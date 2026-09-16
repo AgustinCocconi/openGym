@@ -1,0 +1,34 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "spanish-label-does-not-change-exercise-identity",
+  "purpose": "El entrenador y la UI muestran castellano mientras las operaciones usan el ID canonico.",
+  "given": {
+    "locale": "es-AR",
+    "exercise": {
+      "id": "db-bench-press-001",
+      "canonicalName": "Dumbbell Bench Press",
+      "localizedName": "Press de pecho con mancuernas",
+      "aliases": ["press con mancuernas"]
+    }
+  },
+  "when": {
+    "message": "Explicame el press con mancuernas"
+  },
+  "expect": {
+    "kind": "answer",
+    "resolvedExerciseId": "db-bench-press-001",
+    "visibleExerciseName": "Press de pecho con mancuernas",
+    "operationTypes": [],
+    "invariants": [
+      "answer_is_read_only",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["translated_id", "english_primary_label", "invent_exercise"]
+  },
+  "legacyEvidence": [
+    "BE:catalogo-curado-en-espanol",
+    "upstream:frontend/src/components/locales/es.js"
+  ]
+}
+
+

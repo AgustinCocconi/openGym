@@ -1,0 +1,46 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "equipment-unavailable-prefers-same-pattern",
+  "purpose": "Cambiar un ejercicio pendiente cuando falta equipo sin inventar candidatos.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "active_workout",
+    "baseFingerprint": "state-v1",
+    "currentExercise": {
+      "sessionExerciseId": "item-bench",
+      "exerciseId": "barbell-bench-press",
+      "pattern": "horizontal_push",
+      "status": "pending",
+      "prescription": { "sets": 3, "repetitionsMin": 8, "repetitionsMax": 10, "load": 60 }
+    },
+    "availableEquipment": ["dumbbell", "bench"],
+    "candidates": [
+      { "id": "dumbbell-bench-press", "pattern": "horizontal_push", "equipment": ["dumbbell", "bench"] },
+      { "id": "dumbbell-row", "pattern": "horizontal_pull", "equipment": ["dumbbell", "bench"] }
+    ]
+  },
+  "when": {
+    "message": "La barra esta ocupada, cambialo"
+  },
+  "expect": {
+    "kind": "proposal",
+    "operationTypes": ["replace_pending_exercise"],
+    "replacementExerciseId": "dumbbell-bench-press",
+    "reasonCode": "change.equipment_unavailable",
+    "carriedLoad": null,
+    "invariants": [
+      "candidate_id_exists",
+      "same_pattern_preferred",
+      "load_not_carried_between_exercises",
+      "explicit_confirmation_required",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["direct_state_mutation", "barbell_required_candidate"]
+  },
+  "legacyEvidence": [
+    "FE:src/app/features/sessions/exercise-change.ts",
+    "FE:src/app/features/sessions/exercise-change-state.spec.ts"
+  ]
+}
+
+

@@ -1,0 +1,31 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "limited-time-does-not-invent-exercise-duration",
+  "purpose": "Un tiempo positivo no autoriza a inventar duraciones ni recortes de volumen no versionados.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "today",
+    "availableMinutes": 20,
+    "plannedExercises": ["squat", "row", "press", "hinge"],
+    "exerciseDurations": null,
+    "volumeAdjustmentPolicy": null
+  },
+  "when": {
+    "message": "Hoy tengo solo veinte minutos, acomodame la rutina"
+  },
+  "expect": {
+    "kind": "clarification",
+    "operationTypes": [],
+    "invariants": [
+      "evidence_comes_from_context",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["invent_exercise_duration", "unversioned_volume_rule", "direct_state_mutation"]
+  },
+  "legacyEvidence": [
+    "BE:src/domain/planning-policy.ts",
+    "BE:docs/planning-policy-v1.md"
+  ]
+}
+
+

@@ -1,0 +1,38 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "next-session-uses-recent-pattern-exposure",
+  "purpose": "La proxima sesion se apoya en exposiciones recientes y objetivos, no solo en la ultima rutina.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "today",
+    "goals": [
+      { "pattern": "horizontal_pull", "weeklyExposureUnits": 2 },
+      { "pattern": "squat", "weeklyExposureUnits": 2 }
+    ],
+    "patternExposures": [
+      { "pattern": "horizontal_pull", "days7": 0, "days14": 1, "days28": 2 },
+      { "pattern": "squat", "days7": 2, "days14": 4, "days28": 8 }
+    ],
+    "candidateExerciseIds": ["supported-row", "cable-row", "bodyweight-squat"]
+  },
+  "when": {
+    "message": "Que me conviene entrenar hoy segun lo que vengo haciendo?"
+  },
+  "expect": {
+    "kind": "answer",
+    "operationTypes": [],
+    "priorityPattern": "horizontal_pull",
+    "allowedExerciseIds": ["supported-row", "cable-row"],
+    "invariants": [
+      "candidate_id_exists",
+      "evidence_comes_from_context",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["invent_history", "full_catalog_dump"]
+  },
+  "legacyEvidence": [
+    "BE:src/application/planning-frequency.ts",
+    "BE:src/application/planning-candidates.ts"
+  ]
+}
+

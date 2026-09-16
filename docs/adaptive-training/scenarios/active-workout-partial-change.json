@@ -1,0 +1,45 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "partial-work-is-preserved-before-continuing",
+  "purpose": "Un cambio a mitad de ejercicio conserva las series reales y agrega el reemplazo despues.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "active_workout",
+    "baseFingerprint": "state-partial-v1",
+    "currentExercise": {
+      "sessionExerciseId": "item-squat",
+      "exerciseId": "bodyweight-squat",
+      "status": "partial",
+      "completedSets": [
+        { "repetitions": 10, "load": 0, "effort": 7 },
+        { "repetitions": 9, "load": 0, "effort": 8 }
+      ],
+      "plannedSets": 3
+    },
+    "candidates": [
+      { "id": "glute-bridge", "pattern": "hip_extension", "equipment": [] }
+    ]
+  },
+  "when": {
+    "message": "Dejo la sentadilla aca; segui con puente de gluteos"
+  },
+  "expect": {
+    "kind": "proposal",
+    "operationTypes": ["continue_after_partial_exercise"],
+    "replacementExerciseId": "glute-bridge",
+    "invariants": [
+      "partial_sets_preserved",
+      "completed_sets_immutable",
+      "load_not_carried_between_exercises",
+      "explicit_confirmation_required",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["delete_completed_sets", "mark_original_skipped", "rewrite_history"]
+  },
+  "legacyEvidence": [
+    "BE:INTERFACE_PLAN.md#UI-3.4",
+    "FE:src/app/features/sessions/exercise-change-state.spec.ts"
+  ]
+}
+
+

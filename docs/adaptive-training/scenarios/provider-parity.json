@@ -1,0 +1,30 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "providers-share-one-validated-contract",
+  "purpose": "Cambiar proveedor o modelo no cambia acciones permitidas ni invariantes.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "active_workout",
+    "fixtureId": "equipment-unavailable-prefers-same-pattern",
+    "providers": ["anthropic", "openai", "gemini", "openai-compatible", "claude-agent", "codex"]
+  },
+  "when": {
+    "action": "run_model_capability_gate"
+  },
+  "expect": {
+    "validatedProtocol": "adaptive-trainer/v1",
+    "semanticOperationType": "replace_pending_exercise",
+    "semanticReplacementExerciseId": "dumbbell-bench-press",
+    "invariants": [
+      "provider_contract_is_equivalent",
+      "candidate_id_exists",
+      "explicit_confirmation_required",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["provider_specific_operation", "provider_bypasses_validator"]
+  },
+  "legacyEvidence": [
+    "upstream:docs/AI_COACH.md#Two-kinds-of-provider"
+  ]
+}
+

@@ -1,0 +1,30 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "recent-exercise-is-downranked-for-variety",
+  "purpose": "Entre candidatos equivalentes, la recencia aplica las bandas versionadas de variedad.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "today",
+    "patternPriority": 0.8,
+    "candidates": [
+      { "id": "row-a", "daysSinceLastExecution": 1, "expectedAdjustment": -0.3 },
+      { "id": "row-b", "daysSinceLastExecution": 30, "expectedAdjustment": 0.05 },
+      { "id": "row-c", "daysSinceLastExecution": null, "expectedAdjustment": 0.1 }
+    ]
+  },
+  "when": {
+    "action": "rank_candidates"
+  },
+  "expect": {
+    "orderedExerciseIds": ["row-c", "row-b", "row-a"],
+    "reasonCodes": ["candidate.variety_bonus", "candidate.repetition_penalty"],
+    "invariants": ["candidate_id_exists"],
+    "forbidden": ["unstable_tie_break", "overlapping_bonus_and_penalty"]
+  },
+  "legacyEvidence": [
+    "BE:src/application/planning-exercise-recency.ts",
+    "BE:src/domain/planning-policy.ts"
+  ]
+}
+
+

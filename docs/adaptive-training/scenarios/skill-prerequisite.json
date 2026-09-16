@@ -1,0 +1,39 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "locked-skill-is-not-presented-as-ready",
+  "purpose": "Una habilidad avanzada no se desbloquea por relato o por una marca del asistente.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "plan",
+    "skill": {
+      "id": "advanced-skill",
+      "prerequisiteIds": ["control-prerequisite"],
+      "attempts": [
+        { "result": "passed", "confirmedBy": "assistant", "evidenceComplete": false }
+      ]
+    },
+    "prerequisites": [
+      { "id": "control-prerequisite", "status": "active" }
+    ]
+  },
+  "when": {
+    "message": "Ya estoy para meter la progresion avanzada?"
+  },
+  "expect": {
+    "kind": "answer",
+    "skillStatus": "locked",
+    "operationTypes": [],
+    "invariants": [
+      "answer_is_read_only",
+      "evidence_comes_from_context",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["assistant_unlocks_skill", "ignore_prerequisite"]
+  },
+  "legacyEvidence": [
+    "BE:src/application/skill-progression.ts",
+    "BE:test/skill-progression.test.ts"
+  ]
+}
+
+

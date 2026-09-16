@@ -1,0 +1,30 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "doms-is-not-promoted-to-joint-pain",
+  "purpose": "DOMS permanece separado de dolor, pinzamiento, bloqueo o inestabilidad articular.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "today",
+    "doms": [
+      { "region": "quadriceps", "severity": 5 }
+    ],
+    "signals": []
+  },
+  "when": {
+    "message": "Tengo cargados los cuadriceps, que hacemos hoy?"
+  },
+  "expect": {
+    "kind": "answer",
+    "invariants": [
+      "doms_is_not_articular_signal",
+      "evidence_comes_from_context",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["invent_joint_symptom", "diagnosis", "unversioned_volume_rule"]
+  },
+  "legacyEvidence": [
+    "BE:src/domain/planning-policy.ts",
+    "BE:PLAN.md"
+  ]
+}
+

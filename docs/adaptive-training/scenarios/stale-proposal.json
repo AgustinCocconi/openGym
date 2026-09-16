@@ -1,0 +1,37 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "stale-proposal-cannot-overwrite-current-workout",
+  "purpose": "Una propuesta calculada sobre otro estado se rechaza antes de aplicar operaciones.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "active_workout",
+    "currentFingerprint": "state-v2",
+    "proposal": {
+      "baseFingerprint": "state-v1",
+      "operations": [
+        {
+          "type": "replace_pending_exercise",
+          "targetSessionExerciseId": "item-1",
+          "replacementExerciseId": "exercise-2"
+        }
+      ]
+    }
+  },
+  "when": {
+    "action": "apply_proposal"
+  },
+  "expect": {
+    "validation": "rejected",
+    "operationTypesApplied": [],
+    "invariants": [
+      "stale_fingerprint_rejected",
+      "completed_sets_immutable"
+    ],
+    "forbidden": ["partial_apply", "silent_overwrite"]
+  },
+  "legacyEvidence": [
+    "upstream:docs/AI_COACH.md#What-comes-back-and-what-it-is-allowed-to-do"
+  ]
+}
+
+

@@ -1,0 +1,42 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "routine-proposal-uses-goals-and-recent-work",
+  "purpose": "El Coach puede proponer una rutina aplicable usando objetivos, disponibilidad e historia reciente.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "today",
+    "goal": "general_strength",
+    "availableMinutes": 45,
+    "availableEquipment": ["barbell", "dumbbell", "bench", "cable"],
+    "patternPriorities": [
+      { "pattern": "horizontal_pull", "score": 0.9 },
+      { "pattern": "hinge", "score": 0.7 },
+      { "pattern": "horizontal_push", "score": 0.2 }
+    ],
+    "candidateExerciseIds": ["cable-row", "romanian-deadlift", "dumbbell-bench-press"]
+  },
+  "when": {
+    "message": "Armame la rutina de hoy segun mis objetivos y lo que trabaje ultimamente"
+  },
+  "expect": {
+    "kind": "proposal",
+    "proposalScope": "today",
+    "operationFamily": "upstream_validated_plan_changes",
+    "mustIncludePatterns": ["horizontal_pull", "hinge"],
+    "allowedExerciseIds": ["cable-row", "romanian-deadlift", "dumbbell-bench-press"],
+    "invariants": [
+      "candidate_id_exists",
+      "evidence_comes_from_context",
+      "explicit_confirmation_required",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["invent_history", "invent_exercise", "direct_state_mutation"]
+  },
+  "legacyEvidence": [
+    "BE:src/application/planning-frequency.ts",
+    "BE:src/application/planning-candidates.ts",
+    "upstream:docs/AI_COACH.md"
+  ]
+}
+
+

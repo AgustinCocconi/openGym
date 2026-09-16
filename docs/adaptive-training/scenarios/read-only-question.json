@@ -1,0 +1,33 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "question-does-not-mutate-workout",
+  "purpose": "Una consulta tecnica o explicativa no se convierte accidentalmente en un cambio.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "active_workout",
+    "currentExercise": {
+      "exerciseId": "romanian-deadlift",
+      "localizedName": "Peso muerto rumano",
+      "instructions": "Instrucciones documentadas de fixture.",
+      "status": "pending"
+    }
+  },
+  "when": {
+    "message": "Por que hago este ejercicio y en que me tengo que fijar?"
+  },
+  "expect": {
+    "kind": "answer",
+    "operationTypes": [],
+    "invariants": [
+      "answer_is_read_only",
+      "evidence_comes_from_context",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["proposal", "state_mutation", "invent_instruction"]
+  },
+  "legacyEvidence": [
+    "BE:INTERFACE_PLAN.md#UI-3.2"
+  ]
+}
+
+

@@ -1,0 +1,36 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "joint-symptom-blocks-incompatible-exercise",
+  "purpose": "Una molestia articular seleccionada activa bloqueos conservadores sin diagnostico.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "active_workout",
+    "currentExercise": { "id": "overhead-press", "status": "pending" },
+    "signals": [
+      { "type": "pinching", "region": "shoulder", "laterality": "right", "severity": 4 }
+    ],
+    "candidates": [
+      { "id": "incline-press", "jointRegions": ["shoulder"] },
+      { "id": "supported-row", "jointRegions": ["upper_back"] },
+      { "id": "unclassified-exercise", "jointRegions": [] }
+    ]
+  },
+  "when": {
+    "message": "Me pincha el hombro derecho, cambialo por algo seguro"
+  },
+  "expect": {
+    "kind": "clarification",
+    "blockedExerciseIds": ["incline-press", "unclassified-exercise"],
+    "invariants": [
+      "articular_signal_blocks_incompatible",
+      "candidate_id_exists",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["diagnosis", "guarantee_medical_safety", "ignore_blocker"]
+  },
+  "legacyEvidence": [
+    "BE:src/application/planning-blockers.ts",
+    "BE:docs/planning-policy-v1.md"
+  ]
+}
+

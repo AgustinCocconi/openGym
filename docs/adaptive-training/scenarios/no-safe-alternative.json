@@ -1,0 +1,33 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "no-safe-alternative-is-reported-honestly",
+  "purpose": "No inventar un reemplazo cuando todos los candidatos estan bloqueados o son incompatibles.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "active_workout",
+    "currentExercise": { "sessionExerciseId": "item-press", "status": "pending" },
+    "candidates": [],
+    "blockers": [
+      { "reasonCode": "blocker.selected_joint_symptom", "region": "shoulder" }
+    ],
+    "allowedOperations": ["skip_pending_exercise"]
+  },
+  "when": {
+    "message": "Entonces pone cualquier otro"
+  },
+  "expect": {
+    "kind": "safety_redirect",
+    "operationTypes": [],
+    "invariants": [
+      "no_safe_candidate_is_honest",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": ["invent_exercise", "ignore_blocker", "automatic_skip"]
+  },
+  "legacyEvidence": [
+    "BE:INTERFACE_PLAN.md#UI-3.4",
+    "BE:src/application/planning-blockers.ts"
+  ]
+}
+
+
