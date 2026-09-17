@@ -4,6 +4,9 @@ media/gif/
 
 # Runtime data — users, passkeys, per-user state, session secret
 data/
+data.before-restore-*/
+coach-auth/
+.production-state/
 
 # Local config
 .env

@@ -1,0 +1,17 @@
+services:
+  api:
+    image: opengym-personal-api:${OPENGYM_IMAGE_TAG:?set OPENGYM_IMAGE_TAG}-${API_TARGET:-default}
+    build:
+      target: ${API_TARGET:-default}
+      args:
+        VERSION: personal-${OPENGYM_IMAGE_TAG}
+        VCS_REF: ${OPENGYM_IMAGE_TAG}
+        BUILD_DATE: ${OPENGYM_BUILD_DATE:-unknown}
+
+  web:
+    image: opengym-personal-web:${OPENGYM_IMAGE_TAG:?set OPENGYM_IMAGE_TAG}
+    build:
+      args:
+        VERSION: personal-${OPENGYM_IMAGE_TAG}
+        VCS_REF: ${OPENGYM_IMAGE_TAG}
+        BUILD_DATE: ${OPENGYM_BUILD_DATE:-unknown}

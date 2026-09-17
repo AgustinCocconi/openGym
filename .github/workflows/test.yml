@@ -10,16 +10,18 @@ on:
       - 'mcp/**'
       - 'scripts/build-coach-assets.mjs'
       - 'scripts/build-coach-library.mjs'
+      - 'ops/**'
       - 'api/coach/prompts/**'
       - '.github/workflows/test.yml'
   push:
-    branches: [main, coach]
+    branches: [main, coach, personal]
     paths:
       - 'frontend/**'
       - 'api/**'
       - 'mcp/**'
       - 'scripts/build-coach-assets.mjs'
       - 'scripts/build-coach-library.mjs'
+      - 'ops/**'
       - 'api/coach/prompts/**'
       - '.github/workflows/test.yml'
   workflow_dispatch:
@@ -32,6 +34,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  production-ops:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check production shell syntax
+        run: |
+          for script in ops/production-common.sh ops/verify-production-candidate.sh ops/backup-production.sh ops/smoke-production.sh ops/deploy-production.sh; do
+            sh -n $script
+          done
+      - name: Render production Compose override
+        env:
+          OPENGYM_IMAGE_TAG: 0123456789abcdef0123456789abcdef01234567
+          API_TARGET: default
+          OPENGYM_BUILD_DATE: 2026-09-16T00:00:00Z
+        run: |
+          cp .env.example .env
+          trap 'rm -f .env' EXIT
+          docker compose -f docker-compose.yml -f ops/compose.production.yml config --quiet
+
   test:
     runs-on: ubuntu-latest
     steps:

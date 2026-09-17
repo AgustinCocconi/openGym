@@ -32,6 +32,8 @@ las dos codebases de origen.
 | Trabajar en el entrenador IA | `AI_TRAINER_PROTOCOL.md` | `DATA_CONTRACTS.md` y escenarios |
 | Cambiar una rutina o sesion activa | `AI_TRAINER_PROTOCOL.md` | `DOMAIN_RULES.md` y escenarios `active-workout-*` |
 | Traducir interfaz o ejercicios | `LOCALIZATION_ES.md` | `DATA_CONTRACTS.md` |
+| Planificar o retomar el despliegue OCI | `OCI_DEPLOYMENT_PLAN.md` | `PRODUCTION_DEPLOYMENT.md` y `PRODUCTION_RUNBOOK.md` |
+| Desplegar u operar produccion | `PRODUCTION_DEPLOYMENT.md` | `OCI_DEPLOYMENT_PLAN.md`, `PRODUCTION_RUNBOOK.md`, `UPSTREAM_STRATEGY.md` y la guia vigente de self-hosting de openGym |
 | Portar una capacidad anterior | `PORTING_MAP.md` | una unica ruta de `LEGACY_SOURCES.md` |
 
 `FORK_AGENTS.template.md` contiene el router corto que debe integrarse con las
@@ -98,5 +100,4 @@ codigo determinista.
 4. Convertir primero los escenarios a tests JS junto a funciones puras.
 5. Implementar una sola vertical: sustitucion explicada durante una sesion
    activa, conservando series ya realizadas.
-
 
