@@ -111,12 +111,13 @@ Revalidar antes de actuar:
 - `origin` apunta al fork y `upstream` al repositorio oficial.
 - `main`, `origin/main` y `upstream/main` coinciden en
   `a68a88d2da04cf3334eeeca136385114a65450ff`.
-- `personal` esta en `905f44e8695886ef4c006ce4208e737708d58bf3`, un commit
-  por delante de `origin/personal` (`e7bdbab4a255a1f92286ed098cf70dc82ef3d2a0`).
-- El Compose aun referenciaba imagenes oficiales
-  `ghcr.io/duartesantos8/opengym-*`.
-- El workflow separado de `personal` esta implementado localmente, pero no se
-  ejecutara hasta integrar y subir el commit. El workflow de upstream para
+- `personal` y `origin/personal` coinciden en
+  `52fb8e678afcacb5e33d6dd5f51ac40299baba86`.
+- El Compose productivo referencia las imagenes propias
+  `ghcr.io/agustincocconi/opengym-*` por SHA completo.
+- El workflow separado de `personal` paso su primer gate y publico API
+  `default` y web para `linux/amd64,linux/arm64`. Ambos paquetes son publicos y
+  sus manifests fueron leidos anonimamente; el workflow de upstream para
   `main` permanece sin cambios funcionales.
 - Hay archivos sin seguimiento bajo
   `frontend/src/lib/adaptive-training/`; no desplegar hasta incorporarlos en un
@@ -131,10 +132,10 @@ Revalidar antes de actuar:
 
 Host, region y dominio ya estan definidos. Antes del primer despliegue falta:
 
-1. Integrar y subir el workflow de `personal`, verificar la primera publicacion
-   multi-arquitectura y hacer publicos ambos paquetes GHCR.
+1. Autorizar por separado la creacion de infraestructura a partir del plan OCI
+   revisado; la autorizacion no incluye todavia el primer despliegue.
 2. Elegir el destino cifrado de backups fuera de la VM y ensayar restauracion.
-3. Autorizar por separado la creacion de infraestructura y el primer despliegue.
+3. Autorizar por separado el primer despliegue.
 
 El despliegue inicial sera manual. Solo se automatizara despues de verificar
 backup, rollback y restauracion.

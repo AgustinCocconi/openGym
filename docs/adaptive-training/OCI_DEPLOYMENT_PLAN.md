@@ -1,6 +1,6 @@
 # Plan reanudable de produccion en Oracle Cloud
 
-> Estado: fase 4 en curso; IaC y plan autenticado revisados, sin
+> Estado: fase 5 lista para autorizacion; IaC, plan e imagenes revisados, sin
 > infraestructura creada ni despliegue ejecutado.
 > Ultima actualizacion: 2026-09-29.
 
@@ -512,7 +512,7 @@ recursos esperados y sin secretos.
 
 - [x] Crear un workflow separado para `personal` que ejecute primero todos los
   tests y builds.
-- [ ] Publicar `api` y `web` propias en GHCR para ARM64 o multiarch.
+- [x] Publicar `api` y `web` propias en GHCR para ARM64 o multiarch.
 - [x] Etiquetar cada imagen con el SHA completo e incluir `personal` solo como
   alias movil.
 - [x] Registrar digest y commit. Produccion consume el digest o la etiqueta
@@ -523,17 +523,21 @@ recursos esperados y sin secretos.
   exacto en lugar de compilar en la A1.
 - [x] Conservar el rollback al digest anterior.
 
-Implementacion local del 2026-09-29: `personal-publish.yml` reutiliza el gate
+Implementacion del 2026-09-29: `personal-publish.yml` reutiliza el gate
 completo de `test.yml` y solo publica despues de que pase. Construye API
 `default` y web para `linux/amd64,linux/arm64`, etiqueta por SHA completo y
 alias `personal`, y registra cada digest en el resumen del job. El Compose
 productivo apunta a `ghcr.io/agustincocconi` y el deploy descarga, verifica la
 etiqueta OCI de revision y registra los digestos; ya no compila en la A1.
 
-Falta integrar y subir estos cambios para ejecutar el primer workflow. GHCR
-crea los paquetes como privados: despues de ese primer push, el propietario
-debe cambiar `opengym-api` y `opengym-web` a publicos para que la VM pueda
-descargarlos anonimamente. Hacer publico un paquete es irreversible en GitHub.
+El commit `52fb8e678afcacb5e33d6dd5f51ac40299baba86` paso el gate completo y
+el workflow `36660062726`. GHCR publico los dos indices OCI y el propietario
+cambio ambos paquetes a visibilidad publica. Una comprobacion anonima devolvio
+HTTP 200, confirmo `linux/amd64` y `linux/arm64`, y verifico que los alias
+moviles apuntan a los mismos digestos que las etiquetas inmutables:
+
+- API `default`: `sha256:3510bf43666315c0bbfb66866238d3dbe9fea1b39e6d07bef14d50053007637b`;
+- web: `sha256:0be53325812c7b3ec12bc68d721e21dcd3a12469441d87ed29378639d524fc2c`.
 
 **Salida:** un commit de `personal` con tests verdes y dos imagenes ARM64
 arrancables e identificadas por digest.
@@ -541,6 +545,12 @@ arrancables e identificadas por digest.
 ## Fase 5 - Crear y endurecer la VM
 
 **Responsable:** conjunto.
+
+Gate previo revalidado el 2026-09-29: la IPv4 `/32` configurada para Bastion
+coincide con la salida actual del operador y un plan OCI nuevo conserva 19
+creaciones, cero actualizaciones, reemplazos o eliminaciones, ningun tipo de
+recurso inesperado y la imagen Ubuntu ARM64 fijada. El archivo de plan local se
+actualizo, pero no se ejecuto `apply`.
 
 - [ ] El propietario autoriza el `apply` o crea exactamente los recursos del
   plan guiado por el agente.
@@ -699,8 +709,8 @@ con el bloqueo o siguiente accion; solo una fase puede estar en curso.
 | 1. ARM64 y consumo | COMPLETA | SHA `905f44e`: 1.707 tests ARM64, tres targets construidos, downloader y smoke verdes; ~251-262 MiB combinados con `api:default` bajo QEMU. |
 | 2. Cuentas | COMPLETA | Cuenta y MFA OCI probados; compartment, presupuesto, alertas y cuotas confirmados; zona Cloudflare Free activa, hostname fijo y 2FA con recuperacion y nuevo login verificados. |
 | 3. IaC OCI | COMPLETA | Terraform 1.16.4 y proveedor OCI 7.32.0: formato, validacion, tres guardrails y plan autenticado verdes; 19 altas esperadas, cero cambios destructivos, imagen fijada y ningun `apply`. |
-| 4. Imagenes GHCR | EN CURSO | Workflow, etiquetas, digestos y consumo sin build implementados localmente. Siguiente paso: integrar/pushear, comprobar el primer run y hacer publicos ambos paquetes GHCR. |
-| 5. VM y Cloudflare | PENDIENTE | Requiere autorizacion de infraestructura. |
+| 4. Imagenes GHCR | COMPLETA | Commit `52fb8e6`: gate y publicacion multiarch verdes; paquetes publicos, pulls anonimos verificados y digestos registrados. |
+| 5. VM y Cloudflare | LISTA PARA AUTORIZACION | CIDR de Bastion vigente y plan revalidado con 19 altas esperadas. No ejecutar `apply` sin autorizacion explicita. |
 | 6. Primer deploy | BLOQUEADO | Falta completar el gate y autorizacion explicita. |
 | 7. Observacion | PENDIENTE | Empieza despues del primer deploy. |
 | 8. Recuperacion | PENDIENTE | Definir backup externo antes de produccion. |
@@ -725,6 +735,7 @@ con el bloqueo o siguiente accion; solo una fase puede estar en curso.
 | 2026-09-29 | Subnet publica solo para egreso, sin ingress publico | Una IP efimera e Internet Gateway permiten actualizaciones y Cloudflare Tunnel sin el costo de NAT Gateway; NSG, security list vacia y UFW mantienen cerrados los puertos publicos. |
 | 2026-09-29 | Boot de 50 GB y datos protegidos de 50 GB en `/srv` | Respeta la cuota de 100 GB del compartment, separa la VM reemplazable del estado persistente y permite conservar checkout y backups locales. |
 | 2026-09-29 | P3 completa sin aplicar | Terraform 1.16.4 y proveedor OCI 7.32.0 validaron sintaxis y tres guardrails. El plan autenticado propone 19 altas esperadas, ninguna accion destructiva ni recurso fuera de alcance; la imagen quedo fijada localmente. Cualquier `apply` permanece pendiente de autorizacion explicita. |
+| 2026-09-29 | P4 completa con GHCR publico | El workflow `36660062726` paso el gate y publico API `default` y web para `amd64,arm64` desde `52fb8e6`; ambos paquetes admiten pulls anonimos y los alias coinciden con los digestos inmutables. |
 
 ## Definicion de terminado
 

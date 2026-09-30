@@ -32,10 +32,9 @@ dominio y cambiarlo obliga a volver a registrar las credenciales.
 - Acceso de salida para descargar bases de imagen, dependencias y media.
 
 Las imagenes `ghcr.io/agustincocconi/opengym-api` y
-`ghcr.io/agustincocconi/opengym-web` deben ser publicas. GHCR crea cada paquete
-como privado en la primera publicacion; cambiar su visibilidad a publica desde
-Package settings permite que la VM descargue sin guardar un token. Esa
-transicion no se puede revertir.
+`ghcr.io/agustincocconi/opengym-web` son publicas desde el 2026-09-29. La
+verificacion anonima de sus indices OCI confirmo las plataformas `linux/amd64`
+y `linux/arm64`, por lo que la VM puede descargarlas sin guardar un token.
 
 El usuario operativo debe poder usar Docker y escribir en el checkout y en el
 directorio de backups. Los backups se crean con permisos privados y deben vivir
