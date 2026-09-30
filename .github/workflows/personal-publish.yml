@@ -1,0 +1,98 @@
+name: Publish personal images
+
+on:
+  push:
+    branches: [personal]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/test.yml
+
+  publish:
+    if: github.ref == 'refs/heads/personal'
+    needs: gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: api
+            context: ./api
+            file: ./api/Dockerfile
+            target: default
+            tag_suffix: -default
+          - image: web
+            context: .
+            file: ./web/Dockerfile
+            target: ''
+            tag_suffix: ''
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve immutable image metadata
+        id: image
+        shell: bash
+        run: |
+          owner=$(printf '%s' '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
+          repository="ghcr.io/$owner/opengym-${{ matrix.image }}"
+          built_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "repository=$repository" >> "$GITHUB_OUTPUT"
+          echo "built_at=$built_at" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish ${{ matrix.image }}
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          target: ${{ matrix.target }}
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            VERSION=personal-${{ github.sha }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.image.outputs.built_at }}
+          push: true
+          tags: |
+            ${{ steps.image.outputs.repository }}:${{ github.sha }}${{ matrix.tag_suffix }}
+            ${{ steps.image.outputs.repository }}:personal${{ matrix.tag_suffix }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=personal-${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.image.outputs.built_at }}
+          cache-from: type=gha,scope=personal-${{ matrix.image }}${{ matrix.tag_suffix }}
+          cache-to: type=gha,mode=max,scope=personal-${{ matrix.image }}${{ matrix.tag_suffix }}
+
+      - name: Record immutable digest
+        shell: bash
+        run: |
+          {
+            echo "### ${{ matrix.image }} personal image"
+            echo
+            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Image: \`${{ steps.image.outputs.repository }}:${{ github.sha }}${{ matrix.tag_suffix }}\`"
+            echo "- Digest: \`${{ steps.push.outputs.digest }}\`"
+            echo "- Platforms: \`linux/amd64,linux/arm64\`"
+          } >> "$GITHUB_STEP_SUMMARY"

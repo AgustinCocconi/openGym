@@ -1,8 +1,9 @@
-# Runs on pull requests too — the other two workflows only fire on push to main, so
-# contributed changes used to reach main without anything ever having been run.
+# Runs directly for pull requests and upstream branches. The personal image
+# workflow calls this same file as its publication gate, keeping one test suite.
 name: Tests
 
 on:
+  workflow_call:
   pull_request:
     paths:
       - 'frontend/**'
@@ -13,8 +14,9 @@ on:
       - 'ops/**'
       - 'api/coach/prompts/**'
       - '.github/workflows/test.yml'
+      - '.github/workflows/personal-publish.yml'
   push:
-    branches: [main, coach, personal]
+    branches: [main, coach]
     paths:
       - 'frontend/**'
       - 'api/**'
@@ -24,6 +26,7 @@ on:
       - 'ops/**'
       - 'api/coach/prompts/**'
       - '.github/workflows/test.yml'
+      - '.github/workflows/personal-publish.yml'
   workflow_dispatch:
 
 permissions:
@@ -46,12 +49,14 @@ jobs:
       - name: Render production Compose override
         env:
           OPENGYM_IMAGE_TAG: 0123456789abcdef0123456789abcdef01234567
+          OPENGYM_REGISTRY_OWNER: agustincocconi
           API_TARGET: default
-          OPENGYM_BUILD_DATE: 2026-09-16T00:00:00Z
         run: |
           cp .env.example .env
           trap 'rm -f .env' EXIT
-          docker compose -f docker-compose.yml -f ops/compose.production.yml config --quiet
+          rendered=$(docker compose -f docker-compose.yml -f ops/compose.production.yml config)
+          printf '%s\n' "$rendered" | grep -Fq 'image: ghcr.io/agustincocconi/opengym-api:0123456789abcdef0123456789abcdef01234567-default'
+          printf '%s\n' "$rendered" | grep -Fq 'image: ghcr.io/agustincocconi/opengym-web:0123456789abcdef0123456789abcdef01234567'
 
   test:
     runs-on: ubuntu-latest

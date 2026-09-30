@@ -68,11 +68,16 @@ fi
 
 api_target=${API_TARGET:-default}
 case "$api_target" in
-  default|coach) ;;
-  *) production_die 'API_TARGET debe ser default o coach' ;;
+  default) ;;
+  coach) production_die 'el workflow productivo aun no publica la imagen coach; usar API_TARGET=default' ;;
+  *) production_die 'API_TARGET debe ser default' ;;
 esac
+registry_owner=${OPENGYM_REGISTRY_OWNER:-agustincocconi}
+printf '%s' "$registry_owner" | grep -Eq '^[a-z0-9][a-z0-9-]*$' ||
+  production_die 'OPENGYM_REGISTRY_OWNER debe ser un namespace GHCR en minusculas'
 export API_TARGET="$api_target"
 export OPENGYM_IMAGE_TAG="$expected_commit"
+export OPENGYM_REGISTRY_OWNER="$registry_owner"
 
 state_dir="$PRODUCTION_REPO_ROOT/.production-state"
 umask 077
@@ -96,27 +101,12 @@ else
 fi
 
 build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-export OPENGYM_BUILD_DATE="$build_date"
 
-api_ref="opengym-personal-api:$expected_commit-$api_target"
-web_ref="opengym-personal-web:$expected_commit"
-api_exists=0
-web_exists=0
-if docker image inspect "$api_ref" >/dev/null 2>&1; then api_exists=1; fi
-if docker image inspect "$web_ref" >/dev/null 2>&1; then web_exists=1; fi
-
-if [ "$api_exists" -eq 0 ] && [ "$web_exists" -eq 0 ]; then
-  production_info "Construyendo imagenes inmutables para $expected_commit..."
-  production_compose_release build api web
-elif [ "$api_exists" -eq 0 ]; then
-  production_info "Construyendo la imagen API faltante para $expected_commit..."
-  production_compose_release build api
-elif [ "$web_exists" -eq 0 ]; then
-  production_info "Construyendo la imagen web faltante para $expected_commit..."
-  production_compose_release build web
-else
-  production_info "Reutilizando las imagenes inmutables ya construidas para $expected_commit."
-fi
+api_ref="ghcr.io/$registry_owner/opengym-api:$expected_commit-$api_target"
+web_ref="ghcr.io/$registry_owner/opengym-web:$expected_commit"
+production_info "Descargando imagenes inmutables para $expected_commit..."
+docker pull "$api_ref"
+docker pull "$web_ref"
 
 for image_ref in "$api_ref" "$web_ref"; do
   image_revision=$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$image_ref")
@@ -134,9 +124,9 @@ for service in api web; do
   fi
   image_id=$(docker inspect --format '{{.Image}}' "$container_id")
   if [ "$service" = api ]; then
-    docker image tag "$image_id" "opengym-personal-api:$rollback_tag-$api_target"
+    docker image tag "$image_id" "ghcr.io/$registry_owner/opengym-api:$rollback_tag-$api_target"
   else
-    docker image tag "$image_id" "opengym-personal-web:$rollback_tag"
+    docker image tag "$image_id" "ghcr.io/$registry_owner/opengym-web:$rollback_tag"
   fi
 done
 
@@ -178,12 +168,12 @@ if [ "$deployment_status" -ne 0 ]; then
   production_die 'despliegue fallido; revisar logs antes de cualquier restauracion de datos'
 fi
 
-api_image=$(docker image inspect --format '{{.Id}}' "$api_ref")
-web_image=$(docker image inspect --format '{{.Id}}' "$web_ref")
+api_image=$(docker image inspect --format '{{index .RepoDigests 0}}' "$api_ref")
+web_image=$(docker image inspect --format '{{index .RepoDigests 0}}' "$web_ref")
 printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\tsuccess\n' \
   "$build_date" "$expected_commit" "$api_target" "$api_image" "$web_image" "$backup_archive" "$backup_sha256" >> "$deploy_log"
-printf 'commit=%s\napi_target=%s\nrollback_tag=%s\nbackup_archive=%s\nbackup_sha256=%s\ndeployed_utc=%s\n' \
-  "$expected_commit" "$api_target" "$rollback_tag" "$backup_archive" "$backup_sha256" "$build_date" > "$state_dir/current.env"
+printf 'commit=%s\napi_target=%s\napi_image=%s\nweb_image=%s\nrollback_tag=%s\nbackup_archive=%s\nbackup_sha256=%s\ndeployed_utc=%s\n' \
+  "$expected_commit" "$api_target" "$api_image" "$web_image" "$rollback_tag" "$backup_archive" "$backup_sha256" "$build_date" > "$state_dir/current.env"
 
 production_info "Despliegue completo: $expected_commit"
 production_info "Backup previo: $backup_archive"

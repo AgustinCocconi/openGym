@@ -1,8 +1,8 @@
 # Runbook de la instancia productiva personal
 
-Este runbook opera una unica instancia de openGym construida desde la rama
-`personal`. Todavia no hay un host ni un dominio elegidos: completar esos dos
-datos antes de ejecutar el primer despliegue.
+Este runbook opera una unica instancia de openGym publicada desde la rama
+`personal`. La VM consume imagenes multi-arquitectura de GHCR por commit y no
+compila en produccion.
 
 La politica y las razones de cada control estan en
 `PRODUCTION_DEPLOYMENT.md`. La configuracion general de openGym sigue en
@@ -10,14 +10,14 @@ La politica y las razones de cada control estan en
 
 ## Datos que deben definirse
 
-| Dato | Valor pendiente |
+| Dato | Valor |
 | --- | --- |
-| Host Linux | `PENDIENTE` |
-| Dominio HTTPS definitivo | `PENDIENTE` |
-| Checkout | `/srv/opengym` (recomendado) |
-| Backups locales | `/var/backups/opengym` (recomendado) |
+| Host Linux | OCI Ampere A1, `1 OCPU / 2 GB`, `sa-vinhedo-1` |
+| Dominio HTTPS definitivo | `gym.mientrenadorpersonal.com.ar` |
+| Checkout | `/srv/opengym` |
+| Backups locales | `/srv/opengym-backups` |
 | Copia cifrada fuera del host | `PENDIENTE` |
-| Target de API | `default`, salvo que Codex CLI o Claude Agent SDK deban vivir en el contenedor |
+| Target de API | `default`; el workflow productivo aun no publica `coach` |
 | Retencion local | 14 backups por defecto |
 
 No registrar passkeys con un hostname provisional. `RP_ID` queda ligado al
@@ -28,8 +28,14 @@ dominio y cambiarlo obliga a volver a registrar las credenciales.
 - Linux con Docker Engine y el plugin `docker compose`.
 - `git`, `curl`, `tar` y `sha256sum`.
 - Disco persistente para el checkout, `data/`, `media/` y `coach-auth/`.
-- Un reverse proxy o Tunnel que termine TLS y apunte al `WEB_PORT` de openGym.
+- Cloudflare Tunnel apuntando a `http://127.0.0.1:8080`.
 - Acceso de salida para descargar bases de imagen, dependencias y media.
+
+Las imagenes `ghcr.io/agustincocconi/opengym-api` y
+`ghcr.io/agustincocconi/opengym-web` deben ser publicas. GHCR crea cada paquete
+como privado en la primera publicacion; cambiar su visibilidad a publica desde
+Package settings permite que la VM descargue sin guardar un token. Esa
+transicion no se puede revertir.
 
 El usuario operativo debe poder usar Docker y escribir en el checkout y en el
 directorio de backups. Los backups se crean con permisos privados y deben vivir
@@ -53,12 +59,15 @@ tar por stdout; puede fijarse otra imagen compatible con
    git pull --ff-only origin personal
    ```
 
-2. Copiar `.env.example` a `.env`. Usar el dominio definitivo y desactivar
+2. Confirmar que el workflow **Publish personal images** paso para el commit y
+   que ambos paquetes GHCR son publicos.
+
+3. Copiar `.env.example` a `.env`. Usar el dominio definitivo y desactivar
    invitados desde el comienzo:
 
    ```env
-   RP_ID=gym.example.com
-   ORIGIN=https://gym.example.com
+   RP_ID=gym.mientrenadorpersonal.com.ar
+   ORIGIN=https://gym.mientrenadorpersonal.com.ar
    WEB_PORT=8080
    RP_NAME=openGym
    INVITE_ONLY=0
@@ -68,23 +77,24 @@ tar por stdout; puede fijarse otra imagen compatible con
    `RP_ID` es solo el hostname. `ORIGIN` incluye `https://` y no lleva slash
    final. Mantener `.env` fuera de Git.
 
-3. Configurar DNS/TLS y comprobar que el proxy envia el dominio a
+4. Configurar Cloudflare Tunnel y comprobar que envia el dominio a
    `http://127.0.0.1:8080` (o al `WEB_PORT` elegido). Si Cloudflare es el proxy
    real, revisar `CF_CONNECTING_IP` segun `SELF_HOSTING.md`.
 
-4. Ejecutar el primer despliegue en modo bootstrap. Este es el unico momento en
+5. Ejecutar el primer despliegue en modo bootstrap. Este es el unico momento en
    que se admite `INVITE_ONLY=0`:
 
    ```bash
    cd /srv/opengym
    commit=$(git rev-parse HEAD)
-   PRODUCTION_URL=https://gym.example.com \
-   BACKUP_DIR=/var/backups/opengym \
+   SKIP_LOCAL_GATE=1 CONFIRMED_CI_COMMIT="$commit" \
+   PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar \
+   BACKUP_DIR=/srv/opengym-backups \
    BOOTSTRAP_OWNER=1 \
    bash ops/deploy-production.sh "$commit"
    ```
 
-5. Abrir inmediatamente la URL y registrar el perfil propietario. Obtener su
+6. Abrir inmediatamente la URL y registrar el perfil propietario. Obtener su
    `id` desde `data/db.json`, configurar y recrear la API:
 
    ```env
@@ -98,11 +108,11 @@ tar por stdout; puede fijarse otra imagen compatible con
    OPENGYM_IMAGE_TAG="$commit" API_TARGET=default \
      docker compose -f docker-compose.yml -f ops/compose.production.yml \
      up -d --no-build api web
-   PRODUCTION_URL=https://gym.example.com EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
+   PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
      bash ops/smoke-production.sh
    ```
 
-6. Confirmar un login con passkey, una escritura y una lectura de prueba desde
+7. Confirmar un login con passkey, una escritura y una lectura de prueba desde
    la interfaz. Los scripts de smoke son deliberadamente de solo lectura.
 
 ## Actualizacion ordinaria
@@ -115,8 +125,9 @@ git fetch origin personal
 git switch personal
 git merge --ff-only origin/personal
 commit=$(git rev-parse HEAD)
-PRODUCTION_URL=https://gym.example.com \
-BACKUP_DIR=/var/backups/opengym \
+SKIP_LOCAL_GATE=1 CONFIRMED_CI_COMMIT="$commit" \
+PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar \
+BACKUP_DIR=/srv/opengym-backups \
 BACKUP_RETENTION_COUNT=14 \
 API_TARGET=default \
 bash ops/deploy-production.sh "$commit"
@@ -126,23 +137,23 @@ El script rechaza una rama distinta, un SHA abreviado, cambios locales, un
 commit diferente de `origin/personal`, HTTP, un `RP_ID`/`ORIGIN` inconsistente o
 una instancia sin cerrar. Luego:
 
-1. ejecuta tests y build con Node 22 en contenedores aislados;
-2. construye y etiqueta las imagenes con el SHA completo;
+1. exige confirmacion del mismo commit aprobado por CI;
+2. descarga las imagenes etiquetadas con el SHA completo y verifica su revision;
 3. crea y verifica un backup consistente;
 4. reemplaza los contenedores sin tocar los directorios persistentes;
-5. ejecuta el smoke y registra el resultado en `.production-state/`.
+5. ejecuta el smoke y registra digestos y resultado en `.production-state/`.
 
-Si el mismo commit ya paso el workflow **Tests** de GitHub, se puede omitir la
-repeticion local solo de forma explicita:
+La A1 no repite el gate ni construye. El mismo commit debe haber pasado el gate
+del workflow de publicacion y se confirma de forma explicita:
 
 ```bash
 SKIP_LOCAL_GATE=1 CONFIRMED_CI_COMMIT="$commit" \
-PRODUCTION_URL=https://gym.example.com \
-BACKUP_DIR=/var/backups/opengym \
+PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar \
+BACKUP_DIR=/srv/opengym-backups \
 bash ops/deploy-production.sh "$commit"
 ```
 
-La construccion de imagenes y el smoke nunca se omiten.
+La descarga, verificacion de revision, backup y smoke nunca se omiten.
 
 ## Backup periodico
 
@@ -150,7 +161,7 @@ Ejecutar, ademas del backup automatico previo a cada despliegue:
 
 ```bash
 cd /srv/opengym
-BACKUP_DIR=/var/backups/opengym BACKUP_RETENTION_COUNT=14 \
+BACKUP_DIR=/srv/opengym-backups BACKUP_RETENTION_COUNT=14 \
   bash ops/backup-production.sh
 ```
 
@@ -168,7 +179,7 @@ sha256sum --check opengym-data-YYYYMMDDTHHMMSSZ-COMMIT.tar.gz.sha256
 El smoke remoto no escribe datos:
 
 ```bash
-PRODUCTION_URL=https://gym.example.com bash ops/smoke-production.sh
+PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar bash ops/smoke-production.sh
 docker compose ps
 docker compose logs --tail=200 api web
 ```
@@ -189,7 +200,7 @@ api_target=default
 OPENGYM_IMAGE_TAG="$rollback_tag" API_TARGET="$api_target" \
   docker compose -f docker-compose.yml -f ops/compose.production.yml \
   up -d --no-build
-PRODUCTION_URL=https://gym.example.com EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
+PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
   bash ops/smoke-production.sh
 ```
 
@@ -204,7 +215,7 @@ primero el archivo y su checksum en un directorio aislado. En produccion:
 
 ```bash
 cd /srv/opengym
-archive=/var/backups/opengym/opengym-data-YYYYMMDDTHHMMSSZ-COMMIT.tar.gz
+archive=/srv/opengym-backups/opengym-data-YYYYMMDDTHHMMSSZ-COMMIT.tar.gz
 (cd "$(dirname "$archive")" && sha256sum --check "$(basename "$archive").sha256")
 listing=$(mktemp)
 tar -tzf "$archive" > "$listing" || { rm -f "$listing"; exit 1; }
@@ -218,7 +229,7 @@ docker compose stop api
 mv data "data.before-restore-$(date -u +%Y%m%dT%H%M%SZ)"
 tar -xzf "$archive" -C /srv/opengym
 docker compose start api
-PRODUCTION_URL=https://gym.example.com EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
+PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
   bash ops/smoke-production.sh
 ```
 
@@ -231,8 +242,8 @@ respaldo externo.
 Conservar, sin secretos:
 
 - fecha UTC y commit desplegado;
-- resultado del workflow **Tests** o del gate local;
-- target `default`/`coach` e IDs de imagen;
+- resultado del workflow **Publish personal images**;
+- target `default` y digestos de imagen;
 - ruta y SHA-256 del backup previo;
 - resultado del smoke;
 - rollback realizado, si lo hubo.
