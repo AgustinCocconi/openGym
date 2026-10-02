@@ -9,6 +9,6 @@ ssh_public_key   = "ssh-ed25519 AAAA-replace-with-your-public-key opengym-operat
 # Use the current public IPv4 of the operator as a /32. Never use 0.0.0.0/0.
 bastion_client_cidr_blocks = ["203.0.113.10/32"]
 
-# Leave null to select the latest compatible Ubuntu 24.04 ARM64 platform image
+# Leave null to select the latest compatible Ubuntu 24.04 AMD64 platform image
 # during plan. After reviewing the first plan, this can be pinned to that OCID.
 image_ocid = null

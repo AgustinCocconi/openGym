@@ -5,7 +5,8 @@
 Mantener una sola instancia remota de produccion para uso personal. El
 desarrollo, los tests y las pruebas manuales previas se ejecutan localmente; no
 se crea un ambiente remoto de desarrollo. La rama desplegable es `personal` y
-`main` continua siendo un espejo sin cambios propios de `upstream/main`.
+`main` conserva la base upstream sin cambios propios; la base integrada y las
+divergencias se registran en `PORTING_MAP.md`, no se asume igualdad de refs.
 
 ```text
 feature/* -> tests -> personal -> backup -> despliegue por commit -> smoke
@@ -17,7 +18,8 @@ gate vigente del repositorio.
 
 ## Arquitectura inicial
 
-- Una VM OCI Ampere A1 ARM64 en `sa-vinhedo-1`, limitada a `1 OCPU / 2 GB`.
+- Una VM OCI `VM.Standard.E2.1.Micro` AMD64 Always Free en `sa-vinhedo-1`,
+  con 1 GB de RAM y 1 GB de swap local dentro del boot volume.
 - Boot volume de 50 GB y block volume protegido de 50 GB montado en `/srv`.
   El checkout vive en `/srv/opengym` y los backups locales en
   `/srv/opengym-backups`.
@@ -39,7 +41,7 @@ Workers, D1 ni KV: necesita contenedores y filesystem persistente.
 
 ## Estrategia de construccion
 
-La VM de 2 GB no compila. El workflow `personal-publish.yml` ejecuta el gate y
+La VM de 1 GB no compila. El workflow `personal-publish.yml` ejecuta el gate y
 publica imagenes propias multi-arquitectura en GHCR con dos etiquetas:
 
 - una inmutable derivada del commit;
@@ -51,7 +53,7 @@ oficiales de upstream: no contienen los cambios de `personal`.
 
 El Compose y el script productivos descargan las imagenes del fork por SHA,
 verifican la etiqueta OCI de revision y registran los digestos efectivos. No
-compilan en la A1. Los paquetes deben marcarse publicos en GHCR despues de su
+compilan en la VM. Los paquetes deben marcarse publicos en GHCR despues de su
 primera publicacion para permitir pulls anonimos; si permanecen privados, el
 propietario debe configurar un token de lectura directamente en la VM.
 La primera publicacion usa el target `default`. No hace falta el target Docker
@@ -104,38 +106,14 @@ practica de producir backups verificables y ensayar la restauracion.
 Mantener estos artefactos fuera de archivos centrales de upstream cuando sea
 posible para reducir conflictos durante las sincronizaciones.
 
-## Estado revalidado al 2026-09-29
+## Estado operativo
 
-Revalidar antes de actuar:
-
-- `origin` apunta al fork y `upstream` al repositorio oficial.
-- `main`, `origin/main` y `upstream/main` coinciden en
-  `a68a88d2da04cf3334eeeca136385114a65450ff`.
-- `personal` y `origin/personal` coinciden en
-  `52fb8e678afcacb5e33d6dd5f51ac40299baba86`.
-- El Compose productivo referencia las imagenes propias
-  `ghcr.io/agustincocconi/opengym-*` por SHA completo.
-- El workflow separado de `personal` paso su primer gate y publico API
-  `default` y web para `linux/amd64,linux/arm64`. Ambos paquetes son publicos y
-  sus manifests fueron leidos anonimamente; el workflow de upstream para
-  `main` permanece sin cambios funcionales.
-- Hay archivos sin seguimiento bajo
-  `frontend/src/lib/adaptive-training/`; no desplegar hasta incorporarlos en un
-  commit probado o excluirlos conscientemente.
-- `ops/oci/` pasa formato, validacion y tres tests Terraform. El plan
-  autenticado y revisado contiene 19 altas esperadas, ninguna accion
-  destructiva ni recurso fuera del alcance documentado; la imagen Ubuntu ARM64
-  quedo fijada solo en la configuracion local ignorada. No se ejecuto `apply`
-  ni se creo infraestructura.
-
-## Decisiones externas pendientes
-
-Host, region y dominio ya estan definidos. Antes del primer despliegue falta:
-
-1. Autorizar por separado la creacion de infraestructura a partir del plan OCI
-   revisado; la autorizacion no incluye todavia el primer despliegue.
-2. Elegir el destino cifrado de backups fuera de la VM y ensayar restauracion.
-3. Autorizar por separado el primer despliegue.
+El [checkpoint OCI](OCI_DEPLOYMENT_PLAN.md#checkpoint) contiene evidencia
+registrada, fase activa y bloqueos. Consultar el [gate](OCI_DEPLOYMENT_PLAN.md#gate-absoluto-antes-de-desplegar)
+y la fase pertinente antes de actuar; no duplicar aqui snapshots de ramas,
+cuentas, infraestructura o publicaciones. Revalidar Git y servicios externos
+para la accion concreta.
 
 El despliegue inicial sera manual. Solo se automatizara despues de verificar
-backup, rollback y restauracion.
+backup, rollback y restauracion. La creacion autorizada de infraestructura
+no incluye el primer despliegue.

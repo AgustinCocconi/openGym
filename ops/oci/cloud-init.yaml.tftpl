@@ -2,6 +2,20 @@
 package_update: true
 package_upgrade: false
 
+bootcmd:
+  - |
+    expected_swap_bytes=$((${swap_size_mib} * 1024 * 1024))
+    current_swap_bytes=$(stat -c %s /swapfile 2>/dev/null || printf '0')
+    if [ "$current_swap_bytes" -ne "$expected_swap_bytes" ]; then
+      swapoff /swapfile 2>/dev/null || true
+      rm -f /swapfile
+      fallocate -l ${swap_size_mib}M /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=${swap_size_mib}
+      chmod 0600 /swapfile
+      mkswap /swapfile
+    fi
+    swapon /swapfile || true
+    grep -Fq '/swapfile none swap sw 0 0' /etc/fstab || printf '%s\n' '/swapfile none swap sw 0 0' >> /etc/fstab
+
 packages:
   - ca-certificates
   - curl
@@ -58,7 +72,7 @@ write_files:
       if ! grep -Fq "UUID=$volume_uuid $mount_point " /etc/fstab; then
         printf 'UUID=%s %s ext4 defaults,nofail,_netdev 0 2\n' "$volume_uuid" "$mount_point" >> /etc/fstab
       fi
-      mountpoint -q "$mount_point" || mount "$mount_point"
+      mountpoint -q "$mount_point" || mount "$mount_point" || mountpoint -q "$mount_point"
 
       install -d -o "$operator" -g "$operator" -m 0750 \
         "$mount_point/opengym" \
@@ -106,7 +120,7 @@ write_files:
       URIs: https://download.docker.com/linux/ubuntu
       Suites: noble
       Components: stable
-      Architectures: arm64
+      Architectures: ${docker_arch}
       Signed-By: /etc/apt/keyrings/docker.asc
       EOF
 

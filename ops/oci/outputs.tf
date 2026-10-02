@@ -4,7 +4,7 @@ output "availability_domain" {
 }
 
 output "selected_image_ocid" {
-  description = "Ubuntu ARM64 image selected by the reviewed plan. Record it with the deployment evidence."
+  description = "Ubuntu AMD64 image selected by the reviewed plan. Record it with the deployment evidence."
   value       = local.selected_image_ocid
 }
 

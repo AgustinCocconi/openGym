@@ -10,7 +10,8 @@ Terraform variables, plans, state or cloud-init.
 
 ## Architecture
 
-- One `VM.Standard.A1.Flex` ARM64 instance with exactly 1 OCPU and 2 GB RAM.
+- One `VM.Standard.E2.1.Micro` AMD64 instance with 1 GB RAM, restricted to the
+  Always Free micro shape.
 - A 50 GB boot volume and a protected 50 GB persistent block volume.
 - The persistent volume mounts at `/srv`; the checkout and local backups live
   at `/srv/opengym` and `/srv/opengym-backups`.
@@ -22,19 +23,24 @@ Terraform variables, plans, state or cloud-init.
   7844. Cloudflare remains the only application entry path.
 - OCI Bastion is managed, time-limited and restricted to operator CIDRs. No
   permanent public SSH rule exists.
-- Ubuntu 24.04 ARM64 receives Docker Engine, Compose, Git and `cloudflared`
-  through idempotent cloud-init. The Tunnel token is deliberately absent.
+- Ubuntu 24.04 AMD64 receives 1 GB of local swap, Docker Engine, Compose, Git
+  and `cloudflared` through idempotent cloud-init. The swap lives inside the
+  fixed 50 GB boot volume; the Tunnel token is deliberately absent.
 
 The public subnet is intentional: it avoids introducing a NAT Gateway while
-still allowing updates and Tunnel egress. Defense in depth comes from an empty
-subnet security list, a restrictive NSG, UFW and binding openGym to loopback.
+still allowing updates and Tunnel egress. Its security list has no ingress and
+only permits stateful TCP/22 egress inside the subnet so the Bastion private
+endpoint can reach the host. Defense in depth also comes from the restrictive
+instance NSG, UFW and binding openGym to loopback.
 
 ## Guardrails
 
-Terraform rejects a different region, shape, CPU, memory, hostname or storage
-envelope. The persistent volume has `prevent_destroy = true`; a normal
-`terraform destroy` must fail before deleting it. Follow
-`DESTROY_RECREATE.md` for any replacement or teardown.
+Terraform rejects a different region, shape, hostname or storage envelope.
+The instance and persistent volume have `prevent_destroy = true`; a normal
+`terraform destroy` must fail before deleting either one. Instance `user_data`
+is a first-boot contract and is ignored after creation because OCI would
+replace the VM to change it. Future instances still receive the current
+template. Follow `DESTROY_RECREATE.md` for any replacement or teardown.
 
 `terraform.tfvars`, state, saved plans and crash logs are ignored. State still
 contains infrastructure identifiers and user-data, so keep it only on an
@@ -76,10 +82,11 @@ terraform show opengym.tfplan
 
 Before approving an apply, verify that the plan contains only:
 
-- one VCN, Internet Gateway, route table, subnet and empty security list;
+- one VCN, Internet Gateway, route table and subnet security list with no
+  ingress plus only stateful TCP/22 egress inside the subnet for Bastion;
 - one instance NSG with the documented rules;
 - one OCI Bastion;
-- one A1 instance at 1 OCPU / 2 GB;
+- one `VM.Standard.E2.1.Micro` instance;
 - 50 GB boot plus 50 GB protected data volume and its attachment;
 - no NAT Gateway, load balancer, DNS record, Cloudflare token or secret.
 
@@ -95,6 +102,8 @@ cloud-init status --wait
 sudo systemctl status opengym-data-volume.service --no-pager
 findmnt /srv
 test -f /srv/.opengym-data-volume
+test "$(stat -c %s /swapfile)" -eq 1073741824
+swapon --show --bytes
 docker --version
 docker compose version
 cloudflared --version

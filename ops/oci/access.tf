@@ -1,5 +1,6 @@
 resource "oci_bastion_bastion" "opengym" {
-  bastion_type                 = "standard"
+  # OCI returns this immutable value uppercased; matching it avoids a perpetual forced replacement.
+  bastion_type                 = "STANDARD"
   compartment_id               = var.compartment_ocid
   target_subnet_id             = oci_core_subnet.opengym.id
   client_cidr_block_allow_list = var.bastion_client_cidr_blocks

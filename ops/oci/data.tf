@@ -2,7 +2,7 @@ data "oci_identity_availability_domains" "home" {
   compartment_id = var.tenancy_ocid
 }
 
-data "oci_core_images" "ubuntu_arm64" {
+data "oci_core_images" "ubuntu_amd64" {
   count = var.image_ocid == null ? 1 : 0
 
   compartment_id           = var.tenancy_ocid
@@ -20,7 +20,7 @@ locals {
     null
   )
   selected_image_ocid = var.image_ocid != null ? var.image_ocid : try(
-    data.oci_core_images.ubuntu_arm64[0].images[0].id,
+    data.oci_core_images.ubuntu_amd64[0].images[0].id,
     null
   )
 

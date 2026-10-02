@@ -5,11 +5,6 @@ resource "oci_core_instance" "opengym" {
   shape               = var.instance_shape
   freeform_tags       = local.common_tags
 
-  shape_config {
-    ocpus         = var.instance_ocpus
-    memory_in_gbs = var.instance_memory_gbs
-  }
-
   source_details {
     source_type             = "image"
     source_id               = local.selected_image_ocid
@@ -54,9 +49,11 @@ resource "oci_core_instance" "opengym" {
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml.tftpl", {
       bastion_private_ip = oci_bastion_bastion.opengym.private_endpoint_ip_address
       data_device        = local.data_device
+      docker_arch        = "amd64"
       mount_point        = local.mount_point
       operator_user      = local.operator_user
       public_hostname    = var.public_hostname
+      swap_size_mib      = 1024
     }))
   }
 
@@ -72,6 +69,12 @@ resource "oci_core_instance" "opengym" {
   ]
 
   lifecycle {
+    # user_data is a first-boot contract. OCI replaces the instance when it
+    # changes, so existing hosts are remediated explicitly and future hosts use
+    # the latest template without risking an accidental destroy/recreate.
+    ignore_changes  = [metadata["user_data"]]
+    prevent_destroy = true
+
     precondition {
       condition     = local.availability_domain != null
       error_message = "The requested availability domain was not found in the home region."
@@ -79,16 +82,12 @@ resource "oci_core_instance" "opengym" {
 
     precondition {
       condition     = local.selected_image_ocid != null
-      error_message = "No compatible Ubuntu 24.04 ARM64 platform image was found; set image_ocid explicitly after reviewing an eligible image."
+      error_message = "No compatible Ubuntu 24.04 AMD64 platform image was found; set image_ocid explicitly after reviewing an eligible image."
     }
 
     precondition {
-      condition = (
-        var.instance_shape == "VM.Standard.A1.Flex" &&
-        var.instance_ocpus == 1 &&
-        var.instance_memory_gbs == 2
-      )
-      error_message = "Compute exceeds or differs from the approved Always Free guardrail."
+      condition     = var.instance_shape == "VM.Standard.E2.1.Micro"
+      error_message = "Compute differs from the approved Always Free E2.1.Micro guardrail."
     }
   }
 

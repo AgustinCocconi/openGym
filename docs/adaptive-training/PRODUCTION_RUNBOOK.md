@@ -4,15 +4,15 @@ Este runbook opera una unica instancia de openGym publicada desde la rama
 `personal`. La VM consume imagenes multi-arquitectura de GHCR por commit y no
 compila en produccion.
 
-La politica y las razones de cada control estan en
-`PRODUCTION_DEPLOYMENT.md`. La configuracion general de openGym sigue en
-`../SELF_HOSTING.md` y `../SELF_HOSTING_HTTPS.md`.
+La politica esta en `PRODUCTION_DEPLOYMENT.md`; estado y gate en
+[el plan OCI](OCI_DEPLOYMENT_PLAN.md#checkpoint). La configuracion general
+sigue en `../SELF_HOSTING.md` y `../SELF_HOSTING_HTTPS.md`.
 
 ## Datos que deben definirse
 
 | Dato | Valor |
 | --- | --- |
-| Host Linux | OCI Ampere A1, `1 OCPU / 2 GB`, `sa-vinhedo-1` |
+| Host Linux | OCI `VM.Standard.E2.1.Micro` AMD64, 1 GB RAM + 1 GB swap, `sa-vinhedo-1` |
 | Dominio HTTPS definitivo | `gym.mientrenadorpersonal.com.ar` |
 | Checkout | `/srv/opengym` |
 | Backups locales | `/srv/opengym-backups` |
@@ -31,10 +31,9 @@ dominio y cambiarlo obliga a volver a registrar las credenciales.
 - Cloudflare Tunnel apuntando a `http://127.0.0.1:8080`.
 - Acceso de salida para descargar bases de imagen, dependencias y media.
 
-Las imagenes `ghcr.io/agustincocconi/opengym-api` y
-`ghcr.io/agustincocconi/opengym-web` son publicas desde el 2026-09-29. La
-verificacion anonima de sus indices OCI confirmo las plataformas `linux/amd64`
-y `linux/arm64`, por lo que la VM puede descargarlas sin guardar un token.
+Imagenes del fork: `ghcr.io/agustincocconi/opengym-api` y `opengym-web`.
+Revalidar acceso y plataformas del SHA candidato; evidencia de publicacion
+en la fase 4 del plan, sin duplicar aca su estado.
 
 El usuario operativo debe poder usar Docker y escribir en el checkout y en el
 directorio de backups. Los backups se crean con permisos privados y deben vivir
@@ -45,6 +44,20 @@ escribible, para poder leer tambien los archivos `0600` creados por la API. El
 archivo resultante pertenece al usuario operativo porque Docker transmite el
 tar por stdout; puede fijarse otra imagen compatible con
 `BACKUP_HELPER_IMAGE`.
+
+## Precondiciones del bootstrap
+
+No ejecutar los comandos siguientes hasta completar el gate y la autorizacion
+separada de primer deploy. Bloqueo detectado en la revision documental:
+`smoke-production.sh` hace curl al hostname sin autenticacion Access, y el
+deploy lo llama desde la VM en Brasil. Access y WAF Argentina pueden impedir
+esas sondas aunque la app este sana. No desactivar controles para pasar el smoke.
+
+Antes del deploy, adaptar y probar las sondas: salud interna del origen y prueba
+HTTPS desde Argentina autenticada en Access, con fallo real bloqueando el gate.
+La prueba publica debe confirmar tambien bloqueo desde otro pais. El script
+actual no implementa esa separacion; estos comandos quedan condicionados a
+resolverla, no son evidencia de operacion lista.
 
 ## Instalacion inicial
 
@@ -93,7 +106,11 @@ tar por stdout; puede fijarse otra imagen compatible con
    bash ops/deploy-production.sh "$commit"
    ```
 
-6. Abrir inmediatamente la URL y registrar el perfil propietario. Obtener su
+## Alta y cierre del registro
+
+Tras el bootstrap protegido, continuar sin dejar el registro abierto:
+
+1. Abrir inmediatamente la URL y registrar el perfil propietario. Obtener su
    `id` desde `data/db.json`, configurar y recrear la API:
 
    ```env
@@ -111,7 +128,7 @@ tar por stdout; puede fijarse otra imagen compatible con
      bash ops/smoke-production.sh
    ```
 
-7. Confirmar un login con passkey, una escritura y una lectura de prueba desde
+2. Confirmar un login con passkey, una escritura y una lectura de prueba desde
    la interfaz. Los scripts de smoke son deliberadamente de solo lectura.
 
 ## Actualizacion ordinaria
@@ -142,17 +159,10 @@ una instancia sin cerrar. Luego:
 4. reemplaza los contenedores sin tocar los directorios persistentes;
 5. ejecuta el smoke y registra digestos y resultado en `.production-state/`.
 
-La A1 no repite el gate ni construye. El mismo commit debe haber pasado el gate
-del workflow de publicacion y se confirma de forma explicita:
+La VM no construye ni repite el gate de CI. `CONFIRMED_CI_COMMIT` confirma el
+mismo SHA aprobado por el workflow; no es prueba automatica del estado de CI.
 
-```bash
-SKIP_LOCAL_GATE=1 CONFIRMED_CI_COMMIT="$commit" \
-PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar \
-BACKUP_DIR=/srv/opengym-backups \
-bash ops/deploy-production.sh "$commit"
-```
-
-La descarga, verificacion de revision, backup y smoke nunca se omiten.
+Descarga, revision, backup y smoke nunca se omiten.
 
 ## Backup periodico
 

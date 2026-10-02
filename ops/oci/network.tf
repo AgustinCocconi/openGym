@@ -32,6 +32,22 @@ resource "oci_core_security_list" "no_default_access" {
   vcn_id         = oci_core_vcn.opengym.id
   display_name   = "opengym-personal-no-default-access"
   freeform_tags  = local.common_tags
+
+  # OCI Bastion's private endpoint is attached to this subnet, so the subnet
+  # security list must let it initiate SSH traffic. The instance NSG and UFW
+  # still restrict inbound TCP/22 to the Bastion endpoint's exact /32 address.
+  egress_security_rules {
+    destination      = local.subnet_cidr
+    destination_type = "CIDR_BLOCK"
+    protocol         = "6"
+    stateless        = false
+    description      = "Bastion private endpoint to SSH targets in this subnet"
+
+    tcp_options {
+      min = 22
+      max = 22
+    }
+  }
 }
 
 resource "oci_core_subnet" "opengym" {

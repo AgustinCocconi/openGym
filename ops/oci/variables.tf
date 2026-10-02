@@ -87,35 +87,13 @@ variable "availability_domain_index" {
 }
 
 variable "instance_shape" {
-  description = "Always Free ARM64 shape."
+  description = "Always Free AMD micro shape."
   type        = string
-  default     = "VM.Standard.A1.Flex"
+  default     = "VM.Standard.E2.1.Micro"
 
   validation {
-    condition     = var.instance_shape == "VM.Standard.A1.Flex"
-    error_message = "Only VM.Standard.A1.Flex is allowed by this zero-cost stack."
-  }
-}
-
-variable "instance_ocpus" {
-  description = "OCPUs assigned to the instance."
-  type        = number
-  default     = 1
-
-  validation {
-    condition     = var.instance_ocpus == 1
-    error_message = "The approved personal instance uses exactly 1 OCPU."
-  }
-}
-
-variable "instance_memory_gbs" {
-  description = "Memory assigned to the instance in GB."
-  type        = number
-  default     = 2
-
-  validation {
-    condition     = var.instance_memory_gbs == 2
-    error_message = "The approved personal instance uses exactly 2 GB of memory."
+    condition     = var.instance_shape == "VM.Standard.E2.1.Micro"
+    error_message = "Only the Always Free VM.Standard.E2.1.Micro shape is allowed by this zero-cost stack."
   }
 }
 
@@ -142,7 +120,7 @@ variable "data_volume_size_gbs" {
 }
 
 variable "image_ocid" {
-  description = "Optional pinned Ubuntu ARM64 platform image OCID. Null selects the latest matching platform image at plan time."
+  description = "Optional pinned Ubuntu AMD64 platform image OCID. Null selects the latest shape-compatible image at plan time."
   type        = string
   default     = null
 

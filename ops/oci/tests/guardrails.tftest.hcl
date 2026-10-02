@@ -37,12 +37,13 @@ run "plans_zero_cost_guardrails" {
   command = plan
 
   assert {
-    condition = (
-      oci_core_instance.opengym.shape == "VM.Standard.A1.Flex" &&
-      oci_core_instance.opengym.shape_config[0].ocpus == 1 &&
-      oci_core_instance.opengym.shape_config[0].memory_in_gbs == 2
-    )
-    error_message = "The instance must remain on the approved A1 1 OCPU / 2 GB envelope."
+    condition     = oci_bastion_bastion.opengym.bastion_type == "STANDARD"
+    error_message = "Bastion type must match OCI's normalized state value to avoid forced replacement."
+  }
+
+  assert {
+    condition     = oci_core_instance.opengym.shape == "VM.Standard.E2.1.Micro"
+    error_message = "The instance must remain on the approved Always Free E2.1.Micro shape."
   }
 
   assert {
@@ -63,11 +64,44 @@ run "plans_zero_cost_guardrails" {
 
   assert {
     condition = (
+      length(oci_core_security_list.no_default_access.egress_security_rules) == 1 &&
+      alltrue([
+        for rule in oci_core_security_list.no_default_access.egress_security_rules :
+        rule.destination == local.subnet_cidr &&
+        rule.destination_type == "CIDR_BLOCK" &&
+        rule.protocol == "6" &&
+        rule.stateless == false &&
+        length(rule.tcp_options) == 1 &&
+        rule.tcp_options[0].min == 22 &&
+        rule.tcp_options[0].max == 22
+      ])
+    )
+    error_message = "The shared subnet must allow only TCP/22 egress for Bastion-to-target SSH traffic."
+  }
+
+  assert {
+    condition = (
       var.public_hostname == "gym.mientrenadorpersonal.com.ar" &&
       can(yamldecode(base64decode(oci_core_instance.opengym.metadata.user_data))) &&
       strcontains(
         base64decode(oci_core_instance.opengym.metadata.user_data),
         "Tunnel credentials were intentionally not installed."
+      ) &&
+      strcontains(
+        base64decode(oci_core_instance.opengym.metadata.user_data),
+        "Architectures: amd64"
+      ) &&
+      strcontains(
+        base64decode(oci_core_instance.opengym.metadata.user_data),
+        "fallocate -l 1024M /swapfile"
+      ) &&
+      strcontains(
+        base64decode(oci_core_instance.opengym.metadata.user_data),
+        "swapoff /swapfile"
+      ) &&
+      strcontains(
+        base64decode(oci_core_instance.opengym.metadata.user_data),
+        "mount \"$mount_point\" || mountpoint -q \"$mount_point\""
       ) &&
       !strcontains(
         base64decode(oci_core_instance.opengym.metadata.user_data),
@@ -76,6 +110,16 @@ run "plans_zero_cost_guardrails" {
     )
     error_message = "cloud-init must use the final hostname and remain free of Tunnel credentials."
   }
+}
+
+run "rejects_compute_drift" {
+  command = plan
+
+  variables {
+    instance_shape = "VM.Standard.A1.Flex"
+  }
+
+  expect_failures = [var.instance_shape]
 }
 
 run "rejects_storage_drift" {
