@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "baselineDate": "2026-10-02",
+  "measurement": "LF-normalized UTF-16 characters and lines; estimated tokens = ceil(chars / 4)",
+  "scanPaths": [
+    "frontend",
+    "api",
+    "mcp",
+    "scripts",
+    "ops",
+    "docs",
+    "website",
+    ".github",
+    ".gitea",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "GEMINI.md",
+    "README.md",
+    "CHANGELOG.md",
+    "ROADMAP.md",
+    "SECURITY.md"
+  ],
+  "excludedPrefixes": [
+    "training-app-be/",
+    "training-app-fe/",
+    "frontend/dist/",
+    "node_modules/",
+    "data/",
+    "media/"
+  ],
+  "referenceOnly": [
+    "frontend/src/instr/",
+    "frontend/src/locales/",
+    "frontend/src/exercise-names/",
+    "frontend/src/lib/exercises-data.js",
+    "frontend/src/lib/hevy-id-map.js",
+    "frontend/src/lib/body-paths.js",
+    "api/coach/core/library-data.js",
+    "api/coach/core/prompts.js",
+    "scripts/instruction-sources/pt-BR.json",
+    "scripts/exercise-name-sources/pt-BR.json",
+    "scripts/exercise-name-sources/hu.json",
+    "website/api.html"
+  ],
+  "instructionNames": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "GEMINI.md",
+    "copilot-instructions.md"
+  ],
+  "codeRoots": [
+    "frontend/src/",
+    "frontend/scripts/",
+    "api/",
+    "mcp/src/",
+    "mcp/scripts/",
+    "scripts/",
+    "ops/",
+    "website/"
+  ],
+  "codeExtensions": [
+    ".js",
+    ".mjs",
+    ".cjs",
+    ".jsx",
+    ".css",
+    ".html",
+    ".sh",
+    ".py",
+    ".tf",
+    ".tftpl"
+  ],
+  "documentationRoots": [
+    "docs/",
+    "ops/",
+    "scripts/",
+    "mcp/",
+    "website/"
+  ],
+  "startup": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "docs/adaptive-training/README.md"
+  ],
+  "limits": {
+    "startupChars": 21135,
+    "instructionChars": 4000,
+    "documentChars": 9500,
+    "sectionChars": 2000,
+    "taskChars": 4000,
+    "codeLines": 650,
+    "codeChars": 35000
+  },
+  "files": {
+    "CLAUDE.md": {
+      "chars": 8105
+    },
+    "CONTRIBUTING.md": {
+      "chars": 5312
+    },
+    "api/server.js": {
+      "lines": 1172,
+      "chars": 62264
+    },
+    "docs/AI_COACH.md": {
+      "chars": 25077
+    },
+    "docs/COMBINE_ROUTINES.md": {
+      "chars": 31293
+    },
+    "docs/SELF_HOSTING.md": {
+      "chars": 17471
+    },
+    "docs/adaptive-training/OCI_DEPLOYMENT_PLAN.md": {
+      "chars": 18731
+    },
+    "frontend/src/index.css": {
+      "lines": 1276,
+      "chars": 68592
+    },
+    "frontend/src/lib/coach.test.js": {
+      "lines": 655,
+      "chars": 33455
+    },
+    "frontend/src/lib/history.js": {
+      "lines": 742,
+      "chars": 37572
+    },
+    "frontend/src/lib/history.test.js": {
+      "lines": 1178,
+      "chars": 53605
+    },
+    "frontend/src/lib/progression.test.js": {
+      "lines": 851,
+      "chars": 36887
+    },
+    "frontend/src/sheets.jsx": {
+      "lines": 2140,
+      "chars": 128103
+    },
+    "frontend/src/views/CoachChat.jsx": {
+      "lines": 767,
+      "chars": 43306
+    },
+    "frontend/src/views/Settings.jsx": {
+      "lines": 707,
+      "chars": 42409
+    },
+    "frontend/src/views/Workout.jsx": {
+      "lines": 1095,
+      "chars": 69165
+    },
+    "frontend/src/views/Workout.test.jsx": {
+      "lines": 1364,
+      "chars": 56793
+    },
+    "scripts/build-api-docs.mjs": {
+      "lines": 625,
+      "chars": 36259
+    },
+    "website/docs.html": {
+      "lines": 964,
+      "chars": 73575
+    },
+    "website/index.html": {
+      "lines": 565,
+      "chars": 47823
+    },
+    "website/styles.css": {
+      "lines": 936,
+      "chars": 40969
+    }
+  },
+  "sections": {
+    "docs/AI_COACH.md#Turning it on [1]": 7640,
+    "docs/AI_COACH.md#What comes back, and what it is allowed to do [1]": 2903,
+    "docs/AI_COACH.md#Where a credential lives [1]": 2215,
+    "docs/COMBINE_ROUTINES.md#1. Model [1]": 3083,
+    "docs/COMBINE_ROUTINES.md#2. The merge helper [1]": 2398,
+    "docs/COMBINE_ROUTINES.md#3. Entry-point flows [1]": 4041,
+    "docs/COMBINE_ROUTINES.md#4. Planner resolver — plural helpers [1]": 2424,
+    "docs/COMBINE_ROUTINES.md#6. Progression & session read-back — `noProg` [1]": 3319,
+    "docs/COMBINE_ROUTINES.md#7. Coach — read-context & plan fingerprint [1]": 4022,
+    "docs/COMBINE_ROUTINES.md#8. Data-model invariants [1]": 2330,
+    "docs/COMBINE_ROUTINES.md#11. Test checklist [1]": 5679,
+    "docs/DATA_IMPORTS.md#History [1]": 3067,
+    "docs/MOBILE.md#(intro) [1]": 2563,
+    "docs/MOBILE.md#Distribution — deliberately no app stores [1]": 5456,
+    "docs/SELF_HOSTING.md#4. Multiple users [1]": 3296,
+    "docs/SELF_HOSTING.md#Passkeys fail even though `RP_ID` looks right [1]": 2173,
+    "docs/SELF_HOSTING.md#Troubleshooting [1]": 2157,
+    "docs/SELF_HOSTING_HTTPS.md#Components [1]": 2780,
+    "docs/SELF_HOSTING_HTTPS.md#How?! [1]": 4997,
+    "scripts/instruction-sources/README.md#Provenance and review status [1]": 2335,
+    "website/README.md#(intro) [1]": 2785
+  },
+  "baseline": {
+    "head": "57ad20bf5a53f025facca27d62115e4700f53b63",
+    "workspaceIncludesPreexistingChanges": true,
+    "operationalSections": "OCI plan consolidated on 2026-10-02 with inherited evidence preserved, all sections below the general limit and its file cap reduced; remaining initial exceptions cover inherited HEAD/workspace",
+    "codeDistribution": {
+      "count": 318,
+      "p50Lines": 90,
+      "p95Lines": 615,
+      "p95Chars": 32549,
+      "p99Lines": 1178
+    },
+    "thematicSections": {
+      "p95Chars": 1500,
+      "maxChars": 1969
+    }
+  }
+}

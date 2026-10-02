@@ -1,78 +1,60 @@
-# Instrucciones del fork
+# Instrucciones comunes del fork
 
-Las instrucciones originales de openGym siguen vigentes. Antes de modificar codigo,
-leer CLAUDE.md, CONTRIBUTING.md y cualquier instruccion mas especifica que exista
-en el arbol afectado. Este archivo agrega solamente el router de la extension
-adaptativa y no reemplaza esas reglas de upstream.
+Este fork agrega entrenamiento adaptativo en castellano a openGym con un delta
+pequeno y reconocible. Este archivo es la fuente de reglas propias para todos
+los agentes. Las reglas de upstream en `CLAUDE.md` y `CONTRIBUTING.md` siguen
+vigentes; no convertir esos archivos en wrappers ni duplicar sus reglas aqui.
 
-## Alcance
+## Inicio y contexto
 
-Este fork agrega un entrenador adaptativo en castellano sin reconstruir las
-capacidades generales de openGym. Debe seguir pudiendo recibir actualizaciones
-del repositorio oficial con un delta pequeno y reconocible.
+1. Leer una vez `CLAUDE.md`, `CONTRIBUTING.md` y
+   [el indice por tarea](docs/adaptive-training/README.md). No releer contenido
+   ya cargado salvo que cambie. Leer instrucciones locales del arbol afectado.
+2. Revisar `git status --short --branch`, rama y diff de la zona afectada.
+   Preservar cambios ajenos; revisar tareas relacionadas en `docs/tasks/active/`
+   si existen. No descartar, sobrescribir ni mezclar trabajo desconocido.
+3. Localizar con `rg` en rutas acotadas antes de leer. Abrir solo la capsula,
+   escenarios y rangos necesarios; no explorar directorios por rutina.
+4. Para trabajo con continuidad, concurrencia o cambios a estas instrucciones,
+   consultar [el protocolo](docs/agents/WORKFLOW.md). Cada tarea tiene su propio
+   estado persistido; el chat y la memoria del agente no son fuentes de verdad.
 
-## Que leer
+No recorrer `training-app-be` ni `training-app-fe`: usar solo rutas exactas
+habilitadas por `PORTING_MAP.md`. Capturar reglas nuevas en escenarios.
+Catalogos, locales, instrucciones de ejercicios, artefactos generados, lockfiles,
+media, datos privados y changelog se consultan solo cuando la tarea los requiere.
+No cargar el estado completo ni todo el catalogo al contexto de un agente.
 
-Leer siempre:
+## Arquitectura y comportamiento
 
-1. Las instrucciones originales de openGym (`CLAUDE.md`, `CONTRIBUTING.md` o
-   sus reemplazos vigentes).
-2. `docs/adaptive-training/README.md`.
-3. Solo la capsula indicada por la tabla de ruteo de ese archivo.
+- Logica de entrenamiento pura con tests al lado; UI React/Zustand y backend
+  Node liviano. Modulos propios identificables, adaptadores finos, sin segundo
+  estado global. No trasplantar Hono, D1, Angular ni autenticacion anterior.
+- Mantener IDs y campos canonicos. No reformatear codigo ajeno a la tarea,
+  reordenar imports ni hacer refactors masivos preventivos.
+- Cambios al plan o sesion activa: validacion deterministica, diff y confirmacion
+  explicita. Preservar siempre lo registrado y permitir registro/ajuste manual
+  aunque el modelo no este disponible.
+- Proveedor/modelo intercambiables. Contexto compacto, IDs validos y candidatos
+  acotados; propuestas estructuradas validadas por codigo, no por el prompt.
+  Preguntas informativas son de solo lectura y no pueden mutar estado.
+- Idioma del perfil, recorridos criticos completos en castellano y soporte
+  `es-AR`; no traducir identificadores de codigo.
 
-No recorrer `training-app-be` o `training-app-fe`. Consultar una implementacion
-anterior unicamente cuando `PORTING_MAP.md` remita a una ruta exacta. Si aparece
-una regla nueva, capturarla en un escenario antes de seguir.
+## Upstream y cierre
 
-## Limites de arquitectura
-
-- Seguir el estilo de upstream: logica de entrenamiento pura, sin framework y
-  con test al lado; UI en React/Zustand; backend Node liviano.
-- No trasplantar Hono, D1, Angular ni la infraestructura de autenticacion de la
-  aplicacion anterior.
-- Mantener la logica propia en modulos identificables y usar adaptadores finos
-  para conectarla con el estado de openGym.
-- No renombrar IDs ni campos canonicos de upstream para traducirlos.
-- No modificar masivamente archivos de upstream, reordenar imports ni
-  reformatear codigo no relacionado.
-- Todo cambio al plan o a una sesion activa pasa por validacion deterministica,
-  muestra un diff y requiere confirmacion explicita.
-- Lo ya registrado es historia: no se elimina ni reescribe silenciosamente.
-- Una indisponibilidad del modelo no debe impedir registrar ni ajustar una
-  sesion manualmente.
-
-## IA
-
-- El proveedor y el modelo son intercambiables. Ninguna regla de negocio puede
-  depender de una marca o de un nombre de modelo.
-- El modelo recibe contexto compacto, IDs validos y candidatos acotados; no el
-  estado completo ni todo el catalogo por defecto.
-- La salida del modelo es una propuesta estructurada. El validador, no el
-  prompt, determina que acciones son posibles.
-- Preguntas informativas son de solo lectura. Una respuesta conversacional no
-  puede mutar estado por accidente.
-- Responder en el idioma del perfil; para este fork, los flujos criticos deben
-  estar completos en castellano y el entrenador debe soportar `es-AR`.
-
-## Upstream
-
-- Antes de una funcionalidad, revisar si upstream ya la incorporo.
-- Preferir extension sobre reemplazo y reutilizar contratos existentes del AI
-  Coach, localizacion, workout model y estado.
-- Una capacidad generica que pueda aceptarse upstream debe mantenerse aislada
-  para poder proponerla como PR.
-- Cada sincronizacion se hace segun `UPSTREAM_STRATEGY.md` y ejecuta primero los
-  tests de upstream sin modificaciones, luego los tests propios.
-
-## Definicion de terminado
-
-Una capacidad adaptativa termina cuando:
-
-1. Existe al menos un escenario de comportamiento.
-2. La regla deterministica tiene test unitario junto al modulo puro.
-3. Los proveedores soportados producen el mismo contrato validado.
-4. La UI muestra propuesta, motivo, alcance y forma de revertir.
-5. El flujo critico no deja texto ingles visible en locale castellano.
-6. `PORTING_MAP.md` registra su estado y cualquier divergencia nueva.
-
-
+- Antes de una funcionalidad revisar si upstream ya la incorporo. Reutilizar
+  contratos de Coach, localizacion, workout model y estado. Aislar mejoras
+  genericas para poder proponerlas upstream.
+- Sincronizar segun `docs/adaptive-training/UPSTREAM_STRATEGY.md`: primero gate
+  de upstream sin modificaciones, despues tests propios. Registrar base y
+  divergencias en `PORTING_MAP.md`.
+- Una capacidad adaptativa requiere escenario, test junto al modulo puro,
+  contrato validado igual entre proveedores, propuesta/motivo/alcance/reversion
+  visibles en UI y flujo critico sin ingles en locale castellano.
+- Ejecutar verificaciones reales pertinentes y `npm run check:context`; revisar
+  diff y actualizar solo conocimiento vigente. Dejar handoff si falta trabajo;
+  al completar, integrar el conocimiento y eliminar la tarea activa.
+- No subir presupuestos de contexto ni ampliar exclusiones para pasar el gate
+  sin motivo concreto y acuerdo del usuario. No push ni publicacion sin pedido
+  explicito; commits pequenos de una sola tarea cuando esten autorizados.

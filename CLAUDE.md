@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+Fork entrypoint: read [AGENTS.md](AGENTS.md) for the shared fork policy and task
+router. The upstream guidance below remains in force.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## What this is
@@ -14,7 +17,7 @@ License: AGPL-3.0-or-later.
 ```
 frontend/  React 19 + Vite app (src/views, src/components, src/store, src/lib). Builds to static files.
            android/ + ios/ are the Capacitor shells for the standalone mobile app (docs/MOBILE.md).
-api/       backend — server.js (Node, no framework), deps: @simplewebauthn/server, web-push.
+api/       backend — server.js (Node, no framework); dependencies in api/package.json.
 web/       multi-stage Dockerfile (builds frontend → nginx) + nginx.conf.template (serves app, proxies /api).
 mcp/       optional MCP server — read-only stdio bridge exposing a user's workouts/1RM/muscle
            balance to LLM clients (Claude Desktop, Cursor…). Not part of the Docker build; only
@@ -51,11 +54,11 @@ cd frontend && npm run build:mobile   # + cap sync, points media at the CDN data
 There is no linter/formatter configured (no ESLint/Prettier config in the repo) and no
 TypeScript — match the existing style by hand.
 
-The CI gate is `.gitlab-ci.yml` on GitLab, the canonical remote (see README): it runs the
-`frontend/` tests on Node 22 — the same version as `web/Dockerfile` / `api/Dockerfile`
-(`node:22-alpine`) — and additionally builds and publishes the Docker images, packages the
-signed Android APK, and deploys the demo/docs site. The Gitea and GitHub workflow copies
-(`.gitea/workflows/`, `.github/workflows/`) are dormant mirrors; neither host runs them.
+The fork test gate is `.github/workflows/test.yml`, called by
+`.github/workflows/personal-publish.yml` before publishing the `personal` images.
+It runs the frontend, MCP and API suites and image checks on Node 22, matching
+`web/Dockerfile` / `api/Dockerfile`. `.gitlab-ci.yml` and `.gitea/workflows/` remain
+upstream configurations; inspect actual triggers rather than assuming a host is dormant.
 
 ## Architecture
 
@@ -129,8 +132,9 @@ output), `api`, `web` (multi-stage build of `frontend/` served by nginx, which a
 
 ## Guidelines from CONTRIBUTING.md worth knowing before changing code
 
-- **Dependency-light is a hard constraint, not a preference.** Frontend: React + Router + Zustand
-  and nothing else. `api/`: two dependencies total. New dependencies are a hard sell either side.
+- **Dependency-light is a hard constraint, not a preference.** Keep the React + Router + Zustand
+  architecture; current dependencies, including mobile and optional AI runtimes, are in each
+  package's manifest. New dependencies are a hard sell either side.
 - Don't commit `media/` or `data/` (gitignored).
 - Training-logic changes (progression, 1RM, session read-back) need a unit test in `src/lib`
   beside the code, not just manual clicking-through.

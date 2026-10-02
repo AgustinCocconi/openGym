@@ -18,6 +18,19 @@ logica pura, UI y adaptadores.
 - `main`, `origin/main` y `upstream/main` coincidieron en ese commit al iniciar
   la fase P0; el trabajo propio parte de la rama `personal`.
 
+## Gobernanza del fork
+
+La gobernanza del fork ya tiene [router comun](../../AGENTS.md),
+[indice por tarea](README.md), [protocolo de continuidad](../agents/WORKFLOW.md)
+y gate `npm run check:context`. Su baseline y auditoria viven en
+`scripts/context-budget.json` y [CONTEXT_AUDIT.md](../agents/CONTEXT_AUDIT.md).
+Esto no marca como portada ninguna capacidad de entrenamiento.
+
+Delta de instrucciones/tooling: cambios puntuales en `CLAUDE.md` y
+`CONTRIBUTING.md` para enlazar politica comun y corregir hechos obsoletos;
+scripts propios sin dependencias nuevas, dos comandos en `package.json` y gate
+reutilizable `context.yml` desde `test.yml`. No cambia contratos runtime ni proveedores.
+
 ## Portar comportamiento y tests
 
 | Capacidad | Fuente precisa | Destino conceptual en openGym | Tratamiento |
@@ -32,6 +45,16 @@ logica pura, UI y adaptadores.
 | Fechas locales | BE `src/application/planning-time.ts` | helper puro existente o nuevo | Reutilizar upstream si ya resuelve fechas locales |
 | Habilidades | BE `src/application/skill-progression.ts` | fase posterior de adaptive training | Portar grafo/evidencia, no almacenamiento |
 | Escenarios | BE `test/fixtures/planning-scenarios.ts` | tests junto a `adaptive-training` | Convertir datos, no copiar harness D1 |
+
+## Estado del nucleo adaptativo
+
+Recencia/variedad: **parcial**, modulo puro `recency.js` y test al lado en
+`9324f29940b4efe864b36862cf6ad9a4a51b858b`. Pasan 12 tests de bandas, score,
+desempate por ID y preservacion de entrada, derivados de
+[exercise-recency-ranking.json](scenarios/exercise-recency-ranking.json).
+Usan IDs canonicos de openGym. No hay dependencia runtime de las aplicaciones
+anteriores. Pendientes: adaptador de historial/fechas locales, candidatos e
+integracion UI/Coach; no se marca portada la capacidad completa.
 
 ## Reimplementar sobre la arquitectura de openGym
 
@@ -123,4 +146,3 @@ Una fila se marca portada cuando:
 3. No hay dependencia runtime del repositorio anterior.
 4. La integracion toca el minimo razonable de archivos centrales.
 5. La fila registra commit del fork y se elimina cualquier TODO ambiguo.
-

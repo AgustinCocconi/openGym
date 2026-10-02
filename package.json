@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "check:context": "node scripts/check-context.mjs",
+    "test:context": "node --test scripts/check-context.test.mjs"
+  },
   "devDependencies": {
     "js-yaml": "^4.1.0"
   }

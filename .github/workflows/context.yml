@@ -1,0 +1,26 @@
+name: Context budgets
+
+on:
+  workflow_call:
+  pull_request:
+  push:
+    branches: [main, personal]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: context-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  context:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm run test:context
+      - run: npm run check:context

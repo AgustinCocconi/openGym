@@ -37,6 +37,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  context:
+    uses: ./.github/workflows/context.yml
+
   production-ops:
     runs-on: ubuntu-latest
     steps:
