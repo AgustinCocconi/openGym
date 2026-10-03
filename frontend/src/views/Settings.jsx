@@ -40,7 +40,7 @@ export default function Settings() {
       title: t('Convert to {0}?', v),
       subtitle: t('Every stored weight — logged sets, working weights, routine targets, body weight, bar weights — is in {0}. Convert the numbers, or keep them and only change the label?', S.unit),
       items: [
-        { icon: 'shuffle', label: t('Convert the numbers'), onClick: () => replaceState(convertStateUnit(useStore.getState().S, v)) },
+        { icon: 'shuffle', label: t('Convert the numbers'), onClick: () => update(s => Object.assign(s, convertStateUnit(s, v))) },
         { icon: 'pencil', label: t('Keep the numbers, change the label'), onClick: () => update(s => { s.unit = v }) },
       ],
     })

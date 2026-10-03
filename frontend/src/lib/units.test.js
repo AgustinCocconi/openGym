@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { convertWeight, convertStateUnit } from './units.js'
+import { applyChangeSet, revertLast } from './coach.js'
 
 describe('convertWeight', () => {
   it('rounds lb to a half and kg to a quarter', () => {
@@ -32,8 +33,8 @@ describe('convertStateUnit', () => {
   it('converts every stored weight and keeps everything else', () => {
     const out = convertStateUnit(S, 'lb')
     expect(out.unit).toBe('lb')
-    expect(out.targetW).toBe(176.5)
-    expect(out.bodyweight[0]).toEqual({ d: '2026-01-01', w: 181.5, t: 1 })
+    expect(out.targetW).toBe(176.4)
+    expect(out.bodyweight[0]).toEqual({ d: '2026-01-01', w: 181.7, t: 1 })
     expect(out.exWeights['0025'].w).toBe(176.5)
     expect(out.exWeights.legacy).toBe(220.5)
     expect(out.barWeights['0025']).toBe(44)
@@ -48,5 +49,32 @@ describe('convertStateUnit', () => {
   })
   it('is a no-op for the unit already in use', () => {
     expect(convertStateUnit(S, 'kg')).toBe(S)
+  })
+
+  it.each(['kg', 'lb'])('converts session mass, volume and active guide from %s', from => {
+    const to = from === 'kg' ? 'lb' : 'kg'
+    const source = {
+      unit: from, workouts: [{ bw: 80, vol: 300, entries: [{ sets: [{ w: 60, r: 5, done: true }] }] }],
+      active: { bw: 80, entries: [{ plan: { weight: 60, inc: 2.5, warmup: [{ weight: 20 }] }, sets: [] }] },
+    }
+    const out = convertStateUnit(source, to)
+    expect(out.workouts[0].bw).toBeCloseTo(from === 'kg' ? 176.4 : 36.3)
+    expect(out.active.bw).toBe(out.workouts[0].bw)
+    expect(out.workouts[0].vol).toBe(convertWeight(60, from, to) * 5)
+    expect(out.active.entries[0].plan.weight).toBe(convertWeight(60, from, to))
+    expect(out.active.entries[0].plan.inc).toBe(convertWeight(2.5, from, to))
+    expect(out.active.entries[0].plan.warmup[0].weight).toBe(convertWeight(20, from, to))
+    expect(source.active.bw).toBe(80)
+  })
+
+  it.each(['kg', 'lb'])('reverts a Coach change in the converted unit from %s', from => {
+    const s = { unit: from, routines: [{ id: 'r', ex: [{ id: '0025', sets: 3, weight: 60 }] }], week: {} }
+    applyChangeSet(s, { id: 'p', kind: 'review', changes: [{ id: 'c', type: 'sets', target: { routineId: 'r', exId: '0025' }, after: 5 }] }, ['c'])
+    s.routines[0].ex[0].weight = 70
+    const out = convertStateUnit(s, from === 'kg' ? 'lb' : 'kg')
+    expect(out.routines[0].ex[0].weight).toBe(convertWeight(70, from, out.unit))
+    expect(revertLast(out)).toBe(true)
+    expect(out.routines[0].ex[0]).toMatchObject({ sets: 3, weight: convertWeight(60, from, out.unit) })
+    expect(s.coach.snapshots[0].routines[0].ex[0].weight).toBe(60)
   })
 })

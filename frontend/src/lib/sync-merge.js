@@ -21,6 +21,8 @@
  * on resume and every push is conditional), and a resurrected entry beats a lost one. Tombstones
  * would close it.
  */
+import { convertStateUnit } from './units.js'
+
 const clone = o => JSON.parse(JSON.stringify(o))
 const list = v => (Array.isArray(v) ? v : [])
 
@@ -73,7 +75,7 @@ export function mergeStates(a, b, { prefer } = {}) {
   if (!a) return b ? clone(b) : b
   if (!b) return clone(a)
   const n = prefer === 'a' ? a : prefer === 'b' ? b : newerOf(a, b)
-  const o = n === a ? b : a
+  const o = convertStateUnit(n === a ? b : a, n.unit || 'kg')
   const out = clone(n)
   out.workouts = unionById(n.workouts, o.workouts, workoutKey).map(clone).sort(byDayStart)
   for (const f of ['routines', 'customEx', 'equipProfiles', 'gymCards']) {

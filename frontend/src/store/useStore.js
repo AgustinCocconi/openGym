@@ -9,6 +9,8 @@ import { MOBILE, initReminderSync, nativeLoad, nativeSave, onAppActive, syncRemi
 import { mergeStates, localExtras } from '../lib/sync-merge.js'
 import { loadRemote, chooseLocal, forgetRemote, connect } from '../lib/remote.js'
 import { loadCoachDevice, saveCoachDevice, coachDeviceSettings } from '../lib/coach-device.js'
+import { createSyncSession } from './sync-session.js'
+import { activeInUnit } from '../lib/units.js'
 
 import { WC_DEFAULT } from '../lib/workout-controls.js'
 
@@ -98,7 +100,7 @@ const hasData = st => !!((st.workouts || []).length || (st.routines || []).lengt
 export function restoredStateFor(local, remote, dirty = false) {
   if (!remote || (hasData(local) && (dirty || (remote._ts || 0) < (local._ts || 0)))) return null
   const next = Object.assign(clone(DEF), remote)
-  if (local.active) next.active = local.active
+  if (local.active) next.active = activeInUnit(local, next.unit)
   return next
 }
 
@@ -106,14 +108,20 @@ export const useStore = create((set, get) => {
   let pushTm = null
   let saveTm = null
   let toldTooLarge = false
-  let pushing = null       // the PUT in flight, so a second push waits for it instead of racing it
-  let pushAgain = false    // a push asked for while one was in flight — run once more after it
-  let pulling = null       // the GET in flight, so two resume signals make one request
   let pushPending = false  // a change made before boot's pull — pushed once boot is through
   let forceNext = false    // the next push replaces the server copy outright (import, reset)
   let lastCheck = 0
   let pollTm = null
   let offlineChanges = false   // a push failed for lack of network — the next one that lands says so
+  const sessionSync = createSyncSession(() => ({ uid: get().user?.id || null, owner: localStorage.getItem('gym_owner') }))
+  const invalidateSync = () => {
+    sessionSync.invalidate()
+    clearTimeout(pushTm)
+    pushTm = null
+    pushPending = forceNext = toldTooLarge = offlineChanges = false
+    lastCheck = 0
+    setSync({ offline: false, pending: false, lastSynced: 0 })
+  }
 
   const readSync = () => { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || null } catch { return null } }
   const writeSync = (rev, ts) => localStorage.setItem(SYNC_KEY, JSON.stringify({ rev, ts: ts || 0 }))
@@ -170,17 +178,21 @@ export const useStore = create((set, get) => {
   // desktop tab left open all week used to show, and then push, whatever they last had.
   const checkRev = async (force = false) => {
     if (!get().user || !get().ready || document.visibilityState === 'hidden') return
+    const scope = sessionSync.capture()
+    if (!sessionSync.isCurrent(scope)) return
     if (!force && Date.now() - lastCheck < CHECK_MIN_MS) return
     lastCheck = Date.now()
-    if (pulling) return pulling
+    if (sessionSync.pulling) return sessionSync.pulling
     const sync = readSync()
     const owed = localStorage.getItem('gym_dirty') === '1' || pushTm !== null || pushPending
     if (!sync || owed) return get().pullState()
     try {
-      const { rev } = await api('/api/data/rev')
+      const { rev } = await api('/api/data/rev', { signal: scope.signal })
+      if (!sessionSync.isCurrent(scope)) return
       setSync({ offline: false })
       if (rev !== sync.rev) return get().pullState()
     } catch (e) {
+      if (!sessionSync.isCurrent(scope)) return
       if (e.status === 401) return
       if (isNetworkError(e)) setSync({ offline: true })
       else return get().pullState()   // a server that lacks the route (older API) — the full pull knows the old protocol
@@ -204,21 +216,23 @@ export const useStore = create((set, get) => {
   // happens before the push lands still sees it as unsent.
   const mergeInto = (local, remote, rev) => {
     const merged = Object.assign(clone(DEF), mergeStates(local, remote))
-    merged.active = local.active || null
+    merged.active = activeInUnit(local, merged.unit)
     persist(merged, false)
     writeSync(rev, readSync()?.ts || 0)
   }
   // Take the server's copy as this device's own, timestamp and all (see persist).
   const adopt = (next, rev) => { persist(next, false, false); writeSync(rev, next._ts) }
 
-  const doPush = async (attempt = 0) => {
+  const doPush = async (scope, attempt = 0) => {
+    if (!sessionSync.isCurrent(scope)) return
     const S = get().S
     const sync = readSync()
     const force = forceNext
     const body = { state: S }
     if (!force && sync) body.baseRev = sync.rev
     try {
-      const r = await api('/api/data', { method: 'PUT', body: JSON.stringify(body) })
+      const r = await api('/api/data', { method: 'PUT', body: JSON.stringify(body), signal: scope.signal })
+      if (!sessionSync.isCurrent(scope)) return
       if (force) forceNext = false
       // A server from before revisions answers without one — then there is nothing to hold the
       // next push to, and the marker must not pretend otherwise.
@@ -231,9 +245,10 @@ export const useStore = create((set, get) => {
       setSync({ offline: false, pending: false, lastSynced: Date.now() })
       if (offlineChanges) {
         offlineChanges = false
-        import('./useUI.js').then(({ useUI }) => useUI.getState().toast(t('Back online — synced with the server.'))).catch(() => {})
+        import('./useUI.js').then(({ useUI }) => { if (sessionSync.isCurrent(scope)) useUI.getState().toast(t('Back online — synced with the server.')) }).catch(() => {})
       }
     } catch (e) {
+      if (!sessionSync.isCurrent(scope)) return
       // A session that is gone is boot's business (/api/me); the copy stays owed to the server.
       if (e.status === 401) { localStorage.setItem('gym_dirty', '1'); return }
       if (isNetworkError(e)) { localStorage.setItem('gym_dirty', '1'); offlineChanges = true; setSync({ offline: true, pending: true }); return }
@@ -242,7 +257,7 @@ export const useStore = create((set, get) => {
         // merge and push once more against that revision. A second refusal in a row leaves the
         // copy dirty and the next resume pull takes it from there.
         mergeInto(get().S, e.data.state, e.data.rev || 0)
-        return doPush(attempt + 1)
+        return doPush(scope, attempt + 1)
       }
       localStorage.setItem('gym_dirty', '1')
       setSync({ offline: false, pending: true })
@@ -253,7 +268,7 @@ export const useStore = create((set, get) => {
       if (e.status === 413 && !toldTooLarge) {
         toldTooLarge = true
         import('./useUI.js')
-          .then(({ useUI }) => useUI.getState().toast(t('Sync failed: the server refused the upload as too large. Your changes have not reached the server.')))
+          .then(({ useUI }) => { if (sessionSync.isCurrent(scope)) useUI.getState().toast(t('Sync failed: the server refused the upload as too large. Your changes have not reached the server.')) })
           .catch(() => {})
       }
     }
@@ -287,11 +302,10 @@ export const useStore = create((set, get) => {
   // no owner (a sign-out) this tab falls back to defaults rather than read the key at all — the
   // previous profile's data must not stay here whichever key's event lands first.
   window.addEventListener('storage', e => {
-    if (e.key !== 'gym_owner') return
+    if (e.key !== 'gym_owner' || e.oldValue === e.newValue) return
+    invalidateSync()
     const user = get().user
     if (!user || e.newValue === user.id) return
-    clearTimeout(pushTm)
-    pushTm = null
     set({ user: null, S: e.newValue ? loadState() : clone(DEF) })
   })
 
@@ -363,13 +377,15 @@ export const useStore = create((set, get) => {
     },
 
     setUser(u) {
+      const owner = localStorage.getItem('gym_owner')
+      if ((pushPending || pushTm || sessionSync.pushing) && owner === get().user?.id) localStorage.setItem('gym_dirty', '1')
+      invalidateSync()
       if (u) {
         // The local copy belongs to whoever last signed in here. When a session expires or is
         // revoked elsewhere, boot() only drops the user and the data stays; a different profile
         // signing in next must not inherit it (pullState would push it into that account, and
         // carry the in-progress workout along). A proper sign-out clears the owner, so a guest's
         // data still moves into a freshly created profile.
-        const owner = localStorage.getItem('gym_owner')
         if (owner && owner !== u.id) {
           localStorage.removeItem('gym_dirty')
           localStorage.removeItem(SYNC_KEY)
@@ -380,6 +396,7 @@ export const useStore = create((set, get) => {
         localStorage.setItem('gym_user', JSON.stringify(u)); localStorage.removeItem('gym_guest')
       } else localStorage.removeItem('gym_user')
       set({ user: u })
+      setSync({ pending: localStorage.getItem('gym_dirty') === '1' })
     },
 
     // One PUT at a time: a push asked for while one is in flight runs after it (once, however
@@ -389,23 +406,19 @@ export const useStore = create((set, get) => {
       if (!get().user) return
       clearTimeout(pushTm)
       pushTm = null
-      if (pushing) { pushAgain = true; return pushing.then(() => pushing) }
-      pushing = doPush().finally(() => {
-        pushing = null
-        if (pushAgain) { pushAgain = false; get().pushState() }
-      })
-      return pushing
+      return sessionSync.push(doPush)
     },
     // Ask the server for its copy and settle the difference. Coalesced, and a push still waiting
     // in the debounce goes first — the server's answer is then the one that already includes it,
     // and the push itself is what catches a conflict.
     async pullState() {
-      if (pulling) return pulling
-      pulling = (async () => {
+      return sessionSync.pull(async scope => {
         try {
           if (pushTm) { clearTimeout(pushTm); pushTm = null; await get().pushState() }
-          else if (pushing) await pushing
-          const res = await api('/api/data')
+          else if (sessionSync.pushing) await sessionSync.pushing
+          if (!sessionSync.isCurrent(scope)) return
+          const res = await api('/api/data', { signal: scope.signal })
+          if (!sessionSync.isCurrent(scope)) return
           lastCheck = Date.now()
           setSync({ offline: false })
           const { state, rev } = res
@@ -436,14 +449,12 @@ export const useStore = create((set, get) => {
           const localChanged = dirty || (S._ts || 0) > (sync.ts || 0)
           if (!serverMoved) { if (localChanged) await get().pushState(); return }
           if (!state) { writeSync(rev, 0); if (hasData(S)) await get().pushState(); return }
-          if (!localChanged) { adopt(Object.assign(clone(DEF), state, { active: S.active || null }), rev); return }
+          if (!localChanged) { adopt(Object.assign(clone(DEF), state, { active: activeInUnit(S, state.unit) }), rev); return }
           mergeInto(S, state, rev)
           pushPending = false
           await get().pushState()
-        } catch (e) { if (isNetworkError(e)) setSync({ offline: true }) /* keep local; the poll retries */ }
-        finally { pulling = null }
-      })()
-      return pulling
+        } catch (e) { if (sessionSync.isCurrent(scope) && isNetworkError(e)) setSync({ offline: true }) /* keep local; the poll retries */ }
+      })
     },
 
     // Sign-in (and pairing a phone) takes the server's profile as this device's copy — the
@@ -453,8 +464,12 @@ export const useStore = create((set, get) => {
     // are added to the profile or dropped. A profile with no state yet simply takes the
     // device's data, as creating a profile always did.
     async adoptProfile(ask) {
-      if (pulling) await pulling
-      const res = await api('/api/data')   // a failure here is the caller's toast: sign-in needed the server anyway
+      const scope = sessionSync.capture()
+      if (!scope.uid || !sessionSync.isCurrent(scope)) return
+      if (sessionSync.pulling) await sessionSync.pulling
+      if (!sessionSync.isCurrent(scope)) return
+      const res = await api('/api/data', { signal: scope.signal }).catch(e => { if (sessionSync.isCurrent(scope)) throw e })
+      if (!sessionSync.isCurrent(scope)) return
       const { state, rev } = res
       const S = get().S
       setSync({ offline: false })
@@ -466,10 +481,11 @@ export const useStore = create((set, get) => {
       }
       const extras = localExtras(S, state)
       const keep = (extras.workouts || extras.bodyweight || extras.customEx) && typeof ask === 'function' ? await ask(extras) : false
-      const serverCopy = Object.assign(clone(DEF), state, { active: S.active || null })
+      if (!sessionSync.isCurrent(scope)) return
+      const serverCopy = Object.assign(clone(DEF), state, { active: activeInUnit(S, state.unit) })
       if (keep) {
         const merged = Object.assign(clone(DEF), mergeStates(state, S, { prefer: 'a' }))
-        merged.active = S.active || null
+        merged.active = activeInUnit(S, merged.unit)
         persist(merged, false)
         if (rev != null) writeSync(rev, 0)
         else localStorage.removeItem(SYNC_KEY)
@@ -484,8 +500,13 @@ export const useStore = create((set, get) => {
     },
 
     async signOut() {
-      try { await get().pushState(); await api('/api/logout', { method: 'POST', body: '{}' }) } catch (e) { /* */ }
-      clearLocalSession()
+      const scope = sessionSync.capture()
+      try {
+        await get().pushState()
+        if (!sessionSync.isCurrent(scope)) return
+        await api('/api/logout', { method: 'POST', body: '{}', signal: scope.signal })
+      } catch (e) { /* */ }
+      if (sessionSync.isCurrent(scope)) clearLocalSession()
     },
 
     // Mobile-only ("connect to my server" onboarding, see App.jsx's needsMobileOnboarding).
@@ -520,9 +541,11 @@ export const useStore = create((set, get) => {
     // the sessions elsewhere are all still valid, and wiping this device's copy of the data
     // would sign the user out of the one place the bump didn't reach. Caller reports the error.
     async signOutAll() {
+      const scope = sessionSync.capture()
       await get().pushState()   // never throws — stores gym_dirty and moves on when offline
-      await api('/api/logout/all', { method: 'POST', body: '{}' })
-      clearLocalSession()
+      if (!sessionSync.isCurrent(scope)) return
+      await api('/api/logout/all', { method: 'POST', body: '{}', signal: scope.signal }).catch(e => { if (sessionSync.isCurrent(scope)) throw e })
+      if (sessionSync.isCurrent(scope)) clearLocalSession()
     },
 
     // Demo build only: drop the seeded example profile back in (Settings → "Reset demo data").
@@ -535,6 +558,7 @@ export const useStore = create((set, get) => {
 
     // Boot: ask the server who we are, then pull.
     async boot() {
+      let scope = sessionSync.capture()
       // Mobile build: no backend by default — restore from the file mirror (the durable copy;
       // localStorage may have been evicted since the last run) and go straight in. Unless this
       // device was paired to a server ("connect to my server" mode, lib/remote.js), in which
@@ -542,17 +566,22 @@ export const useStore = create((set, get) => {
       if (MOBILE) {
         const remote = await loadRemote()
         set({ coachLocal: coachDeviceSettings(await loadCoachDevice()) })
+        if (!sessionSync.isCurrent(scope)) return
         if (remote?.mode === 'remote') {
           setRemoteAuth(remote.base, remote.token)
           try {
-            const me = await api('/api/me')   // also catches a token revoked elsewhere (sign out everywhere)
-            get().setUser(me.user)
+            const me = await api('/api/me', { signal: scope.signal })   // also catches a token revoked elsewhere (sign out everywhere)
+            if (!sessionSync.isCurrent(scope)) return
+            get().setUser(me.user); scope = sessionSync.capture()
             // The paired server's /api/config, the same one the web boot reads: without it the
             // phone never learned whether the server offers the Coach and told everyone "your
             // server has no Coach enabled" — with the admin looking at a green test.
             await get().loadConfig()
+            if (!sessionSync.isCurrent(scope)) return
             await get().pullState()
+            if (!sessionSync.isCurrent(scope)) return
           } catch (e) {
+            if (!sessionSync.isCurrent(scope)) return
             if (e.status === 401) { await forgetRemote(); get().setGuest(true) }
             else { get().setUser(remote.user); setSync({ offline: true }) }   // offline — keep going from the last-synced local copy
           }
@@ -561,6 +590,7 @@ export const useStore = create((set, get) => {
           return
         }
         const saved = await nativeLoad()
+        if (!sessionSync.isCurrent(scope)) return
         const S = get().S
         if (saved && (!hasData(S) || (saved._ts || 0) >= (S._ts || 0))) {
           persist(Object.assign(clone(DEF), saved), false, false)
@@ -590,11 +620,14 @@ export const useStore = create((set, get) => {
       // boot. Ending the session needs a positive `allow_guest: false`; see lib/guest.js for why
       // an unreachable server must not be allowed to lock anyone out (#42).
       const cfg = await get().loadConfig()
+      if (!sessionSync.isCurrent(scope)) return
       if (!guestAllowed(cfg)) get().setGuest(false)
       try {
-        const me = await api('/api/me')
-        get().setUser(me.user)
+        const me = await api('/api/me', { signal: scope.signal })
+        if (!sessionSync.isCurrent(scope)) return
+        get().setUser(me.user); scope = sessionSync.capture()
         await get().pullState()
+        if (!sessionSync.isCurrent(scope)) return
         // Re-stamp the reminder's timezone on every load — keeps it correct if you're travelling,
         // without needing to revisit Settings.
         const tz = localTZ()
@@ -602,6 +635,7 @@ export const useStore = create((set, get) => {
           get().update(s => { s.reminder = { ...s.reminder, tz } })
         }
       } catch (e) {
+        if (!sessionSync.isCurrent(scope)) return
         if (e.status === 401) get().setUser(null)
         // Started without a network (a home-screen app reopened in the gym's basement): keep the
         // signed-in copy and say so from the first screen, not only after the first failed push.

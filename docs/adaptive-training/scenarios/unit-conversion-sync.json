@@ -1,0 +1,31 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "unit-conversion-sync",
+  "purpose": "Convertir las magnitudes persistidas y sincronizarlas sin reinterpretar registros ni sobrescribir el otro dispositivo.",
+  "given": {
+    "unit": "kg",
+    "snapshotWeight": 60,
+    "currentWeight": 70,
+    "sessionBodyweight": 80,
+    "serverRevision": 1,
+    "activeSessionOnOtherDevice": true
+  },
+  "when": {
+    "actions": ["convert_to_lb", "resume_sync", "adopt_on_other_device", "revert_coach", "convert_to_kg"],
+    "conflictVariant": "other_device_logs_a_workout_in_kg"
+  },
+  "expect": {
+    "invariants": [
+      "convert_session_mass_targets_guides_sets_and_cached_volume",
+      "convert_all_coach_routine_snapshots_before_revert",
+      "mass_rounds_to_tenths_and_loads_to_plate_steps",
+      "put_uses_base_revision_instead_of_forced_overwrite",
+      "merge_normalizes_older_copy_to_selected_unit",
+      "adoption_preserves_and_converts_local_active_session",
+      "recorded_sets_keep_reps_completion_and_identity",
+      "legacy_sessions_keep_absent_fields_absent"
+    ],
+    "revertedWeightLb": 132.5,
+    "forbidden": ["60_kg_reinterpreted_as_60_lb", "mixed_unit_history", "conversion_waits_for_another_mutation"]
+  }
+}

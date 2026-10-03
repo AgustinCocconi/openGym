@@ -113,6 +113,7 @@ describe('saved workout state sync and restore', () => {
 
   it('restores a remote state over defaults when the local profile is empty', async () => {
     const remote = { _ts: 30, routines: [routine('remote')], workouts: [] }
+    useStore.getState().setUser({ id: 'user-1' })
     api.mockResolvedValue({ state: remote })
 
     await useStore.getState().pullState()
@@ -157,7 +158,7 @@ describe('saved workout state sync and restore', () => {
     await useStore.getState().pullState()
 
     expect(api).toHaveBeenCalledTimes(2)
-    expect(api.mock.calls.every(([, opts]) => !opts)).toBe(true)   // two GETs, no PUT
+    expect(api.mock.calls.every(([, opts]) => !opts?.method)).toBe(true)   // two GETs, no PUT
     expect(useStore.getState().S.workouts.map(w => w.id)).toEqual(['w1', 'w2-from-B'])
     expect(useStore.getState().S._ts).toBe(1010000)
   })
@@ -263,7 +264,7 @@ describe('signing in as a different profile', () => {
     await useStore.getState().pullState()
 
     expect(api).toHaveBeenCalledTimes(1)   // the GET only — nothing of A's was pushed under C
-    expect(api.mock.calls[0][1]).toBeUndefined()
+    expect(api.mock.calls[0][1]?.method).toBeUndefined()
     expect(hasData(useStore.getState().S)).toBe(false)
   })
 

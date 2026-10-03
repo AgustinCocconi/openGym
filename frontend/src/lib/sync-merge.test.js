@@ -11,6 +11,15 @@ const base = (over = {}) => ({
 const ids = xs => (xs || []).map(x => x.id)
 
 describe('newerOf / unionById / mergeBodyweight', () => {
+  it('normalizes the older device before merging loads and logs in different units', () => {
+    const a = base({ unit: 'kg', _ts: 100, workouts: [{ id: 'kg-only', entries: [{ sets: [{ w: 60, r: 5, done: true }] }] }], exWeights: { x: { w: 100 } } })
+    const b = base({ unit: 'lb', _ts: 200, exWeights: { x: { w: 150 } } })
+    const out = mergeStates(a, b)
+    expect(out.unit).toBe('lb')
+    expect(out.workouts[0].entries[0].sets[0].w).toBe(132.5)
+    expect(out.exWeights.x.w).toBe(220.5)
+    expect(a.workouts[0].entries[0].sets[0].w).toBe(60)
+  })
   it('picks the later _ts, first argument on a tie or missing stamps', () => {
     const a = { _ts: 5 }, b = { _ts: 9 }
     expect(newerOf(a, b)).toBe(b)
@@ -146,8 +155,8 @@ describe('sign-in adoption helpers', () => {
     expect(m.workouts.map(w => w.id)).toEqual(['w1', 'w9'])
     expect(m.routines.map(r => r.id).sort()).toEqual(['r1', 'rg'])
     expect(m.customEx.map(e => e.id)).toEqual(['c1'])
-    // the weigh-in both sides have for the same day: the later `t` wins, as between devices
-    expect(m.bodyweight.find(e => e.d === '2026-09-01').w).toBe(79)
+    // The later weigh-in wins, expressed in the preferred profile's unit.
+    expect(m.bodyweight.find(e => e.d === '2026-09-01').w).toBe(174.2)
     expect(mergeStates(server, local).unit).toBe('kg')   // without prefer the newer copy decides
   })
 })

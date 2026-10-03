@@ -1,0 +1,26 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "profile-sync-isolation",
+  "purpose": "Una respuesta tardia de sincronizacion no puede mezclar ni enviar datos del perfil anterior en la sesion nueva.",
+  "given": {
+    "profile": "A",
+    "localWorkoutId": "private-A",
+    "pendingOperations": ["data_get", "data_put", "revision_get", "profile_adoption"]
+  },
+  "when": {
+    "sessionChanges": ["sign_in_B", "owner_change_in_another_tab", "sign_out", "sign_out_and_rejoin_A"],
+    "lateResults": ["get_success", "put_success", "put_409", "network_error", "adoption_answer"]
+  },
+  "expect": {
+    "invariants": [
+      "operation_requires_current_uid_owner_and_generation",
+      "session_change_aborts_previous_requests",
+      "late_results_do_not_merge_retry_persist_or_change_sync_markers",
+      "old_finalizers_do_not_clear_new_session_queues",
+      "new_session_does_not_wait_for_old_requests",
+      "same_profile_boot_preserves_unsent_local_edits",
+      "signed_out_sync_does_not_send_data"
+    ],
+    "forbidden": ["private_A_in_profile_B", "forced_overwrite_from_previous_session"]
+  }
+}

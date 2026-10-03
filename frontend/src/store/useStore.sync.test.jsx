@@ -12,6 +12,7 @@ vi.mock('./useUI.js', () => ({ useUI: { getState: () => ({ toast }) } }))
 
 import { api } from '../lib/api.js'
 import { DEF, useStore } from './useStore.js'
+import { convertStateUnit } from '../lib/units.js'
 
 const clone = value => JSON.parse(JSON.stringify(value))
 const routine = id => ({ id, name: id, ex: [] })
@@ -19,7 +20,7 @@ const workout = (id, d = '2026-09-01') => ({ id, d, start: 1, entries: [] })
 const httpError = (status, data) => Object.assign(new Error(data?.error || 'HTTP ' + status), { status, data })
 const sync = () => JSON.parse(localStorage.getItem('gym_sync'))
 const puts = () => api.mock.calls.filter(([, o]) => o?.method === 'PUT').map(([, o]) => JSON.parse(o.body))
-const gets = () => api.mock.calls.filter(([, o]) => !o)
+const gets = () => api.mock.calls.filter(([, o]) => !o?.method || o.method === 'GET')
 const signedIn = (S, extra = {}) => useStore.setState({ S, user: { id: 'user-1' }, ready: true, ...extra })
 
 beforeEach(() => {
@@ -34,6 +35,31 @@ afterEach(() => {
 })
 
 describe('pull against a revisioned server', () => {
+  it('syncs a unit conversion on resume with baseRev and lets the other device adopt it', async () => {
+    vi.useFakeTimers()
+    const original = { ...clone(DEF), _ts: 100, routines: [{ id: 'r', ex: [{ id: '0025', weight: 60 }] }] }
+    signedIn(original)
+    localStorage.setItem('gym_sync', JSON.stringify({ rev: 1, ts: 100 }))
+    let server = clone(original)
+    api.mockImplementation(async (path, opts) => {
+      if (opts?.method === 'PUT') { server = JSON.parse(opts.body).state; return { ok: true, rev: 2 } }
+      return { state: server, rev: 2 }
+    })
+    useStore.getState().update(s => Object.assign(s, convertStateUnit(s, 'lb')))
+    window.dispatchEvent(new Event('online'))
+    await vi.advanceTimersByTimeAsync(10)
+    expect(puts()).toHaveLength(1)
+    expect(puts()[0]).toMatchObject({ baseRev: 1, state: { unit: 'lb' } })
+    expect(server.routines[0].ex[0].weight).toBe(132.5)
+    signedIn({ ...clone(original), active: { bw: 80, entries: [{ plan: { weight: 60 }, sets: [{ w: 60, r: 5, done: true }] }] } })
+    localStorage.setItem('gym_sync', JSON.stringify({ rev: 1, ts: 100 }))
+    await useStore.getState().pullState()
+    expect(useStore.getState().S.unit).toBe('lb')
+    expect(useStore.getState().S.routines[0].ex[0].weight).toBe(132.5)
+    expect(useStore.getState().S.active).toMatchObject({ bw: 176.4, entries: [{ plan: { weight: 132.5 }, sets: [{ w: 132.5, r: 5, done: true }] }] })
+    expect(puts()).toHaveLength(1)
+  })
+
   it('adopts the server copy when only the server moved, and records its revision', async () => {
     const local = { ...clone(DEF), _ts: 100, workouts: [workout('w1')], active: { id: 'running' } }
     signedIn(local)
@@ -250,7 +276,7 @@ describe('ordering', () => {
     api.mockImplementation(async (path, opts) => {
       if (path === '/api/config') return { allow_guest: true }
       if (path === '/api/me') return { user: { id: 'user-1', name: 'One' } }
-      if (path === '/api/data' && !opts) {
+      if (path === '/api/data' && !opts?.method) {
         useStore.getState().update(s => { s.restSec = 30 })   // a change while the pull is in flight
         return { state: { ...clone(DEF), _ts: 10, routines: [routine('r')], _rev: 1 }, rev: 1 }
       }
@@ -275,7 +301,7 @@ describe('ordering', () => {
     vi.useFakeTimers()
     signedIn({ ...clone(DEF), _ts: 100, routines: [routine('r')] })
     localStorage.setItem('gym_sync', JSON.stringify({ rev: 1, ts: 100 }))
-    api.mockImplementation(async (path, opts) => opts ? { ok: true, rev: 2 } : { state: { ...clone(DEF), _ts: 100, routines: [routine('r')], _rev: 2 }, rev: 2 })
+    api.mockImplementation(async (path, opts) => opts?.method === 'PUT' ? { ok: true, rev: 2 } : { state: { ...clone(DEF), _ts: 100, routines: [routine('r')], _rev: 2 }, rev: 2 })
 
     useStore.getState().update(s => { s.restSec = 30 })   // arms the 1.5 s push
     const pull = useStore.getState().pullState()
@@ -283,7 +309,7 @@ describe('ordering', () => {
     await pull
 
     expect(api.mock.calls[0][1]?.method).toBe('PUT')
-    expect(api.mock.calls[1][1]).toBeUndefined()
+    expect(api.mock.calls[1][1]?.method).toBeUndefined()
     expect(puts()).toHaveLength(1)
     expect(sync().rev).toBe(2)
   })
