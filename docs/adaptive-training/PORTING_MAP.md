@@ -18,6 +18,20 @@ logica pura, UI y adaptadores.
 - `main`, `origin/main` y `upstream/main` coincidieron en ese commit al iniciar
   la fase P0; el trabajo propio parte de la rama `personal`.
 
+## Correcciones de producto sobre la base
+
+La base integrada sigue en `a68a88d`; no hubo merge ni fetch de upstream.
+La [auditoria por subsistemas](../agents/SUBSYSTEM_AUDIT.md) registra H01-H10
+y su verificacion local. Son correcciones del producto existente; no completan
+las fases adaptativas pendientes.
+
+Referencias locales reutilizadas: `585f372` para eliminar rutinas y sus punteros;
+`e637a9e` para leer todas las ocurrencias; lectura por rutina de `ab0c586`.
+La conversion tolera `planned` de `8049f1b` y agrega masa, volumen, guia activa,
+snapshots y normalizacion entre dispositivos. Las guardas de Coach se comparten
+entre servidor/mobile/cliente; el aislamiento de sync y secretos queda propio.
+Los escenarios de la auditoria fijan las invariantes sin importar todo upstream.
+
 ## Gobernanza del fork
 
 La gobernanza del fork ya tiene [router comun](../../AGENTS.md),

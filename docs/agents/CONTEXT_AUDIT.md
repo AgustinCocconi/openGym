@@ -131,3 +131,12 @@ tratarlos en la nueva auditoria, sin refactor preventivo en estos commits.
 
 La recencia sigue parcial segun `PORTING_MAP.md`; los pendientes operativos
 siguen en el checkpoint OCI. Confirmar archivos no satisface el gate de deploy.
+
+## Continuacion funcional por subsistemas
+
+La revision de producto sobre `125eadd` esta en
+[SUBSYSTEM_AUDIT.md](SUBSYSTEM_AUDIT.md): hallazgos priorizados de store,
+entrenamiento, Coach, seguridad mobile, MCP y gates, con reproducciones y limites.
+H01-H10 estan corregidos y verificados localmente; los limites de entorno y
+objetivos diferidos quedan en ese informe. No modifica el corte ni acredita
+el gate productivo ni operaciones OCI nuevas.
