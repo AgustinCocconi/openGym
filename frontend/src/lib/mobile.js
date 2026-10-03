@@ -49,9 +49,7 @@ export async function nativeSave(state) {
 }
 
 // "Connect to my server" mode (lib/remote.js): which of local-only / a paired remote account this
-// device chose, kept in its own file — never inside opengym-state.json, since that file's content
-// is exactly what pushState() PUTs to a server, and a device's own connection secret must never
-// travel as if it were training data.
+// device chose. This file keeps metadata only; device-secrets.js holds the bearer separately.
 const REMOTE_FILE = 'opengym-remote.json'
 
 // Small JSON files in the app's private data directory, for device facts that must not ride

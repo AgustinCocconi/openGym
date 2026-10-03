@@ -23,7 +23,8 @@ const SecureStorage = new Proxy({}, {
     }
   }
 })
-vi.mock('@aparajita/capacitor-secure-storage', () => ({ SecureStorage }))
+vi.mock('@aparajita/capacitor-secure-storage', () => ({ SecureStorage, KeychainAccess: { whenUnlockedThisDeviceOnly: 1 } }))
+vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => true } }))
 
 const secrets = await import('./coach-secrets.js')
 

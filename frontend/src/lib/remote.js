@@ -8,6 +8,10 @@
 // /api/pair/create + /api/pair/redeem.
 import { pairRedeem, setRemoteAuth } from './api.js'
 import { loadRemoteFile, saveRemoteFile } from './mobile.js'
+import { getDeviceSecret, setDeviceSecret, clearDeviceSecret } from './device-secrets.js'
+import { t } from './i18n-core.js'
+
+const TOKEN_KEY = 'remote.token'
 
 // Accepts what someone actually types: bare host, no scheme, trailing slash, stray whitespace.
 // Defaults to https:// (self-hosting docs already push for HTTPS; the one exception, localhost,
@@ -24,14 +28,26 @@ export function normalizeServerUrl(raw) {
 }
 
 export async function loadRemote() {
-  return loadRemoteFile()
+  const data = await loadRemoteFile()
+  if (data?.mode !== 'remote') return data
+  const { token: legacyToken, ...metadata } = data
+  if (legacyToken) {
+    // Move older pairings once, persisting securely before using their bearer.
+    try { await setDeviceSecret(TOKEN_KEY, legacyToken, { persistent: true }) }
+    catch { await saveRemoteFile({ mode: 'local' }); return { mode: 'local' } }
+    await saveRemoteFile(metadata)
+  }
+  const token = await getDeviceSecret(TOKEN_KEY)
+  return token ? { ...metadata, token } : { mode: 'local' }
 }
 
 export async function chooseLocal() {
+  await clearDeviceSecret(TOKEN_KEY)
   await saveRemoteFile({ mode: 'local' })
 }
 
 export async function forgetRemote() {
+  await clearDeviceSecret(TOKEN_KEY)
   await saveRemoteFile({ mode: 'local' })
   setRemoteAuth('', null)
 }
@@ -42,7 +58,9 @@ export async function connect(rawUrl, code) {
   const base = normalizeServerUrl(rawUrl)
   if (!base) throw new Error('Enter a valid server address')
   const { token, user } = await pairRedeem(base, String(code || '').trim())
+  try { await setDeviceSecret(TOKEN_KEY, token, { persistent: true }) }
+  catch (cause) { throw new Error(t('Could not save'), { cause }) }
+  await saveRemoteFile({ mode: 'remote', base, user })
   setRemoteAuth(base, token)
-  await saveRemoteFile({ mode: 'remote', base, token, user })
   return user
 }
