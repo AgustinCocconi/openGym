@@ -10,7 +10,7 @@
 import { readdirSync } from 'node:fs';
 
 const CORE = new URL('../coach/core/', import.meta.url);
-const files = readdirSync(CORE).filter(f => f.endsWith('.js')).sort();
+const files = readdirSync(CORE).filter(f => f.endsWith('.js') && !f.endsWith('.test.js')).sort();
 const adapters = readdirSync(new URL('adapters/', CORE)).filter(f => f.endsWith('.js')).sort().map(f => 'adapters/' + f);
 
 let failed = 0;
