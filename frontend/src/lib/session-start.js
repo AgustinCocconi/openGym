@@ -3,7 +3,7 @@
 // to identical entries, or the two paths drift apart the first time a prescription rule changes.
 // Imports both history.js and progression.js (which itself imports history.js); nothing in
 // either imports this file, so there is no cycle.
-import { buildSets, applyIntensifierPlan, modeOf } from './history.js'
+import { buildSets, applyIntensifierPlan, modeOf, resolveExerciseConfig } from './history.js'
 import { nextPrescription, applyPrescription, defaultIncrement, weightIncrement } from './progression.js'
 
 // Returns a bare array of session entries. "Excluded from progression" is per-entry now
@@ -16,13 +16,14 @@ export function buildSessionEntries(st, r) {
   // right weight already on the screen instead of being told about it afterwards. `plan` is
   // kept on the entry purely so the workout can explain the number it chose.
   const noProg = r?.excludeFromProgression === true
-  return (r ? r.ex : []).map(cfg => {
+  return (r ? r.ex : []).map(source => {
+    const cfg = resolveExerciseConfig(st, source)
     const plan = noProg ? { policy: 'off', kind: 'off' } : nextPrescription(st, cfg, r)
     // The warm-up ramp and the prescription snap to the exercise's own increment (1.25 kg
     // plates exist), not the unit default; a timed exercise's `inc` is seconds, so it keeps the
     // default for its optional load.
-    const step = modeOf(cfg) === 'reps' ? weightIncrement(cfg, st.unit) : defaultIncrement(cfg.id, st.unit)
-    const sets = applyIntensifierPlan(applyPrescription(buildSets(st, cfg, { step, useTarget: plan.kind === 'off' }), plan, step), cfg)
+    const step = modeOf(cfg) === 'reps' ? weightIncrement(cfg, st.unit, st) : defaultIncrement(cfg.id, st.unit, st)
+    const sets = applyIntensifierPlan(applyPrescription(buildSets(st, cfg, { step, routineId: r.id, useTarget: plan.kind === 'off' }), plan, step), cfg)
     const target = { ...cfg }
     if (plan.weight != null) target.weight = plan.weight
     if (plan.reps != null) target.reps = plan.reps

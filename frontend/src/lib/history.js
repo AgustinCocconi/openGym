@@ -1,6 +1,7 @@
 // Pure helpers over the state object S (ported 1:1 from the vanilla app).
 import { todayISO, isoOf, weekKey, weekStartOf, fmtNum } from './format.js'
-import { isCardio, isBodyweightEq } from './exercises.js'
+import { isCardio, isBodyweightEq, exerciseFor } from './exercises.js'
+import { entriesForExercise } from './exercise-occurrences.js'
 import { phaseForSet, modeForSet, modeForEntry, isWarmupRow, normalizeMode, completedVolumeOf, nextDropWeight, splitBurstReps, makeSideSet, isSideSet, syncSideAggregate } from './workout-model.js'
 const objectOf = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 // Completed-state-independent work rows whose authoritative mode matches the requested mode.
@@ -25,10 +26,10 @@ import { t } from './i18n-core.js'
 //   cardio — duration + speed   sets look like { min, speed }
 // An entry without `mode` behaves exactly as before, so every existing plan, workout and
 // plan file is read unchanged and nothing needs migrating.
-export function modeOf(cfg) {
+export function modeOf(cfg, S) {
   const m = cfg && cfg.mode
   if (m === 'reps' || m === 'time' || m === 'cardio') return m
-  return isCardio(cfg && cfg.id) ? 'cardio' : 'reps'
+  return isCardio(exerciseFor(cfg && cfg.id, S)) ? 'cardio' : 'reps'
 }
 export const isTimed = cfg => modeOf(cfg) === 'time'
 
@@ -45,7 +46,9 @@ export const isTimed = cfg => modeOf(cfg) === 'time'
 //                means the same thing beats two that need a legend.
 // Both are absent on every plan, workout and backup written before they existed, and absent
 // reads as false, so nothing needs migrating.
-export const isBw = cfg => (cfg && cfg.bodyweight != null ? !!cfg.bodyweight : isBodyweightEq(cfg && cfg.id))
+export const isBw = (cfg, S) => (cfg && cfg.bodyweight != null ? !!cfg.bodyweight : isBodyweightEq(exerciseFor(cfg && cfg.id, S)))
+
+export const resolveExerciseConfig = (S, cfg) => ({ ...cfg, mode: modeOf(cfg, S), bodyweight: isBw(cfg, S) })
 export const isPerSide = cfg => !!(cfg && cfg.side)
 // What one side did, for display only. Half of an odd total is shown as it falls (8.5) rather
 // than rounded away: it means the sides were not even, which is worth seeing.
@@ -231,26 +234,19 @@ export function entryExcluded(w, entry) {
   return w?.excludeFromProgression === true || entry?.noProg === true
 }
 
-export function lastEntryFor(S, exId) {
+export function lastEntryFor(S, exId, routineId, mode) {
   for (let i = S.workouts.length - 1; i >= 0; i--) {
     const w = S.workouts[i]
-    const en = w.entries.find(e => e.id === exId)
-    if (!en) continue
-    // A session that does not count — a planned deload, or a rehab block merged into a real
-    // session — is not "last time" for the next regular prescription: its reps and durations
-    // must not seed the rows any more than its weight seeds the progression.
-    if (entryExcluded(w, en)) continue
-    // Work sets only. Every caller asks the same question — "what did you actually lift last
-    // time" — to seed the next session's rows, to size a freestyle config, and to print "Last
-    // time" on the card. A warm-up answers none of them: seeding position 0 from a 50% ramp row
-    // walks the working weight DOWN a little every session, and counting the ramp rows makes a
-    // 3x5 come back as a 5-set exercise. Warm-ups are already excluded from volume, records and
-    // progression; this is the same rule one level up.
-    const done = en.sets.filter(s => s.done && !isWarmupRow(s))
+    const entries = entriesForExercise(w, exId, routineId)
+      .filter(en => !entryExcluded(w, en) && (en.sets || []).some(s => s.done && !isWarmupRow(s)) && (!mode || modeOf({ ...en.target, id: en.id }, S) === mode))
+    if (!entries.length) continue
+    // Only counting work rows seed the next session; neither a rehab occurrence nor a warm-up
+    // can hide another routine's work or lower its opening load.
+    const done = entries.flatMap(en => (en.sets || []).filter(s => s.done && !isWarmupRow(s)))
     // `target` is what the session prescribed; finished workouts carry it so labels and the
     // progression engine can read a session back the way it was logged. Older workouts have
     // none — modeOf() falls back to the body part for them, which is what they were.
-    if (done.length) return { d: w.d, sets: done, target: en.target || null }
+    if (done.length) return { d: w.d, sets: done, target: entries[0].target || null }
   }
   return null
 }
@@ -363,7 +359,7 @@ export function buildSets(S, cfg, options = {}) {
   const rows = buildWorkSets(S, cfg, options)
   const warm = Math.max(0, Math.min(MAX_PLANNED_WARMUPS, Math.round(cfg.warmupSets) || 0))
   if (!warm) return rows
-  const mode = modeOf(cfg)
+  const mode = modeOf(cfg, S)
   let out = rows
   for (let i = 0; i < warm; i++) out = insertWarmupRow(out, mode, cfg, options.step)
   return out
@@ -378,9 +374,9 @@ function buildWorkSets(S, cfg, options = {}) {
   // `lastEntryFor` now skips any entry that does not count — a planned deload, or a rehab
   // block merged into a real session (entryExcluded) — so the rows seed from the last
   // *counting* session without this function pre-filtering the history itself.
-  const last = lastEntryFor(S, cfg.id)
+  const last = lastEntryFor(S, cfg.id, options.routineId, modeOf(cfg, S))
   const n = Math.max(1, cfg.sets || 1)
-  const mode = modeOf(cfg)
+  const mode = modeOf(cfg, S)
   const sets = []
   // A deload routine must use its own prescription instead of carrying regular-session values
   // into the workout. Other planned sessions keep the existing history-first behaviour.

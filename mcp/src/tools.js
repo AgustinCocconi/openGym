@@ -7,7 +7,7 @@ import {
   fmt, setLabel, exLine, muscleName, policyName, friendlyDuration, ratio, muscleOrder
 } from './labels.js'
 import {
-  modeOf, workoutVolume, setsDone, effectiveRoutine, effectiveRoutineId, lastEntryFor
+  modeOf, workoutVolume, setsDone, effectiveRoutine, effectiveRoutineId, lastEntryFor, resolveExerciseConfig
 } from '../../frontend/src/lib/history.js'
 import { exOr } from '../../frontend/src/lib/exercises.js'
 import { isWarmupRow } from '../../frontend/src/lib/workout-model.js'
@@ -34,8 +34,8 @@ function entryView(e, S) {
   // Spread id into the cfg the way every call site in the app does (Workout.jsx, Stats.jsx,
   // progression.js) — the sheet saves a cardio target as {sets, min, speed} with no id and no
   // mode, so modeOf needs the id to fall through to isCardio(id).
-  const cfg = { ...(e.target || {}), id: e.id }
-  const mode = modeOf(cfg)
+  const cfg = resolveExerciseConfig(S, { ...(e.target || {}), id: e.id })
+  const mode = modeOf(cfg, S)
   return {
     id: e.id,
     name: ex.n,
@@ -123,7 +123,7 @@ export const getRoutine = {
       unit: S.unit || 'kg',
       exercises: (r.ex || []).map((cfg, i) => {
         const ex = exerciseOf(cfg.id, S)
-        const mode = modeOf(cfg)
+        const mode = modeOf(cfg, S)
         return {
           position: i + 1,
           id: cfg.id,
@@ -468,9 +468,10 @@ export const previewSession = {
     // prescription, step, progression-off targets, deload routines and warm-up ramps all come from
     // there, so the preview cannot drift from what the screen shows.
     const built = buildSessionEntries(S, r)
-    const exercises = (r.ex || []).map((cfg, i) => {
+    const exercises = (r.ex || []).map((source, i) => {
+      const cfg = resolveExerciseConfig(S, source)
       const ex = exerciseOf(cfg.id, S)
-      const mode = modeOf({ ...cfg, id: cfg.id })
+      const mode = modeOf(cfg, S)
       const plan = built[i].plan
       const rows = built[i].sets
       const work = rows.filter(s => !isWarmupRow(s))

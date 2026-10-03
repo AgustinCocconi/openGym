@@ -4,7 +4,8 @@
 // (rest-day override, missing routine, zero-workout history, no synced state, superset links).
 import { describe, beforeAll, afterAll, beforeEach, test, expect, vi } from 'vitest'
 import { buildDemoState } from '../../frontend/src/lib/demoSeed.js'
-import { EXDB } from '../../frontend/src/lib/exercises.js'
+import { EXDB, EXIDX, registerCustom } from '../../frontend/src/lib/exercises.js'
+import { buildSessionEntries } from '../../frontend/src/lib/session-start.js'
 import { _seedStateForTests } from '../src/state.js'
 import { TOOLS } from '../src/tools.js'
 import { bestSetOf } from '../../frontend/src/lib/onerm.js'
@@ -682,6 +683,29 @@ describe('shared: no-state fallback', () => {
 // beats the confirmed working weight, which beats the routine's own number — because getting
 // it backwards is how a coach ends up telling someone to squat a weight the app never shows.
 describe('preview_session', () => {
+  test('resolves custom cardio and bodyweight from the profile with UI parity and no global writes', () => {
+    const customs = [
+      { id: 'cx-cardio', n: 'Bici', bp: 'cardio' },
+      { id: 'cx-bw', n: 'Flexiones', bp: 'chest', eq: 'body weight' },
+    ]
+    S.customEx = customs
+    const routine = { id: 'r-custom', name: 'Custom', ex: [{ id: 'cx-cardio', sets: 1 }, { id: 'cx-bw', sets: 2, reps: 8, weight: 0 }] }
+    S.routines = [routine]
+    const out = call('preview_session', { routine_id: routine.id }).exercises
+    const before = { ...EXIDX }
+    expect(out.map(e => e.mode)).toEqual(['cardio', 'reps'])
+    expect(EXIDX).toEqual(before)
+    const withoutIndex = buildSessionEntries(S, routine)
+    expect(withoutIndex[0].sets[0]).toMatchObject({ min: 20, speed: 8 })
+    expect(withoutIndex[1].target.bodyweight).toBe(true)
+    try {
+      registerCustom(customs)
+      expect(buildSessionEntries(S, routine)).toEqual(withoutIndex)
+      // The same id means something else in another profile, irrespective of the UI index.
+      const other = { ...S, customEx: [{ id: 'cx-cardio', bp: 'chest' }] }
+      expect(buildSessionEntries(other, routine)[0].target.mode).toBe('reps')
+    } finally { registerCustom([]) }
+  })
   const WD = new Date(FAKE_TODAY_ISO + 'T12:00:00Z').getDay()
 
   // One routine, one exercise, scheduled for the pinned "today". Nothing from the demo seed,

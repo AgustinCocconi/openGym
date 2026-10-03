@@ -17,7 +17,8 @@
 // So a session that fell apart can never advance the load as though it had succeeded.
 
 import { modeOf, repStep, rerampWarmups, isBw, isPerSide, entryExcluded } from './history.js'
-import { EXIDX } from './exercises.js'
+import { entriesForExercise } from './exercise-occurrences.js'
+import { exerciseFor } from './exercises.js'
 import { isWarmupRow, isSideSet, syncSideAggregate, makeSideSet } from './workout-model.js'
 import { normalizeRepRange } from './rep-range.js'
 
@@ -80,16 +81,16 @@ const HEAVY_BP = ['upper legs', 'lower legs', 'back', 'hips', 'glutes']
 
 // Default load step. Lower-body lifts take the bigger jump — that is the "lift-specific
 // increment" a linear program lives on; an exercise can override it with cfg.inc.
-export function defaultIncrement(exId, unit) {
-  const ex = EXIDX[exId]
+export function defaultIncrement(exId, unit, S) {
+  const ex = exerciseFor(exId, S)
   const heavy = ex && HEAVY_BP.includes(ex.bp)
   if (unit === 'lb') return heavy ? 10 : 5
   return heavy ? 5 : 2.5
 }
 // Resolve the load step for reps-mode weight controls and progression. Timed exercises use
 // `inc` for seconds, so their optional weight column must not call this helper.
-export function weightIncrement(cfg, unit) {
-  return cfg && cfg.inc > 0 ? cfg.inc : defaultIncrement(cfg?.id, unit)
+export function weightIncrement(cfg, unit, S) {
+  return cfg && cfg.inc > 0 ? cfg.inc : defaultIncrement(cfg?.id, unit, S)
 }
 export const DEFAULT_SEC_INCREMENT = 5
 // Where adding another set of push-ups stops being progress and starts being a way to spend
@@ -214,9 +215,9 @@ export function selectDeloadCandidate({ currentWeight, targetWeight, targetReps,
  * entry without its own target is judged against `fallback`, the exercise's current plan,
  * which is exactly what the app's old weight hint compared against.
  */
-export function readSession(entry, fallback) {
+export function readSession(entry, fallback, S) {
   const target = (entry && entry.target) || fallback || {}
-  const mode = modeOf({ ...target, id: entry && entry.id })
+  const mode = modeOf({ ...target, id: entry && entry.id }, S)
   // Warm-up rows are prep, not the session: one filtered read beats guarding every consumer
   // below (an undone warm-up otherwise poisons `ok` forever and its reps drag `low`/`count`).
   const sets = ((entry && entry.sets) || []).filter(s => !isWarmupRow(s))
@@ -246,18 +247,32 @@ export function readSession(entry, fallback) {
 }
 
 /** Every past session for one exercise, oldest first. `fallback` — see readSession. */
-export function sessionsFor(S, exId, fallback) {
+export function sessionsFor(S, exId, fallback, routineId) {
   const out = []
   ;(S.workouts || []).forEach(w => {
-    const entry = w.entries.find(e => e.id === exId)
-    if (!entry) return
     // A session that does not count for this exercise cannot become the baseline for its next
     // prescription. Exclusion is per-entry now (ENG-11): a legacy whole-workout
     // `excludeFromProgression` flag still excludes every entry; a merged rehab block excludes
     // only its own. `noProg` is frozen onto the entry at build time, so later routine edits
     // never rewrite it. This is the only progression-exclusion path in the file.
-    if (entryExcluded(w, entry)) return
-    if (entry.sets.some(s => s.done && !isWarmupRow(s))) out.push({ d: w.d, ...readSession(entry, fallback) })
+    const sessions = entriesForExercise(w, exId, routineId)
+      .filter(e => !entryExcluded(w, e) && (e.sets || []).some(s => s.done && !isWarmupRow(s)))
+      .map(e => readSession(e, fallback, S))
+      .filter(s => !fallback || s.mode === modeOf(fallback, S))
+    if (!sessions.length) return
+    // One point per workout: repeated occurrences never multiply a stall streak. Within a
+    // routine they all must succeed; an unscoped read uses the highest load as its baseline.
+    const key = s => JSON.stringify(Object.entries(s.target).sort())
+    for (const mode of [...new Set(sessions.map(s => s.mode))].sort()) {
+      const group = sessions.filter(s => s.mode === mode)
+      const base = [...group].sort((a, b) => b.weight - a.weight || b.goal - a.goal || key(a).localeCompare(key(b)))[0]
+      out.push({ d: w.d, ...base, ok: group.every(s => s.ok),
+        ...(mode === 'time' ? { held: group.flatMap(s => s.held) } : {
+          reps: group.flatMap(s => s.reps), count: group.reduce((n, s) => n + s.count, 0),
+          low: Math.min(...group.map(s => s.low)), amrap: Math.min(...group.map(s => s.amrap)),
+        }),
+      })
+    }
   })
   return out
 }
@@ -299,15 +314,15 @@ export function stallCount(sessions, policy) {
  * undefined and the caller keeps whatever the plan said.
  */
 export function nextPrescription(S, cfg, routine) {
-  const mode = modeOf(cfg)
+  const mode = modeOf(cfg, S)
   const policy = policyFor(cfg, routine, mode)
   const unit = S.unit || 'kg'
   const inc = mode === 'time'
     ? (cfg.inc > 0 ? cfg.inc : DEFAULT_SEC_INCREMENT)
-    : weightIncrement(cfg, unit)
+    : weightIncrement(cfg, unit, S)
   if (policy === 'off') return { policy, kind: 'off' }
 
-  const sessions = sessionsFor(S, cfg.id, cfg).filter(s => s.mode === mode)
+  const sessions = sessionsFor(S, cfg.id, cfg, routine?.id).filter(s => s.mode === mode)
   const last = sessions[sessions.length - 1]
   if (!last) return { policy, kind: 'first', why: ['Nothing logged yet — this session sets the baseline.'] }
 

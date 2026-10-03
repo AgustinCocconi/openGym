@@ -1,4 +1,5 @@
 import { isWarmupRow } from './workout-model.js'
+import { entriesForExercise } from './exercise-occurrences.js'
 // Estimated one-rep max (issue #18).
 //
 // Deliberately knows nothing about the exercise database: an estimate needs a weight AND a
@@ -57,9 +58,8 @@ export function bestSetOf(entry, formula = DEFAULT_FORMULA) {
 export function e1rmSeries(S, exId, formula = DEFAULT_FORMULA) {
   const pts = []
   ;(S.workouts || []).forEach(w => {
-    const entry = w.entries.find(e => e.id === exId)
-    if (!entry) return
-    const best = bestSetOf(entry, formula)
+    const best = entriesForExercise(w, exId).map(e => bestSetOf(e, formula))
+      .filter(Boolean).sort((a, b) => b.est - a.est)[0]
     if (best) pts.push({ t: w.start, d: w.d, y: best.est, w: best.w, r: best.r })
   })
   return pts

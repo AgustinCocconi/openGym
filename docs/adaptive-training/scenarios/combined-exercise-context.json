@@ -1,0 +1,30 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "combined-exercise-context",
+  "purpose": "Leer todas las ocurrencias de un ejercicio y resolver personalizados desde el perfil, con paridad entre UI y MCP.",
+  "given": {
+    "exerciseId": "0025",
+    "occurrences": [
+      { "rid": "rehab", "noProg": true, "weight": 20 },
+      { "rid": "main", "weight": 60, "reps": 5 }
+    ],
+    "customVariants": ["cardio_without_explicit_mode", "bodyweight_without_explicit_flag"]
+  },
+  "when": {
+    "actions": ["read_next_prescription", "read_last_session", "read_1rm", "preview_in_mcp"],
+    "variants": ["reverse_occurrences", "different_counting_routine_loads", "legacy_without_rid", "same_id_in_another_profile"]
+  },
+  "expect": {
+    "invariants": [
+      "noProg_excludes_only_its_occurrence_from_prescription",
+      "progression_and_opening_rows_use_source_routine_scope",
+      "unscoped_progression_uses_highest_load_and_requires_every_occurrence_to_succeed",
+      "one_progression_point_per_workout_and_mode_prevents_duplicate_stalls",
+      "all_completed_occurrences_contribute_to_last_read_and_1rm",
+      "legacy_without_provenance_remains_readable",
+      "profile_customs_and_immutable_catalogue_resolve_defaults",
+      "ui_and_mcp_use_the_same_session_builder_without_global_registration"
+    ],
+    "forbidden": ["first_occurrence_hides_later_work", "profile_custom_leaks_to_another_profile"]
+  }
+}

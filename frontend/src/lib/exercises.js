@@ -71,6 +71,11 @@ export function registerCustom(list) {
 // Full searchable catalogue — customs first so your own exercises are easy to find.
 export const allExercises = st => [...(st.customEx || []), ...CATALOGUE]
 
+// A profile-aware lookup never reads another profile's customs from the mutable UI index.
+export const exerciseFor = (id, S) => S
+  ? (S.customEx || []).find(e => e.id === id) || CATALOGUE.find(e => e.id === id)
+  : EXIDX[id]
+
 function searchableText(value) {
   if (Array.isArray(value)) return value.map(searchableText).join(' ')
   if (value == null) return ''
