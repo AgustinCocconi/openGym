@@ -15,6 +15,7 @@
  * better second attempt than the first of them does.
  */
 import { libraryHas, libraryName } from './library.js';
+import { reviewResultErrors } from './review-result.js';
 
 // The closed list (FR-23 / C3). Adding a member here is a deliberate act with an apply
 // implementation on the client to match; there is no default case anywhere.
@@ -338,11 +339,9 @@ export function validateReview(data, plan, ctx = {}) {
         break;
       case 'repsMin':
         if (!isInt(c.after, 1, 100)) { errors.push(`${where}.after must be a whole number (1-100)`); return; }
-        if (planned?.repsMax != null && c.after > planned.repsMax) { errors.push(INVERTED_RANGE(where)); return; }
         break;
       case 'repsMax':
         if (!isInt(c.after, 1, 100)) { errors.push(`${where}.after must be a whole number (1-100)`); return; }
-        if (planned?.repsMin != null && c.after < planned.repsMin) { errors.push(INVERTED_RANGE(where)); return; }
         break;
       case 'sec': if (!isInt(c.after, 5, 3600) ) { errors.push(`${where}.after must be seconds (5-3600)`); return; } break;
       case 'cardio': {
@@ -484,6 +483,8 @@ export function validateReview(data, plan, ctx = {}) {
   if (routines.size + addedRoutines - removedRoutines.size > MAX_ROUTINES) {
     errors.push(`the plan would end up with more than the ${MAX_ROUTINES} routines allowed`);
   }
+
+  errors.push(...reviewResultErrors(plan, kept));
 
   if (errors.length) return fail(errors);
 

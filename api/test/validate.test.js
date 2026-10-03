@@ -16,6 +16,21 @@ import { tempData } from './helpers.mjs';
 tempData();
 const { validatePlan, validateReview, CHANGE_TYPES } = await import('../coach/core/validate.js');
 
+test('reviews validate the resulting range and dependent edits together', () => {
+  const plan = { routines: [{ id: 'r', ex: [{ id: '0001', repsMin: 5, repsMax: 10 }] }] };
+  const changes = (min, max) => [
+    { id: 'min', type: 'repsMin', target: { routineId: 'r', exId: '0001' }, after: min, why: 'Move the range' },
+    { id: 'max', type: 'repsMax', target: { routineId: 'r', exId: '0001' }, after: max, why: 'Move the range' },
+  ];
+  assert.equal(validateReview({ changes: changes(9, 7) }, plan).ok, false);
+  assert.equal(validateReview({ changes: changes(12, 15) }, plan).ok, true);
+  assert.equal(validateReview({ changes: changes(12, 15).slice(0, 1) }, plan).ok, false);
+  assert.equal(validateReview({ changes: [
+    { id: 'remove', type: 'remove-exercise', target: { routineId: 'r', exId: '0001' }, why: 'Remove' },
+    { id: 'sets', type: 'sets', target: { routineId: 'r', exId: '0001' }, after: 4, why: 'Change sets' },
+  ] }, plan).ok, false);
+});
+
 const PLAN = {
   routines: [{
     id: 'r1', name: 'Full body A',

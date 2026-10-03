@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import CoachChat from './CoachChat.jsx'
 import { effectiveRoutine } from '../lib/history.js'
 import { todayISO } from '../lib/format.js'
+import { planHash } from '../lib/coach.js'
 
 // The chat is where a plan is imported. These pin that the Import button applies the pending
 // plan through the store, writes the decision into the thread, and leaves today startable.
@@ -108,6 +109,25 @@ afterEach(async () => {
 })
 
 describe('the Coach chat', () => {
+  it('shows a stale structural proposal as disabled and preserves the edited exercise', async () => {
+    const S = state()
+    S.routines = [{ id: 'r', name: 'A', ex: [{ id: '0001', sets: 3, reps: 10 }] }]
+    const p = { id: 'p', kind: 'review', planHash: planHash(S), changes: [{ id: 'c', type: 'remove-exercise', target: { routineId: 'r', exId: '0001' }, why: 'change' }] }
+    S.routines[0].ex[0].sets = 5
+    await mount(p, null, { S })
+    expect(container.textContent).toContain('Your plan changed')
+    expect(container.querySelectorAll('[role="checkbox"]')).toHaveLength(0)
+    expect(byText(/Apply nothing/).hasAttribute('disabled')).toBe(true)
+    expect(S.routines[0].ex[0].sets).toBe(5)
+  })
+  it('disables importing a created plan against a changed week', async () => {
+    const S = state()
+    const p = { id: 'p', kind: 'create', planHash: planHash(S), bundle: bundle(everyDay) }
+    S.week[1] = ['manual']
+    await mount(p, null, { S })
+    expect(container.textContent).toContain('Your plan changed')
+    expect(byText(/Import this plan/).hasAttribute('disabled')).toBe(true)
+  })
   it('opens with the questionnaire summary and pitches the plan as a card with routine tabs', async () => {
     await mount({ id: 'p1', kind: 'create', bundle: bundle(everyDay) })
     expect(container.textContent).toContain('Build muscle')

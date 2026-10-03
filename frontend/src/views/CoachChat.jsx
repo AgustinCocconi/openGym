@@ -24,7 +24,7 @@ import { MOBILE } from '../lib/mobile.js'
 import {
   coachAvailable, hasConsent, emptyCoach, appendChat, recordTiming, estimateMs, profileLines,
   markStale, applicable, applyChangeSet, applyCreatedPlan, recordDismissal, recordDebrief, logEntry,
-  changeTitle, changeValues, exName, canRevert, revertLast
+  changeTitle, changeValues, exName, canRevert, revertLast, STALE_PLAN_MESSAGE
 } from '../lib/coach.js'
 import { insightsFor, sessionInsights } from '../lib/coach-insights.js'
 import { useCoachStatus, requestReview, requestDebrief, requestPlan, refinePlan, resolvePending, cohortStats, setCohortShare, jobErrorText } from '../lib/coach-api.js'
@@ -284,7 +284,7 @@ function Typing({ S, kind, coachLocal, config }) {
 /* ---------------------------------- the plan ---------------------------------- */
 
 function PlanCard({ p, S, update, toast, nav, refresh }) {
-  const b = p.bundle
+  const { bundle: b, planMoved } = markStale(p, S)
   const [tab, setTab] = useState(0)
   const [schedule, setSchedule] = useState(true)
   const r = b.routines[Math.min(tab, b.routines.length - 1)]
@@ -320,7 +320,7 @@ function PlanCard({ p, S, update, toast, nav, refresh }) {
       <div className="pcard-hd">
         <div className="pcard-eyebrow">{p.iteration > 1 ? t('Revision {0}', p.iteration) : t('Your plan')}</div>
         <h2 className="pcard-h">{b.name || t('Coach plan')}</h2>
-        {!!b.summary && <p className="pcard-sum">{b.summary}</p>}
+        {(planMoved || b.summary) && <p className="pcard-sum">{planMoved ? t(STALE_PLAN_MESSAGE) : b.summary}</p>}
         {!!b.basedOn && <p className="pcard-sum" style={{ fontSize: 13 }}>{b.basedOn}</p>}
       </div>
 
@@ -338,7 +338,7 @@ function PlanCard({ p, S, update, toast, nav, refresh }) {
       </div>
       <div className="pcard-note">{t('The Coach is not a doctor or a physiotherapist. If something hurts, ask a professional.')}</div>
       <div className="pcard-ft">
-        <Button variant="primary" icon="download" onClick={accept}>{t('Import this plan')}</Button>
+        <Button variant="primary" icon="download" onClick={accept} disabled={planMoved}>{t('Import this plan')}</Button>
         <Button onClick={discard}>{t('Discard')}</Button>
       </div>
     </div>
@@ -359,12 +359,13 @@ const RoutineBlock = ({ r, unit }) => <div className="pcard-rt">
   </div>)}
 </div>
 
-/* ---------------------------------- a review ---------------------------------- */
+/* Review and confirmation. */
 
 function ReviewCard({ p, S, update, toast, refresh }) {
   const marked = useMemo(() => markStale(p, S), [p, S])
   const usable = applicable(marked)
   const [accepted, setAccepted] = useState(() => new Set(usable.map(c => c.id)))
+  const count = usable.filter(c => accepted.has(c.id)).length
   const toggle = id => setAccepted(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
 
   const apply = () => {
@@ -399,9 +400,7 @@ function ReviewCard({ p, S, update, toast, refresh }) {
         {!!marked.evidence?.sessions && <p className="pcard-sum" style={{ fontSize: 13 }}>
           {t('Based on your last {0} sessions', marked.evidence.sessions)}{marked.evidence.from ? ` · ${fmtDate(marked.evidence.from)} – ${fmtDate(marked.evidence.to)}` : ''}
         </p>}
-        {marked.planMoved && <p className="pcard-sum" style={{ fontSize: 13, color: 'var(--yellow)' }}>
-          {t('Your plan changed since the Coach looked at it. Suggestions that no longer match are greyed out — ask for a fresh review to see them again.')}
-        </p>}
+        {marked.planMoved && <p className="pcard-sum" style={{ fontSize: 13, color: 'var(--yellow)' }}>{t(STALE_PLAN_MESSAGE)}</p>}
       </div>
 
       <Insights S={S} window={marked.evidence} />
@@ -417,8 +416,8 @@ function ReviewCard({ p, S, update, toast, refresh }) {
 
       <div className="pcard-note">{t('The Coach is not a doctor or a physiotherapist. If something hurts, ask a professional.')}</div>
       <div className="pcard-ft">
-        <Button variant="primary" icon="check" onClick={apply}>
-          {accepted.size ? t(accepted.size === 1 ? 'Apply {0} change' : 'Apply {0} changes', accepted.size) : t('Apply nothing')}
+        <Button variant="primary" icon="check" onClick={apply} disabled={!usable.length}>
+          {count ? t(count === 1 ? 'Apply {0} change' : 'Apply {0} changes', count) : t('Apply nothing')}
         </Button>
         <Button onClick={discard}>{t('Dismiss all')}</Button>
       </div>

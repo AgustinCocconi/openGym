@@ -16,6 +16,8 @@ import { EXIDX } from './exercises.js'
 import { modeOf, isBw, isPerSide, cleanupSg } from './history.js'
 import { uid, todayISO, DAYN } from './format.js'
 import { mergePlan } from './plan-share.js'
+import { deleteRoutine } from './routines.js'
+import { reviewResultErrors } from '../../../api/coach/core/review-result.js'
 import { POLICIES } from './progression.js'
 import { t } from './i18n.js'
 
@@ -84,7 +86,7 @@ export function canonicalPlan(S) {
     routines: (S.routines || []).map(r => ({
       id: r.id, name: r.name || '', prog: r.prog || '',
       ex: (r.ex || []).map(e => {
-        const mode = modeOf(e)
+        const mode = modeOf(e, S)
         return {
           id: e.id, mode, sets: e.sets || 0,
           reps: mode === 'reps' ? (e.reps || 0) : 0,
@@ -93,7 +95,7 @@ export function canonicalPlan(S) {
           speed: mode === 'cardio' ? (e.speed || 0) : 0,
           weight: mode === 'cardio' ? 0 : (e.weight || 0),
           prog: e.prog || '', inc: e.inc || 0, repsMin: e.repsMin || 0, repsMax: e.repsMax || 0,
-          bodyweight: isBw(e), side: isPerSide(e),
+          bodyweight: isBw(e, S), side: isPerSide(e),
           sg: e.sg || ''
         }
       })
@@ -127,6 +129,7 @@ export function hashPlan(plan) {
   return h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0')
 }
 export const planHash = S => hashPlan(canonicalPlan(S))
+export const STALE_PLAN_MESSAGE = 'Your plan changed since the Coach looked at it. Suggestions that no longer match are greyed out — ask for a fresh review to see them again.'
 
 /* ============================ staleness ============================ */
 
@@ -165,7 +168,7 @@ export function markStale(proposal, S) {
   const planMoved = !!proposal.planHash && proposal.planHash !== planHash(S)
   const changes = (proposal.changes || []).map(c => {
     const r = c.target?.routineId ? findRoutine(S, c.target.routineId) : null
-    let stale = false
+    let stale = planMoved
     if (c.type !== 'add-routine' && c.type !== 'week' && !r) stale = true
     else if (c.target?.exId && !findEx(r, c.target.exId)) stale = true
     else if (c.type === 'week') {
@@ -381,6 +384,7 @@ export function profileLines(p) {
  */
 export function applyCreatedPlan(s, proposal, { schedule } = {}) {
   validateProposal(proposal)
+  requireCurrentPlan(s, proposal)
   pushSnapshot(s, proposal.id, t('Before the Coach’s plan'))
   const bundle = proposal.bundle
   // The Coach's `why` texts are for the review screen; they have no place in the routine data.
@@ -496,24 +500,14 @@ const CHANGE_APPLY = {
         id: e.id, sets: e.sets || 3, mode: e.mode || 'reps',
         ...(e.mode === 'time' ? { sec: e.sec || 45 } : { reps: e.reps || 10 }),
         ...(Number.isInteger(e.repsMax) ? { repsMax: e.repsMax } : {}),
+        ...(Number.isInteger(e.repsMin) ? { repsMin: e.repsMin } : {}),
         ...(e.bodyweight != null ? { bodyweight: !!e.bodyweight } : {}),
         ...(e.side ? { side: true } : {})
       }))
     })
   },
   'remove-routine': (s, c) => {
-    const id = c.target.routineId
-    s.routines = s.routines.filter(r => r.id !== id)
-    // A week pointing at a routine that no longer exists reads as a rest day anyway; clearing
-    // it keeps the plan honest rather than merely harmless.
-    Object.keys(s.week || {}).forEach(d => { if (s.week[d] === id) delete s.week[d] })
-    // RoutineEdit does the same on a hand-deleted routine. A pointer left behind here is not
-    // merely inert: the day still counts as overridden, so it wears a "rescheduled" badge for good.
-    const dropped = {}
-    Object.keys(s.dayPlan || {}).forEach(iso => {
-      if (s.dayPlan[iso] === id) { dropped[iso] = id; delete s.dayPlan[iso] }
-    })
-    recordDayPlanDrops(s, dropped)
+    recordDayPlanDrops(s, deleteRoutine(s, c.target.routineId))
   },
   'rename-routine': (s, c) => { need(findRoutine(s, c.target.routineId)).name = c.after },
   week: (s, c) => {
@@ -530,6 +524,12 @@ export const CHANGE_TYPES = Object.keys(CHANGE_APPLY)
 function findExIn(s, c) { return findEx(findRoutine(s, c.target.routineId), c.target.exId) }
 function need(x) { if (!x) throw new Error('missing target'); return x }
 
+function requireCurrentPlan(s, proposal) {
+  if (proposal.planHash && proposal.planHash !== planHash(s)) {
+    throw new Error(t(STALE_PLAN_MESSAGE))
+  }
+}
+
 /**
  * Apply the accepted subset, atomically (FR-30).
  *
@@ -540,9 +540,11 @@ function need(x) { if (!x) throw new Error('missing target'); return x }
  */
 export function applyChangeSet(s, proposal, acceptedIds) {
   validateProposal(proposal)
+  requireCurrentPlan(s, proposal)
   const accepted = new Set(acceptedIds || [])
-  const changes = (proposal.changes || []).filter(c => accepted.has(c.id) && c.status !== 'stale')
+  const changes = proposal.changes.filter(c => accepted.has(c.id) && c.status !== 'stale')
   if (!changes.length) return { applied: 0 }
+  if (reviewResultErrors(canonicalPlan(s), changes).length) throw new Error(t('That proposal can’t be read.'))
 
   pushSnapshot(s, proposal.id, t('Before the Coach’s changes'))
   const applied = []

@@ -1,0 +1,32 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "coach-mutation-guards",
+  "purpose": "Revalidar las propuestas confirmadas contra el plan vigente y el resultado del subconjunto elegido.",
+  "given": {
+    "exerciseSets": 3,
+    "repRange": [5, 10],
+    "combinedWeekday": ["r1", "r2"],
+    "proposalHasPlanFingerprint": true
+  },
+  "when": {
+    "variants": [
+      "manual_or_remote_edit_before_structural_apply",
+      "week_edit_before_created_plan_import",
+      "select_repsMin_9_and_repsMax_7",
+      "select_only_repsMin_12_from_valid_12_to_15_pair",
+      "remove_r2_then_revert"
+    ]
+  },
+  "expect": {
+    "invariants": [
+      "stale_fingerprint_disables_all_changes_and_import",
+      "confirmation_checks_draft_before_snapshot_or_mutation",
+      "shared_core_rejects_inverted_result_and_removed_targets",
+      "valid_dependent_bounds_are_accepted_together_in_either_order",
+      "selected_subset_is_validated_again_on_client",
+      "deletion_keeps_other_weekday_ids_in_order_and_removes_empty_days",
+      "revert_restores_week_and_removed_date_overrides"
+    ],
+    "forbidden": ["delete_manually_edited_exercise", "partial_invalid_range", "dangling_routine_id"]
+  }
+}
