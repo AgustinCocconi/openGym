@@ -21,7 +21,8 @@ Checkpoint y evidencia de fase 6 integrados al cierre autorizado por el propieta
 
 ## Estado actual
 
-Propietario autorizo commit/push/activacion. Ops 9fdb243 publicado y activo;
+Autorizacion previa usada para 9fdb243; esta retoma solo comitea cambios locales.
+Push/deploy requieren pedido explicito. Ops 9fdb243 publicado y activo;
 [gate/publicacion OK](https://github.com/AgustinCocconi/openGym/actions/runs/37227664601).
 App/imagenes e8771b1 aceptadas; delta ops/docs/CI validado sin redesplegar app.
 Host limpio, /srv persistente, modos 0700/0600 y cuatro alarmas OCI OK.
@@ -51,9 +52,11 @@ Copia externa diaria requiere PC/Bastion temporal; no hay SSH permanente.
 ## Siguiente paso y handoff
 
 Sesion DELETED; claves retiradas, cero sesiones/consolas; resumen privado guardado.
-Mantener copia diaria PC tras 05:00 AR y revisar RPO/avisos/colector. Desde 12/10 16:25 AR, ejecutar
+Retoma: dependencias/Coach locales, sin nueva verificacion remota ni cambios OCI.
+Mantener copia PC diaria tras 05:00 AR; siguiente ventana 5/10/2026. Revisar
+RPO/avisos/colector. Desde 12/10/2026 16:25 AR, ejecutar
 informe desde 2026-10-04T19:18:55Z, exigir ocho dias completos sin brechas,
 contrastar CPU/red OCI y revisar evento del backup antes de cerrar fase 7.
-Repetir simulacro el 4/11; resguardo independiente sigue diferido.
+Repetir simulacro el 4/11/2026; resguardo independiente sigue diferido.
 Completar fase 8 cuando continuidad/RPO y recuperacion esten acreditados;
 RTO 60 min aun requiere ensayo productivo. Al completar, integrar y retirar tarea.

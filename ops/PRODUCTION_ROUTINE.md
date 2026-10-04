@@ -52,8 +52,8 @@ Exige ocho dias, extremos cubiertos y ninguna brecha >6 min, error de lectura
 o contador reiniciado sin cambio de boot. Los incidentes se reportan aunque
 la cobertura sea completa; el propietario debe revisarlos y decidir.
 
-Aceptacion 4/10 04:22 AR: referencia minima 12/10 04:22 AR. Un registro
-que comience despues debe completar sus propios ocho dias.
+Primera muestra: 4/10/2026 16:18:55 AR (2026-10-04T19:18:55Z).
+Revisar desde 12/10/2026 16:25 AR; exigir ocho dias completos desde esa muestra.
 No rellenar intervalos faltantes ni generar actividad para evitar reclamacion.
 
 CPU P95 de intervalos de cinco minutos y bytes locales son orientativos, no

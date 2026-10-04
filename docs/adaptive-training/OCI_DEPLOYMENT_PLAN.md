@@ -20,8 +20,8 @@ OCI E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 al 3/10 UTC OK; sin PAYG.
 | 4. Imagenes | COMPLETA | `e8771b1`/`37175784315`: gate/publicacion, digests/plataformas/revision anonimos OK. |
 | 5. VM y Cloudflare | COMPLETA | Tunnel Healthy/4, tres pruebas confirmadas, cierre sano y token API revocado. |
 | 6. Primer deploy | COMPLETA | e8771b1: HTTPS AR/WAF BR, passkey/admin, backup restaurado y SSH cerrado. |
-| 7. Observacion | EN CURSO | Primera muestra 4/10 16:18:55 AR; ocho dias desde ella. |
-| 8. Recuperacion | EN CURSO | Timer diario activo; copia PC/restore OK. Copia diaria/simulacro mensual. |
+| 7. Observacion | EN CURSO | Revisar ocho dias completos desde 12/10/2026 16:25 AR. |
+| 8. Recuperacion | EN CURSO | Copia PC diaria tras 05:00 AR; simulacro 4/11. RTO pendiente; resguardo independiente diferido |
 | 9. Operacion | PENDIENTE | Rutina tras observacion y recuperacion periodica. |
 
 ## Como retomar desde cualquier chat
