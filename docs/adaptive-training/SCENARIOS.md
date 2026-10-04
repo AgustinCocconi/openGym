@@ -64,6 +64,7 @@ literario.
 | calisthenics-live-management | core/active-workout.test.js; alta/baja/parcial |
 | novice-pullup-foundation | core/skills.test.js; tres reps no aprueban cuatro |
 | reported-pain-plan-removal | core/candidates.test.js; baja sin alternativa |
+| codex-cached-login | ../test/codex-login.test.js; conexion explicita, binding y cache ausente |
 
 Rutas de tests relativas a api/coach. Question, senales, dosis y confirmacion
 se cubren en tests puros; API y DOM prueban adapters y flujo. Los restantes

@@ -62,7 +62,7 @@ export const PROVIDERS = {
   // somewhere is CREDENTIAL_HOME — outside ./data, so `tar czf … data/` cannot capture it.
   codex: {
     label: 'Codex (OpenAI)', runtime: 'Codex CLI',
-    apiKeyEnv: 'CODEX_API_KEY', oauthEnv: null, credentialHomeEnv: 'CODEX_HOME'
+    apiKeyEnv: 'CODEX_API_KEY', oauthEnv: null, credentialHomeEnv: 'CODEX_HOME', cachedLogin: true
   },
   // The plain-HTTPS providers — Anthropic, OpenAI, Gemini and any OpenAI-compatible endpoint.
   // Described once in core/providers.js so the phone's picker and this table cannot disagree.
@@ -177,6 +177,20 @@ export function saveAuth(provider, auth) {
   const bound = { ...cfg.boundUid }; delete bound[provider];
   return save({ auth: next, boundUid: bound });
 }
+// Connection metadata belongs in coach.json; the CLI owns its refreshable login
+// outside data/. Never return the cached tokens to routes or jobs.
+export function hasCodexLogin() {
+  try {
+    const file = path.join(CREDENTIAL_HOME, 'auth.json');
+    const stat = fs.lstatSync(file);
+    if (!stat.isFile() || stat.size > 65536) return false;
+    const login = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return login.auth_mode === 'chatgpt' &&
+      typeof login.tokens?.access_token === 'string' && !!login.tokens.access_token &&
+      typeof login.tokens?.refresh_token === 'string' && !!login.tokens.refresh_token;
+  } catch { return false; }
+}
+
 export function saveModel(provider, model) {
   const next = { ...load().models };
   if (model) next[provider] = model; else delete next[provider];
@@ -239,6 +253,11 @@ export function credentialFor(uid) {
     return { ok: false, reason: 'shared-account', message: SHARED_ACCOUNT_REFUSAL, mode: 'instance' };
   }
   const rec = authFor(cfg);
+  if (cfg.provider === 'codex' && rec?.type === 'chatgpt-cli') {
+    return hasCodexLogin()
+      ? { ok: true, auth: null, type: rec.type, account: rec.account || null, mode: 'instance' }
+      : { ok: false, reason: 'no-credential', mode: 'instance' };
+  }
   const auth = rec && rec.data ? decrypt(rec.data) : null;
   if (!auth || !auth.token) {
     // An endpoint that takes no key (a model on the LAN) is connected without one. Only when
@@ -256,7 +275,7 @@ export function credentialFor(uid) {
    the provider terms forbid. An API key is what an admin pastes so their household can use the
    Coach; binding it to whoever happened to click first would just look broken, and the daily
    caps are what bound its spend. */
-export const isPersonalCredential = type => type === 'cli-token' || type === 'oauth';
+export const isPersonalCredential = type => ['cli-token', 'oauth', 'chatgpt-cli'].includes(type);
 
 /** First profile to actually spend the instance credential binds it — a personal credential
  *  only; an API key is shared by every profile on the instance. */
@@ -302,6 +321,7 @@ export function isConnected() {
   if (cfg.provider === 'fixture') return true;
   if (cfg.authMode === 'profile') return true;
   const rec = authFor(cfg);
+  if (cfg.provider === 'codex' && rec?.type === 'chatgpt-cli') return hasCodexLogin();
   if (!rec) return !!providerMeta(cfg).keyOptional && !!baseUrlFor(cfg.provider, cfg);
   return !!decrypt(rec.data);
 }

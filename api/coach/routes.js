@@ -158,10 +158,12 @@ export function coachRoutes({ json, readBody, readSession, requireAdmin }) {
         providers: Object.entries(cfgStore.PROVIDERS).map(([id, p]) => ({
           id, label: p.label, runtime: p.runtime,
           setupToken: !!p.setupToken, deviceLogin: !!p.deviceLogin, apiKey: !!p.apiKeyEnv,
+          cachedLogin: !!p.cachedLogin, cacheLoginReady: !!p.cachedLogin && cfgStore.hasCodexLogin(),
           http: !!p.http, baseUrl: !!p.baseUrl, keyOptional: !!p.keyOptional, keyPlaceholder: p.keyPlaceholder || null,
           defaultModel: p.defaultModel || null,
           // Which providers already hold a key — so switching chips is visibly not a reset.
-          connected: !!(cfgStore.authFor(cfg, id) && cfgStore.authFor(cfg, id).data)
+          connected: !!(cfgStore.authFor(cfg, id)?.data ||
+            (id === 'codex' && cfgStore.authFor(cfg, id)?.type === 'chatgpt-cli' && cfgStore.hasCodexLogin()))
         })),
         model: cfgStore.modelFor(cfg),
         models: cfg.models,
@@ -179,6 +181,10 @@ export function coachRoutes({ json, readBody, readSession, requireAdmin }) {
         auth: (() => {
           const meta = cfgStore.providerMeta(cfg);
           const rec = cfgStore.authFor(cfg);
+          if (cfg.provider === 'codex' && rec?.type === 'chatgpt-cli') {
+            return { state: cfgStore.hasCodexLogin() ? 'connected' : 'none', type: rec.type,
+              account: rec.account || null, connectedAt: rec.connectedAt || null };
+          }
           if (!meta.oauthEnv && !meta.apiKeyEnv) return { state: 'not-required' };
           if (!rec || !rec.data) return { state: meta.keyOptional ? 'optional' : 'none' };
           if (!cfgStore.decrypt(rec.data)) return { state: 'unreadable' };
@@ -269,6 +275,11 @@ export function coachRoutes({ json, readBody, readSession, requireAdmin }) {
       if (!cfgStore.PROVIDERS[provider]) return json(res, 400, { error: 'unknown provider' });
       const meta = cfgStore.PROVIDERS[provider];
       const type = String(body.type || '');
+      if (type === 'chatgpt-cli') {
+        if (!meta.cachedLogin || !cfgStore.hasCodexLogin()) return json(res, 400, { error: 'no server Codex ChatGPT login available' });
+        cfgStore.saveAuth(provider, { type, account: String(body.account || '').slice(0, 120), connectedAt: new Date().toISOString() });
+        return json(res, 200, { ok: true });
+      }
       const envVar = (type === 'cli-token' || type === 'oauth') ? meta.oauthEnv
         : type === 'apikey' ? meta.apiKeyEnv : null;
       if (!envVar) {

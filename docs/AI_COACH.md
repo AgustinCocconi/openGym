@@ -386,12 +386,14 @@ Three shapes, because the providers work differently:
 - **Codex** keeps a refreshable sign-in cache of its own, so it needs somewhere durable to write.
   That is `./coach-auth`, mounted at `/coach-auth`, owned by the `coach` user, mode `0700`.
 
-`./coach-auth` is a **sibling of `./data`, never a folder inside it**, and that placement is the
-whole point. §5 of `docs/SELF_HOSTING.md` tells owners to back up with `tar czf … data/`.
-Anything under `./data` is therefore in every backup archive people are instructed to produce —
-and unlike workout history, a refresh token keeps working after that archive is copied to a
-laptop or a cloud drive. Keeping the cache outside `./data` is what lets the backup instructions
-stay true about what they capture.
+In the admin card, **Use server ChatGPT login** connects the server's Codex
+cache explicitly. coach.json stores metadata only. This personal login binds
+to its first profile; a missing cache disables it. Disconnecting preserves the
+cache and requires an explicit reconnection.
+
+`./coach-auth` is a **sibling of `./data`, never a folder inside it**, so `tar czf … data/`
+backups cannot carry refresh tokens to another device. Keep that boundary when
+changing the backup procedure.
 
 Per-profile credentials follow the same rule for the same reason: they live in
 `coach-auth-<uid>.json` at mode `0600`, never in the synced state blob, so they cannot ride along

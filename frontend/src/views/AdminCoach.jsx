@@ -76,6 +76,13 @@ export default function AdminCoach() {
     setBusy(false)
   }
 
+  const connectCachedLogin = async () => {
+    setBusy(true)
+    try { await api('/api/admin/coach/connect', { method: 'POST', body: JSON.stringify({ type: 'chatgpt-cli' }) }); await load() }
+    catch (e) { toast(e.message) }
+    setBusy(false)
+  }
+
   if (!d) return <div className="card"><div className="muted small">Loading Coach status…</div></div>
 
   if (d.disabledByEnv) return <div className="card">
@@ -183,7 +190,7 @@ export default function AdminCoach() {
           <CredentialPill auth={d.auth} />
         </div>
         {authState === 'connected' ? <>
-          <div className="adm-hint">Connected{d.auth.account ? ' as ' + d.auth.account : ''} via {credentialLabel(d.auth.type)}{d.auth.connectedAt ? ' · added ' + rel(d.auth.connectedAt) : ''}. The key is stored encrypted and is never shown again.</div>
+          <div className="adm-hint">Connected{d.auth.account ? ' as ' + d.auth.account : ''} via {credentialLabel(d.auth.type)}{d.auth.connectedAt ? ' · added ' + rel(d.auth.connectedAt) : ''}. {d.auth.type === 'chatgpt-cli' ? 'The server login stays outside data backups and is bound to the first profile that uses it.' : 'The key is stored encrypted and is never shown again.'}</div>
           <div className="adm-actions">
             {meta.apiKey && <Button size="sm" variant="tinted" icon="lock" disabled={busy}
               onClick={() => openSheet(close => <ApiKeySheet close={close} onDone={load} label={meta.label} placeholder={meta.keyPlaceholder} optional={meta.keyOptional} />)}>Replace key</Button>}
@@ -198,6 +205,8 @@ export default function AdminCoach() {
             ? 'Paste either a Claude Code setup token (your subscription) or an Anthropic API key (pay per use).'
             : 'Paste an API key from the provider\'s console. It is stored encrypted on this server and sent to the provider only while a job runs.'}</div>}
           <div className="adm-actions">
+            {meta.cachedLogin && <Button size="sm" variant="primary" disabled={busy || !meta.cacheLoginReady}
+              onClick={connectCachedLogin}>Use server ChatGPT login</Button>}
             {meta.setupToken && <Button size="sm" variant="primary" icon="key" disabled={busy}
               onClick={() => openSheet(close => <SetupTokenSheet close={close} onDone={load} label={meta.label} />)}>Add Claude Code token</Button>}
             {meta.apiKey && <Button size="sm" variant={meta.setupToken ? undefined : 'primary'} icon="lock" disabled={busy}
