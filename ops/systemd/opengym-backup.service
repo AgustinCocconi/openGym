@@ -1,0 +1,19 @@
+[Unit]
+Description=Backup consistente y cifrado diario openGym
+RequiresMountsFor=/srv/opengym /srv/opengym-backups /srv/opengym-encrypted
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/srv/opengym
+UMask=0077
+Environment=BACKUP_DIR=/srv/opengym-backups
+Environment=BACKUP_ENCRYPTED_DIR=/srv/opengym-encrypted
+Environment=BACKUP_RETENTION_COUNT=14
+Environment=BACKUP_RECIPIENT_FILE=/etc/opengym/backup-recipient.txt
+Environment=PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar
+Environment=SMOKE_ORIGIN_URL=http://127.0.0.1:8080
+ExecStart=/bin/sh /srv/opengym/ops/periodic-backup.sh
+TimeoutStartSec=15min

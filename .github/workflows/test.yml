@@ -46,7 +46,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: Check production shell syntax
         run: |
-          for script in ops/production-common.sh ops/verify-production-candidate.sh ops/backup-production.sh ops/smoke-production.sh ops/deploy-production.sh ops/accept-production.sh ops/encrypt-backup.sh ops/verify-backup-restore.sh; do
+          for script in ops/production-common.sh ops/verify-production-candidate.sh ops/backup-production.sh ops/smoke-production.sh ops/deploy-production.sh ops/accept-production.sh ops/encrypt-backup.sh ops/verify-backup-restore.sh ops/periodic-backup.sh; do
             sh -n $script
           done
       - uses: actions/setup-node@v7
@@ -56,7 +56,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y age
-          node --test ops/production-probes.test.mjs
+          node --test ops/production-probes.test.mjs ops/periodic-backup.test.mjs
+          python3 -B ops/observe-production.test.py
       - name: Render production Compose override
         env:
           OPENGYM_IMAGE_TAG: 0123456789abcdef0123456789abcdef01234567

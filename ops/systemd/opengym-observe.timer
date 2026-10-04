@@ -1,0 +1,11 @@
+[Unit]
+Description=Observar openGym cada cinco minutos
+
+[Timer]
+OnCalendar=*-*-* *:0/5:00 UTC
+AccuracySec=30s
+Persistent=true
+Unit=opengym-observe.service
+
+[Install]
+WantedBy=timers.target

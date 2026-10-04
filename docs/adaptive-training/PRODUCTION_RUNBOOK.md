@@ -165,18 +165,13 @@ Descarga, revision, backup y smoke no se omiten; completar la aceptacion protegi
 
 ## Backup periodico
 
-Ejecutar, ademas del backup automatico previo a cada despliegue:
+[Rutina operativa](../../ops/PRODUCTION_ROUTINE.md): backup diario, retencion 14,
+copia cifrada a PC y simulacro mensual. Verifica imagenes aceptadas y cambios
+operativos; preparacion no acredita RPO ni activacion remota.
 
-```bash
-cd /srv/opengym
-BACKUP_DIR=/srv/opengym-backups BACKUP_RETENTION_COUNT=14 \
-  bash ops/backup-production.sh
-```
-
-Cifrar y transferir fuera de OCI; comprobar checksum en destino y ensayar
-restauracion segun [recuperacion cifrada](../../ops/PROTECTED_OPERATIONS.md#copia-cifrada-y-simulacro-aislado).
-
-`coach-auth/` no entra en el archivo. Si se pierde, reconectar el proveedor.
+Manual: `BACKUP_DIR=/srv/opengym-backups BACKUP_RETENTION_COUNT=14 sh ops/backup-production.sh`.
+Antes de deploy/rollback, detener timer y esperar servicio inactivo.
+`coach-auth/` excluido: reconectar proveedor si se pierde.
 
 ## Smoke y diagnostico
 

@@ -8,6 +8,7 @@ PRODUCTION_SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 production_require_command docker
 production_require_command git
 production_require_command sha256sum
+production_require_command flock
 
 backup_dir=${BACKUP_DIR:-"$PRODUCTION_REPO_ROOT/../opengym-backups"}
 retention=${BACKUP_RETENTION_COUNT:-14}
@@ -17,6 +18,7 @@ case "$retention" in
   0) production_die 'BACKUP_RETENTION_COUNT debe ser mayor que cero' ;;
 esac
 
+umask 077
 mkdir -p "$backup_dir"
 backup_dir=$(CDPATH= cd -- "$backup_dir" && pwd -P)
 repo_root=$(CDPATH= cd -- "$PRODUCTION_REPO_ROOT" && pwd -P)
@@ -24,7 +26,9 @@ case "$backup_dir/" in
   "$repo_root/"*) production_die 'BACKUP_DIR debe estar fuera del checkout de openGym' ;;
 esac
 
-umask 077
+exec 8>"$backup_dir/.backup.lock"
+flock -n 8 || production_die 'ya hay un backup consistente en curso'
+
 [ ! -L "$PRODUCTION_REPO_ROOT/data" ] || production_die 'data/ no puede ser un enlace simbolico'
 mkdir -p "$PRODUCTION_REPO_ROOT/data"
 
@@ -72,8 +76,8 @@ mv -- "$partial" "$archive"
 digest=$(sha256sum "$archive" | awk '{ print $1 }')
 printf '%s  %s\n' "$digest" "$base" > "$checksum"
 (CDPATH= cd -- "$backup_dir" && sha256sum --check "$base.sha256" >/dev/null)
-printf 'created_utc=%s\ncommit=%s\narchive=%s\nsha256=%s\nhelper_image=%s\nhelper_image_id=%s\n' \
-  "$timestamp" "$commit" "$base" "$digest" "$helper_image" "$helper_image_id" > "$metadata"
+printf 'created_utc=%s\ncommit=%s\ndeployed_commit=%s\narchive=%s\nsha256=%s\nhelper_image=%s\nhelper_image_id=%s\n' \
+  "$timestamp" "$commit" "${BACKUP_DEPLOYED_COMMIT:-}" "$base" "$digest" "$helper_image" "$helper_image_id" > "$metadata"
 
 if [ "$api_was_running" -eq 1 ]; then
   production_compose start api >/dev/null

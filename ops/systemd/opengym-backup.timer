@@ -1,0 +1,11 @@
+[Unit]
+Description=Backup openGym diario a las 05:00 Argentina
+
+[Timer]
+OnCalendar=*-*-* 08:00:00 UTC
+AccuracySec=1min
+Persistent=true
+Unit=opengym-backup.service
+
+[Install]
+WantedBy=timers.target
