@@ -1,6 +1,19 @@
 services:
   api:
     image: ghcr.io/${OPENGYM_REGISTRY_OWNER:-agustincocconi}/opengym-api:${OPENGYM_IMAGE_TAG:?set OPENGYM_IMAGE_TAG}-${API_TARGET:-default}
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   web:
     image: ghcr.io/${OPENGYM_REGISTRY_OWNER:-agustincocconi}/opengym-web:${OPENGYM_IMAGE_TAG:?set OPENGYM_IMAGE_TAG}
+    # Compose >= 2.24.4: replace the inherited public binding instead of appending.
+    ports: !override
+      - "127.0.0.1:${WEB_PORT:-8080}:${NGINX_PORT:-80}"
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"

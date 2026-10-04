@@ -25,6 +25,17 @@ production_compose() {
 }
 
 production_compose_release() {
+  # Older Compose can accept !override while retaining the public port.
+  production_compose_version=$(docker compose version --short) ||
+    production_die 'no se pudo consultar la version de Docker Compose'
+  production_compose_version=${production_compose_version#v}
+  production_compose_version=${production_compose_version%%[-+]*}
+  printf '%s\n' "$production_compose_version" | awk -F. '
+    /^[0-9]+\.[0-9]+\.[0-9]+$/ {
+      if ($1 > 2 || ($1 == 2 && ($2 > 24 || ($2 == 24 && $3 >= 4)))) ok = 1
+    }
+    END { exit !ok }
+  ' || production_die 'el Compose productivo requiere Docker Compose >= 2.24.4 para publicar solo en loopback'
   docker compose \
     -f "$PRODUCTION_REPO_ROOT/docker-compose.yml" \
     -f "$PRODUCTION_REPO_ROOT/ops/compose.production.yml" \
