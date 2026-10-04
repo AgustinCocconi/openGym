@@ -49,6 +49,12 @@ origin=$(production_env_value ORIGIN)
 admin_uids=$(production_env_value ADMIN_UIDS)
 invite_only=$(production_env_value INVITE_ONLY)
 allow_guest=$(production_env_value ALLOW_GUEST)
+web_port=$(production_env_value WEB_PORT)
+web_port=${web_port:-8080}
+production_origin_url="http://127.0.0.1:$web_port"
+printf '%s' "$web_port" | grep -Eq '^[0-9]+$' &&
+  [ "$web_port" -ge 1 ] && [ "$web_port" -le 65535 ] ||
+  production_die 'WEB_PORT debe ser un puerto valido'
 public_host=${PRODUCTION_URL#https://}
 case "$public_host" in
   ''|*[!A-Za-z0-9.-]*|.*|*.|*..*) production_die 'PRODUCTION_URL debe usar un hostname HTTPS valido sin puerto ni ruta' ;;
@@ -147,7 +153,7 @@ production_compose_release up -d --no-build || deployment_status=$?
 expect_locked=1
 production_is_true "$bootstrap" && expect_locked=0
 if [ "$deployment_status" -eq 0 ]; then
-  PRODUCTION_URL="$PRODUCTION_URL" EXPECT_LOCKED="$expect_locked" CHECK_CONTAINER_CONFIG=1 \
+  PRODUCTION_URL="$PRODUCTION_URL" SMOKE_ORIGIN_URL="$production_origin_url" EXPECT_LOCKED="$expect_locked" CHECK_CONTAINER_CONFIG=1 \
     sh "$PRODUCTION_SCRIPT_DIR/smoke-production.sh" || deployment_status=$?
 fi
 
@@ -155,7 +161,7 @@ if [ "$deployment_status" -ne 0 ]; then
   if [ "$rollback_ready" -eq 1 ]; then
     production_info "El despliegue o el smoke fallo; restaurando las imagenes previas ($rollback_tag)..."
     if OPENGYM_IMAGE_TAG="$rollback_tag" production_compose_release up -d --no-build; then
-      PRODUCTION_URL="$PRODUCTION_URL" EXPECT_LOCKED="$expect_locked" CHECK_CONTAINER_CONFIG=1 \
+      PRODUCTION_URL="$PRODUCTION_URL" SMOKE_ORIGIN_URL="$production_origin_url" EXPECT_LOCKED="$expect_locked" CHECK_CONTAINER_CONFIG=1 \
         sh "$PRODUCTION_SCRIPT_DIR/smoke-production.sh" || true
     else
       production_info 'El rollback automatico tambien fallo; conservar datos y revisar los logs.'
@@ -170,10 +176,10 @@ fi
 
 api_image=$(docker image inspect --format '{{index .RepoDigests 0}}' "$api_ref")
 web_image=$(docker image inspect --format '{{index .RepoDigests 0}}' "$web_ref")
-printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\tsuccess\n' \
+printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\tpending-external\n' \
   "$build_date" "$expected_commit" "$api_target" "$api_image" "$web_image" "$backup_archive" "$backup_sha256" >> "$deploy_log"
-printf 'commit=%s\napi_target=%s\napi_image=%s\nweb_image=%s\nrollback_tag=%s\nbackup_archive=%s\nbackup_sha256=%s\ndeployed_utc=%s\n' \
+printf 'commit=%s\napi_target=%s\napi_image=%s\nweb_image=%s\nrollback_tag=%s\nbackup_archive=%s\nbackup_sha256=%s\ndeployed_utc=%s\nacceptance_status=pending-external\n' \
   "$expected_commit" "$api_target" "$api_image" "$web_image" "$rollback_tag" "$backup_archive" "$backup_sha256" "$build_date" > "$state_dir/current.env"
 
-production_info "Despliegue completo: $expected_commit"
+production_info "Origen sano: $expected_commit; aceptacion pendiente de HTTPS argentino y WAF exterior."
 production_info "Backup previo: $backup_archive"

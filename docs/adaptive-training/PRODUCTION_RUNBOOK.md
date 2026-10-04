@@ -25,7 +25,7 @@ dominio y cambiarlo obliga a volver a registrar las credenciales.
 
 ## Requisitos del host
 
-- Linux con Docker Engine y el plugin `docker compose`.
+- Linux, Docker Engine y Compose >= 2.24.4 (loopback).
 - `git`, `curl`, `tar` y `sha256sum`.
 - Disco persistente para el checkout, `data/`, `media/` y `coach-auth/`.
 - Cloudflare Tunnel apuntando a `http://127.0.0.1:8080`.
@@ -47,17 +47,16 @@ tar por stdout; puede fijarse otra imagen compatible con
 
 ## Precondiciones del bootstrap
 
-No ejecutar los comandos siguientes hasta completar el gate y la autorizacion
-separada de primer deploy. Bloqueo detectado en la revision documental:
-`smoke-production.sh` hace curl al hostname sin autenticacion Access, y el
-deploy lo llama desde la VM en Brasil. Access y WAF Argentina pueden impedir
-esas sondas aunque la app este sana. No desactivar controles para pasar el smoke.
+Estos comandos requieren gate completo y autorizacion separada. El deploy
+prueba el origen por loopback y queda pending-external hasta comprobar HTTPS
+argentino autenticado y WAF exterior. Procedimiento y credenciales privadas en
+[sondas protegidas](../../ops/PROTECTED_OPERATIONS.md); no retirar Access/WAF.
 
-Antes del deploy, adaptar y probar las sondas: salud interna del origen y prueba
-HTTPS desde Argentina autenticada en Access, con fallo real bloqueando el gate.
-La prueba publica debe confirmar tambien bloqueo desde otro pais. El script
-actual no implementa esa separacion; estos comandos quedan condicionados a
-resolverla, no son evidencia de operacion lista.
+Override preparado: `!override` publica web solo en loopback; api/web usan
+logs `local`, 10 MB x 3. El adaptador exige Compose >= 2.24.4; 2.20.2 conserva
+el puerto publico pese al tag. Verificar ports/logging resueltos con ambos
+archivos antes del deploy aprobado. data/audit.log mantiene su rotacion propia.
+Host, cuota y alarmas: [plan concreto](../../ops/oci/REMEDIATION.md).
 
 ## Instalacion inicial
 
@@ -124,7 +123,7 @@ Tras el bootstrap protegido, continuar sin dejar el registro abierto:
    OPENGYM_IMAGE_TAG="$commit" API_TARGET=default \
      docker compose -f docker-compose.yml -f ops/compose.production.yml \
      up -d --no-build api web
-   PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
+   PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar SMOKE_ORIGIN_URL=http://127.0.0.1:8080 EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
      bash ops/smoke-production.sh
    ```
 
@@ -157,12 +156,12 @@ una instancia sin cerrar. Luego:
 2. descarga las imagenes etiquetadas con el SHA completo y verifica su revision;
 3. crea y verifica un backup consistente;
 4. reemplaza los contenedores sin tocar los directorios persistentes;
-5. ejecuta el smoke y registra digestos y resultado en `.production-state/`.
+5. ejecuta smoke interno; registra digestos y pending-external en `.production-state/`.
 
 La VM no construye ni repite el gate de CI. `CONFIRMED_CI_COMMIT` confirma el
 mismo SHA aprobado por el workflow; no es prueba automatica del estado de CI.
 
-Descarga, revision, backup y smoke nunca se omiten.
+Descarga, revision, backup y smoke no se omiten; completar la aceptacion protegida.
 
 ## Backup periodico
 
@@ -174,12 +173,8 @@ BACKUP_DIR=/srv/opengym-backups BACKUP_RETENTION_COUNT=14 \
   bash ops/backup-production.sh
 ```
 
-Copiar cada `.tar.gz`, `.sha256` y `.meta` a almacenamiento cifrado fuera del
-host. Verificar despues de la transferencia desde el directorio destino:
-
-```bash
-sha256sum --check opengym-data-YYYYMMDDTHHMMSSZ-COMMIT.tar.gz.sha256
-```
+Cifrar y transferir fuera de OCI; comprobar checksum en destino y ensayar
+restauracion segun [recuperacion cifrada](../../ops/PROTECTED_OPERATIONS.md#copia-cifrada-y-simulacro-aislado).
 
 `coach-auth/` no entra en el archivo. Si se pierde, reconectar el proveedor.
 
@@ -188,7 +183,7 @@ sha256sum --check opengym-data-YYYYMMDDTHHMMSSZ-COMMIT.tar.gz.sha256
 El smoke remoto no escribe datos:
 
 ```bash
-PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar bash ops/smoke-production.sh
+PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar SMOKE_ORIGIN_URL=http://127.0.0.1:8080 bash ops/smoke-production.sh
 docker compose ps
 docker compose logs --tail=200 api web
 ```
@@ -209,7 +204,7 @@ api_target=default
 OPENGYM_IMAGE_TAG="$rollback_tag" API_TARGET="$api_target" \
   docker compose -f docker-compose.yml -f ops/compose.production.yml \
   up -d --no-build
-PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
+PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar SMOKE_ORIGIN_URL=http://127.0.0.1:8080 EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
   bash ops/smoke-production.sh
 ```
 
@@ -226,19 +221,15 @@ primero el archivo y su checksum en un directorio aislado. En produccion:
 cd /srv/opengym
 archive=/srv/opengym-backups/opengym-data-YYYYMMDDTHHMMSSZ-COMMIT.tar.gz
 (cd "$(dirname "$archive")" && sha256sum --check "$(basename "$archive").sha256")
-listing=$(mktemp)
-tar -tzf "$archive" > "$listing" || { rm -f "$listing"; exit 1; }
-if grep -Ev '^data(/|$)' "$listing"; then
-  rm -f "$listing"
-  echo 'El archivo contiene rutas inesperadas; abortar.' >&2
-  exit 1
-fi
-rm -f "$listing"
+isolated=$(mktemp -d)
+bash ops/verify-backup-restore.sh "$archive" "$isolated"
+
 docker compose stop api
 mv data "data.before-restore-$(date -u +%Y%m%dT%H%M%SZ)"
-tar -xzf "$archive" -C /srv/opengym
+mv "$isolated/data" data
+rmdir "$isolated"
 docker compose start api
-PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
+PRODUCTION_URL=https://gym.mientrenadorpersonal.com.ar SMOKE_ORIGIN_URL=http://127.0.0.1:8080 EXPECT_LOCKED=1 CHECK_CONTAINER_CONFIG=1 \
   bash ops/smoke-production.sh
 ```
 
