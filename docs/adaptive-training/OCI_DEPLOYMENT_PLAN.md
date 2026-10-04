@@ -7,19 +7,19 @@ las fases contienen controles y evidencia pertinente, sin bitacora de intentos.
 
 ## Checkpoint
 
-Corte documental: 2026-10-02. Evidencia heredada de las validaciones registradas,
-no una nueva consulta a OCI, GHCR o Cloudflare. Actualizar estado, fecha y proximo
-paso al operar; solo una fase puede estar `EN CURSO`.
+Corte local: 2026-10-04 02:17 UTC / 3/10 23:17 AR; fase 6 revalidada.
+Commits/push/GHCR autorizados al retomar; faltan SHA/CI, custodia y permiso de deploy.
+Token API CF revocado/copia DPAPI retirada; costos hasta 2/10, GHCR heredado.
 
 | Fase | Estado | Evidencia / proximo paso |
 | --- | --- | --- |
 | 0. Base local | COMPLETA | Artefactos operativos separados y gate Linux/Node 22 registrado. Revalidar limpieza, SHA y gate para cada candidato. |
 | 1. Compatibilidad | COMPLETA | ARM64 probado en `905f44e`; imagenes publicadas para AMD64 y ARM64 en fase 4. Consumo local orientativo. |
-| 2. Cuentas | REVALIDAR | OCI/Cloudflare y MFA confirmados. Falta evidencia de cuotas del compartment adaptadas a E2; ver fase 2. |
+| 2. Cuentas | COMPLETA | OCI Always Free/MFA/USD 0, alertas activas y E2 1/1/0. CF zona activa Free por API; propietario confirma Zero Trust Free/2FA. |
 | 3. IaC OCI | COMPLETA | Terraform 1.16.4 / OCI 7.32.0: formato, validacion y cuatro guardrails registrados; E2, swap y storage de 50+50 GB. |
 | 4. Imagenes | COMPLETA | `52fb8e6`, workflow `36660062726`: gate y publicacion multiarch verdes; digests abajo. |
-| 5. VM y Cloudflare | EN CURSO | E2 `RUNNING`, volumen `ATTACHED` y host verificado por Managed SSH; ultimo plan sin deriva. Faltan Tunnel, Access, WAF y pruebas HTTPS. |
-| 6. Primer deploy | BLOQUEADO | Gate incompleto; smoke incompatible con Access sin autenticacion y autorizacion de deploy pendiente. |
+| 5. VM y Cloudflare | COMPLETA | Tunnel Healthy/4, tres pruebas confirmadas, cierre sano y token API revocado. |
+| 6. Primer deploy | BLOQUEADO | Smoke/recuperacion local probados; faltan SHA limpio/CI, custodia externa y permiso de deploy. |
 | 7. Observacion | PENDIENTE | Ocho dias despues del deploy; memoria no determina reclamacion de E2. |
 | 8. Recuperacion | PENDIENTE | Destino externo y simulacros exigidos antes del deploy; operacion periodica despues. |
 | 9. Operacion | PENDIENTE | Despues de aceptacion productiva. |
@@ -32,7 +32,7 @@ revisar todos los controles aplicables y el gate; no hace falta cargar el plan
 completo para una correccion localizada.
 
 Revisar rama, HEAD, referencias y diff sin descartar cambios locales. Retomar
-la fase 5 y sus prerrequisitos, salvo prioridad expresa del usuario. Clasificar
+la fase pendiente del checkpoint y sus prerrequisitos. Clasificar
 cambios nuevos y probar el SHA candidato antes de cualquier deploy; consultar
 `PORTING_MAP.md` para distinguir nucleo puro de integracion terminada.
 
@@ -117,53 +117,37 @@ candidato seleccionado; un check historico de otro SHA no los satisface.
 
 ## Fase 0 - Consolidar la base local
 
-Fase operativa original terminada; no certifica otro SHA candidato. Los
-scripts de preflight, gate, backup, smoke, deploy y rollback viven en `ops/`.
-La politica y el runbook se alinean con E2; el nucleo `recency` tiene un commit
-separado y no implica integracion adaptativa.
-
-Evidencia registrada el 2026-09-17: frontend, MCP, build, locales, generados y
-carga directa pasaron localmente con Node 24. La API tuvo diferencias POSIX
-en Windows; el gate Linux/Node 22 paso los 181 tests de API y el resto de
-suites. Compose y los cinco scripts pasaron render/sintaxis. Para un nuevo
-candidato repetir el gate pertinente; no reutilizar esos resultados.
+P0 operativa terminada; scripts en `ops/`, politica/runbook alineados con E2.
+Gate registrado el 2026-09-17: Node 24 local y Linux/Node 22, Compose y scripts
+verificados; diferencias POSIX de API en Windows corregidas por H10 de la
+[auditoria](../agents/SUBSYSTEM_AUDIT.md). Para cada candidato repetir el gate;
+esta evidencia no certifica otro SHA. `recency` separado no implica integracion.
 
 ## Fase 1 - Validar compatibilidad ARM64 y consumo
 
-Evidencia sobre `905f44e8695886ef4c006ce4208e737708d58bf3`, 2026-09-17:
-archivo del commit aislado sin `recency*`; Node 22 ARM64 paso 1.468 tests de
-frontend, 58 MCP y 181 API, build y chequeos. Bajo QEMU dos tests necesitaron
-30 s de timeout sin cambios de codigo. Buildx construyo `api:default`,
-`api:coach` y web; downloader, health/config y smoke del stack pasaron.
-
-Imagenes sin comprimir: ~166 MiB `default`, ~1.022 MiB `coach`, ~78 MiB web.
-Consumo local de API+web ~251-262 MiB bajo QEMU/Docker Desktop: no acredita
-capacidad real, latencia ni politica de inactividad OCI. E2 usa las imagenes
-AMD64 publicadas en fase 4; observarla antes de afirmar suficiencia.
-`coach` sigue fuera del workflow productivo y requiere pruebas/publicacion
-separadas; mantener `default` para el primer deploy.
+`905f44e8695886ef4c006ce4208e737708d58bf3`, 2026-09-17, sin recency: Node 22
+ARM64 paso suites/build/checks; dos tests QEMU necesitaron timeout 30 s, sin
+cambiar codigo. Buildx, downloader, health/config y smoke pasaron. Imagenes:
+default ~166 MiB, coach ~1.022 MiB, web ~78 MiB; API+web ~251-262 MiB bajo
+QEMU/Docker Desktop, sin acreditar capacidad/latencia/inactividad OCI.
+E2 usa AMD64 de fase 4; medir antes de afirmar suficiencia. Mantener default:
+coach exige pruebas/publicacion separadas y no esta en el workflow productivo.
 
 ## Fase 2 - Preparar cuentas y elecciones del propietario
 
-Confirmaciones registradas el 2026-09-29: OCI con MFA probado, home region
-`sa-vinhedo-1`, compartment `opengym-personal`, presupuesto y alertas real/
-prevista. Facturacion: conservar trial y Always Free sin PAYG. Cloudflare Free,
-zona `mientrenadorpersonal.com.ar` activa, hostname definitivo, 2FA propio,
-recuperacion guardada y nuevo login probado. Access fue decidido, no instalado.
+OCI 3/10 20:37: home `sa-vinhedo-1`, MFA; una clave API a las 17:15.
+Cost Analysis 29/9 a 3/10 UTC exclusivo: USD 0, hasta 2/10; falta consolidar.
+Propietario confirma Always Free sin PAYG y ventana 60 min el 3/10.
+`opengym-zero-cost`: USD 1, gasto/forecast 0, tenancy; ACTUAL 1 %/FORECAST 100 % activos.
+[Budgets](https://docs.oracle.com/en-us/iaas/Content/Billing/Concepts/budgetsoverview.htm)
+solo alerta, no bloquea cargos.
 
-**Pendiente tras cambiar de A1 a E2:** la evidencia original de quota policy
-solo limita A1 a 1 OCPU/2 GB, storage a 100 GB y backups a cinco. La consulta
-E2 registro cuota disponible 2, pero no prueba un limite del compartment a la
-unica VM acordada. Revalidar policy efectiva, alertas y costos antes del deploy.
-La documentacion de [Compute Quotas](https://docs.oracle.com/en-us/iaas/Content/Quotas/Concepts/resourcequotas_topic-Compute_Quotas.htm)
-publica `compute` / `vm-standard-e2-1-micro-count`; usar los nombres/ambitos
-generados por consola, no las sentencias A1 heredadas.
-
-El propietario configura cualquier ajuste aprobado en OCI. Una cuota no bloquea
-todos los servicios pagos y un presupuesto solo alerta. No recrear cuentas,
-cambiar home region ni abrir el flujo PAYG por esta limpieza. Devolver solo
-confirmacion de modalidad, limites efectivos y alertas; sin identificadores,
-capturas de facturacion ni secretos. Salida: guardrails efectivos para E2.
+Cuota E2 delegada al continuar: If-Match/copia privada 20:35; E2 1/1/0.
+Policy raiz conserva A1 1 OCPU/2 GB, storage 100 GB/cinco backups; sin policy hija.
+[Reversion](../../ops/oci/REMEDIATION.md#cuota-e2); otros servicios pagos no cubiertos.
+CF 3/10: zona activa Free/USD 0 por API; propietario confirma Zero Trust Free/2FA.
+Access habilitado por propietario; token API revocado y copia DPAPI retirada.
+Salida: modalidad revalidada y guardrail efectivo para una E2.
 
 ## Fase 3 - Codificar la infraestructura OCI
 
@@ -201,32 +185,38 @@ No hacer push/publicacion por este plan sin pedido autorizado.
 
 ## Fase 5 - Crear y endurecer la VM
 
-Evidencia registrada el 2026-10-02: tras fallos de capacidad A1, el propietario
-autorizo E2 Always Free. El plan tenia solo E2+attachment (dos altas, sin cambios
-ni bajas); apply completo, VM `RUNNING`, volumen `ATTACHED` y sin deriva.
-El diagnostico Bastion se resolvio con egreso estatal TCP/22 hacia la subnet,
-sin abrir ingress publico; Managed SSH verifico cloud-init completo, `/srv`
-ext4/marcador/servicio, swap 1 GiB, Docker, Compose, cloudflared, UFW, SSH y
-agente OCI. Sesiones/consola/claves temporales eliminadas; ultimo plan vacio.
+OCI/plan 3/10 17:18: E2/IMDS cerrado, 50+50 GB/10 VPU cifrados ATTACHED,
+sin replicas/backups; subnet sin ingress, NSG Bastion/PMTU. Plan exit 0, sin apply.
+Ventana autorizada 19:38-20:06 UTC / 16:38-17:06 AR, dentro de 60 min.
+Indices frescos: cero seguridad/seis generales diferidos; dpkg/apt, sudo/OpenSSL,
+units sanos, timers conservados. [Consola](../../ops/oci/RECOVERY.md) RSA/sudo,
+GRUB serial 9600/menu 10 s y submenu probados; 7.0.0-1012-oracle ejecutandose,
+reboot resuelto, 6.17.0-1020/initrd preservados. cloud-init done, /srv ext4/marcador,
+swap 1 GiB, Docker/Compose 5.6.0, agente/UFW activos. SSH ubuntu/root: root,
+password, keyboard-interactive, X11/forwarding cerrados; pubkey/agente y segunda
+Managed SSH/sudo OK tras reload. RPCbind/socket inactive/disabled, sin 111/NFS
+(montajes/fstab/units); nfs-common instalado, fwupd diferido por ubuntu-server.
+Cierre 20:02: password/fecha ubuntu exactos (L), root intacto, sin hashes/timers
+temporales; copias root 0700/0600: [rutas](../../ops/oci/RECOVERY.md#copias-para-reversion).
+20:06: VM/plugin RUNNING, accesos DELETED, cero SSH/consolas/claves propios.
+MQL 21:46: infra 0, CPU 0,05 %, RAM 28,02 %, streams sin brechas. Activacion
+permitida 21:47: cuatro alarmas ON/OK, configuracion preservada, email ACTIVE/confirmado.
 
-Pendiente, responsable conjunto:
+CF 21:49 AR: Tunnel Healthy/4/Free, DNS/ruta, token 0600/argv seguro y
+metricas loopback; Access propietario/OTP/24 h y WAF fuera de AR (1/5) ON.
+HTTPS AR, identidad rechazada y BR/Block/regla propia confirmados. Cierre
+21:54 AR: VM sana/RUNNING, credenciales exactas, sin prueba/timers/accesos/claves.
+Token API revocado 22:06 AR (401/1000); copia DPAPI retirada.
 
-- [ ] Revalidar costo/guardrails E2 de fase 2.
-- [ ] Crear named Tunnel; propietario instala el token en el host, fuera de
-  Terraform, cloud-init, estado, Git y chat. No usar Quick Tunnel.
-- [ ] Configurar Access solo para el propietario y resolver el bloqueo de
-  [smoke protegido](PRODUCTION_RUNBOOK.md#precondiciones-del-bootstrap).
-- [ ] Publicar ruta al loopback `http://127.0.0.1:8080`; activar WAF `Block`:
-  `(http.host eq "gym.mientrenadorpersonal.com.ar" and ip.src.country ne "AR")`.
-- [ ] Probar HTTPS desde el celular en Argentina y bloqueo desde otra salida,
-  usando servicio aislado previo al deploy; retirar el servicio de prueba.
-
-Geolocalizacion no reemplaza passkeys ni cierre del registro. Salida: host y
-entrada protegidos, sin datos productivos, listos para revalidar el gate.
+Salida: host/entrada protegidos, prueba retirada y accesos temporales cerrados.
+Smoke/gate Linux y recuperacion corresponden a fase 6.
 
 ## Fase 6 - Primer despliegue controlado
 
 Responsable conjunto; requiere gate completo y autorizacion separada.
+[Preparacion local](../../ops/PROTECTED_OPERATIONS.md): Linux/Node 22 AMD64
+(1539 frontend/59 MCP/190 API), diez probes y rollback/restore ficticios OK.
+Workspace sin integrar; no acredita CI/imagenes del SHA ni capacidad de E2.
 Seguir [instalacion](PRODUCTION_RUNBOOK.md#instalacion-inicial):
 
 - [ ] Crear `.env` privado: `RP_ID=gym.mientrenadorpersonal.com.ar`,
