@@ -17,8 +17,7 @@ Completar fases 7 y 8 conservando destino PC y resguardo independiente diferido.
 [rutina](../../../ops/PRODUCTION_ROUTINE.md),
 [runbook](../../adaptive-training/PRODUCTION_RUNBOOK.md#backup-periodico).
 Colector Python, backup shell, receptor/simulacro Windows, systemd y tests/CI.
-Preservar cambios ajenos Coach/localizacion y evidencia previa de fase 6 sin commit.
-Checkpoint local actualizado; no mezclar sus cambios previos al integrar esta tarea.
+Checkpoint y evidencia de fase 6 integrados al cierre autorizado por el propietario.
 
 ## Estado actual
 
@@ -52,8 +51,7 @@ Copia externa diaria requiere PC/Bastion temporal; no hay SSH permanente.
 ## Siguiente paso y handoff
 
 Sesion DELETED; claves retiradas, cero sesiones/consolas; resumen privado guardado.
-Mantener copia diaria
-PC tras 05:00 AR y revisar RPO/avisos/colector. Desde 12/10 16:20 AR, ejecutar
+Mantener copia diaria PC tras 05:00 AR y revisar RPO/avisos/colector. Desde 12/10 16:25 AR, ejecutar
 informe desde 2026-10-04T19:18:55Z, exigir ocho dias completos sin brechas,
 contrastar CPU/red OCI y revisar evento del backup antes de cerrar fase 7.
 Repetir simulacro el 4/11; resguardo independiente sigue diferido.

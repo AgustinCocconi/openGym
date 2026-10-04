@@ -107,6 +107,11 @@ del ZIP contrastados con la [release oficial](https://github.com/FiloSottile/age
 Registrar solo destino, permisos y resultado. custody-status.json distingue
 fixture de backup productivo y no confirma resguardo independiente.
 
+En Windows se puede transmitir el tar por SSH binario a age nativo sin guardarlo
+en claro. Validar checksum remoto/cifrado, descifrar en carpeta privada nueva,
+comparar SHA original y restaurar con el contrato del helper. Retirar solo esa
+carpeta propia y mantener age/sha256/meta/informe juntos; evitar pipes de texto.
+
 Cuando el propietario retome el resguardo, copiar identity.txt al medio elegido.
 Recuperarla
 a una ruta privada nueva y verificar con esa copia el descifrado del fixture,

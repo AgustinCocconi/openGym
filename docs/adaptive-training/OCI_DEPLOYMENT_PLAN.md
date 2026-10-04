@@ -7,9 +7,9 @@ las fases contienen controles y evidencia pertinente, sin bitacora de intentos.
 
 ## Checkpoint
 
-4/10 00:52 AR: deploy autorizado; preflight pendiente.
+4/10 16:25 AR: app e8771b1 aceptada; ops 9fdb243 activa y copia PC restaurada.
 Propietario difiere resguardo de identidad: backup/clave solo en esta PC por ahora.
-API OCI: E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 hasta 3/10 UTC OK.
+OCI E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 al 3/10 UTC OK; sin PAYG.
 
 | Fase | Estado | Evidencia / proximo paso |
 | --- | --- | --- |
@@ -17,12 +17,12 @@ API OCI: E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 hasta 3/10 UTC OK.
 | 1. Compatibilidad | COMPLETA | ARM64 probado en `905f44e`; imagenes publicadas para AMD64 y ARM64 en fase 4. Consumo local orientativo. |
 | 2. Cuentas | COMPLETA | OCI Always Free/MFA/USD 0, alertas activas y E2 1/1/0. CF zona activa Free por API; propietario confirma Zero Trust Free/2FA. |
 | 3. IaC OCI | COMPLETA | Terraform 1.16.4 / OCI 7.32.0: formato, validacion y cuatro guardrails registrados; E2, swap y storage de 50+50 GB. |
-| 4. Imagenes | COMPLETA | `7e77b34`, workflow `37171003702`: gate/publicacion verdes y digests/plataformas/revision anonimos verificados. |
+| 4. Imagenes | COMPLETA | `e8771b1`/`37175784315`: gate/publicacion, digests/plataformas/revision anonimos OK. |
 | 5. VM y Cloudflare | COMPLETA | Tunnel Healthy/4, tres pruebas confirmadas, cierre sano y token API revocado. |
-| 6. Primer deploy | EN CURSO | Deploy autorizado 4/10; resguardo diferido por propietario. Revalidar cuenta/host y bootstrap protegido. |
-| 7. Observacion | PENDIENTE | Ocho dias despues del deploy; memoria no determina reclamacion de E2. |
-| 8. Recuperacion | PENDIENTE | Destino externo y simulacros exigidos antes del deploy; operacion periodica despues. |
-| 9. Operacion | PENDIENTE | Despues de aceptacion productiva. |
+| 6. Primer deploy | COMPLETA | e8771b1: HTTPS AR/WAF BR, passkey/admin, backup restaurado y SSH cerrado. |
+| 7. Observacion | EN CURSO | Primera muestra 4/10 16:18:55 AR; ocho dias desde ella. |
+| 8. Recuperacion | EN CURSO | Timer diario activo; copia PC/restore OK. Copia diaria/simulacro mensual. |
+| 9. Operacion | PENDIENTE | Rutina tras observacion y recuperacion periodica. |
 
 ## Como retomar desde cualquier chat
 
@@ -170,13 +170,13 @@ revision explicita del cambio de guardrail. Salida: plan revisado sin sorpresas.
 
 ## Fase 4 - Publicar imagenes propias por commit
 
-Evidencia del 2026-10-03: SHA
-`7e77b34d8e76c1a3da0f3fa8f6d2b0e914264494`, workflow `37171003702`, gate y
+Evidencia del 2026-10-04: SHA
+`e8771b131b84175fe46d4f8b3c69e7f65649ccf0`, workflow `37175784315`, gate y
 publicacion `linux/amd64,linux/arm64` verdes. Consulta anonima: checksums de
 indices/manifests/configs, labels de revision y alias personal coincidentes:
 
-- API `default`: `sha256:58324b44c772b07a92b8cba0767dfd00efcf721720187171c419bcb9ec7a1221`.
-- Web: `sha256:b6ff5e41ba1a296238f3528b4e1075a30f0a07c400657284d1de1283c5bb234a`.
+- API `default`: `sha256:66097a85f033eeb34f355e8799b2a1248e332f40613155a9c56338d8fb39eb81`.
+- Web: `sha256:d2c3e3380a6008d71d7e1bc0fd5548918fca5d8e17a8bc6ff4287378563ae8b3`.
 
 `.github/workflows/personal-publish.yml` llama a `test.yml` antes de publicar.
 El deploy verifica revision y registra digests. Esa evidencia corresponde solo
@@ -213,68 +213,70 @@ Smoke/gate Linux y recuperacion corresponden a fase 6.
 
 ## Fase 6 - Primer despliegue controlado
 
-Gate y permiso de deploy separados. Codigo/CI/GHCR en fase 4.
-[Preparacion local](../../ops/PROTECTED_OPERATIONS.md): Linux/Node 22 AMD64,
-1539 frontend/59 MCP/190 API; diez probes/rollback/restore ficticios OK.
-PC: age/ACL/cifrado/restore OK; resguardo diferido por propietario el 4/10.
-Perder esta PC puede impedir recuperar backups.
-Seguir [instalacion](PRODUCTION_RUNBOOK.md#instalacion-inicial):
+Deploy autorizado 4/10; SHA/digests en fase 4. [Preparacion](../../ops/PROTECTED_OPERATIONS.md):
+Linux/Node 22 AMD64, 1539 frontend/59 MCP/190 API; probes/rollback/restore OK.
+Deploy 04:19 UTC, aceptado 07:22 UTC. API/web healthy sin OOM/restarts;
+web loopback, API sin puerto, logs local 10m x 3, /srv persistente.
+[Instalacion](PRODUCTION_RUNBOOK.md#instalacion-inicial):
 
-- [ ] Crear `.env` privado: `RP_ID=gym.mientrenadorpersonal.com.ar`,
-  `ORIGIN=https://gym.mientrenadorpersonal.com.ar`, sin invitados.
-- [ ] Descargar SHA/digests y desplegar bootstrap con Access propietario y WAF
-  activos; health y smoke deben atravesar esa proteccion correctamente.
-- [ ] Registrar perfil/passkey en celular; configurar `ADMIN_UIDS`,
-  `INVITE_ONLY=1`, `ALLOW_GUEST=0`, recrear y comprobar cierre del alta.
-- [ ] Login, lectura y escritura manual de prueba; smoke permanece de solo lectura.
-- [ ] Registrar SHA, digests y smoke; primer backup consistente/checksum y copia
-  cifrada externa comprobada.
-- [ ] Decidir si Access permanece tras cerrar el registro; WAF y autenticacion
-  openGym permanecen. Actualizar runbook si cambia el acceso de sondas.
+- [x] `.env` 0600; `RP_ID`/`ORIGIN` segun instalacion.
+- [x] e8771b1: labels/digests/smoke OK; HTTPS AR 07:08 UTC. Propietario confirma
+  WAF BR/Block/opengym_argentina_only, Ray a452485da9315e0f (06:55 UTC).
+- [x] Perfil/passkey celular, ADMIN_UIDS coincide; INVITE_ONLY=1, ALLOW_GUEST=0.
+  Login/lectura/escritura/admin confirmados por propietario.
+- [x] Backup 20261004T072203Z-e8771b131b84 con perfil; copia age PC,
+  checksum/descifrado/restore y cinco archivos comparados; plaintext retirado.
+- [x] Mantener Access propietario, WAF y autenticacion openGym.
+- [x] SSH 06:45-07:32 UTC DELETED, claves retiradas; sesiones/consolas activas 0.
 
-Salida: instancia cerrada y recuperable. El deploy no implementa entrenamiento
-adaptativo ni permite dar por probada la rama local entera.
+Evidencia privada: %LOCALAPPDATA%/openGym-backups/deployment-e8771b1-20261004.json,
+.age.verification.json y custody-status.json. Clave: openGym-recovery/identity.txt.
+Resguardo independiente diferido por propietario; perder la PC puede impedir recuperar.
+No acredita adaptacion ni toda la rama local.
 
 ## Fase 7 - Observar inactividad sin fabricar carga
 
-Responsable: agente configura metricas; propietario recibe alertas y decide.
+[Rutina activa](../../ops/PRODUCTION_ROUTINE.md#observacion-de-ocho-dias):
+primera muestra 2026-10-04T19:18:55Z (16:18:55 AR); cada cinco minutos.
+Cierre desde 12/10 16:18:55 AR, sujeto a cobertura/revision.
 
-- [ ] Metricar CPU, red, memoria, swap, OOM/restarts; alarmas de disponibilidad
-  y ausencia de metricas. Observar ocho dias completos despues del deploy.
-- [ ] Mantener healthchecks, smoke, backups y mantenimiento reales; no loops
-  de CPU, trafico ficticio ni reserva de memoria para simular actividad.
+- [x] Metricas/health locales y cuatro alarmas OCI OK.
+- [ ] Ocho dias completos sin brechas; contrastar CPU/red OCI oficiales.
+- [x] Healthchecks, smoke y backups reales; sin carga sintetica.
+
+Backup inicial reinicio API; loopback OK y Docker starting hasta su healthcheck
+cada cinco minutos. Conservar este evento, no rellenar muestras faltantes.
+Propietario revisa alertas y decide.
 
 [Oracle](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)
-considera inactividad durante siete dias con CPU P95 y red debajo de 20 %;
-el criterio adicional de memoria debajo de 20 % se aplica solo a A1.
-Para E2, mas RAM usada o swap no evita reclamacion. Revalidar la politica
-antes de configurar alertas; probes pequenos tampoco garantizan actividad.
-
-Umbrales internos de capacidad: 25-70 % de memoria orienta observacion, no
-elegibilidad. Ante >70 %, OOM o reinicios, revisar margen y pruebas; E2 es
-shape fija, no tiene ajuste de RAM. Otra shape necesita nueva decision, plan,
-backup y autorizacion dentro del costo cero. Si no hay alternativa segura,
-aceptar riesgo de reclamacion o pedir una decision nueva; no migrar a pago
-automaticamente. Salida: metricas y decision sustentada de dimensionamiento.
+considera siete dias con CPU P95/red <20 %; memoria <20 % solo para A1.
+Revalidado 4/10/2026. En E2, RAM/swap y probes no evitan reclamacion.
+CPU/red locales orientan, no sustituyen metricas OCI.
+Memoria 25-70 % orienta capacidad. >70 %, OOM/reinicios: revisar margen/pruebas.
+E2 es fija; otra shape requiere decision/plan/backup y autorizacion a costo cero;
+sin alternativa, decidir riesgo, nunca migrar automaticamente a pago.
+Salida: cobertura completa y decision de dimensionamiento sustentada.
 
 ## Fase 8 - Backups y recuperacion ante reclamacion
 
-Responsable conjunto. Elegir destino externo y ensayar checksum, rollback y
-restauracion aislada con datos de prueba antes del gate del primer deploy.
-Despues, backup consistente diario y antes de cada deploy, rotacion local
-explicita, copia cifrada fuera del host (preferentemente fuera de OCI), checksum
-tras transferir y restauracion mensual. Backups de volumen dentro de cuota,
-hasta cinco; no sustituyen la copia externa. `coach-auth/` requiere reconexion.
+[Rutina activa](../../ops/PRODUCTION_ROUTINE.md#backup-diario-y-ventanas) en 9fdb243;
+app aceptada e8771b1. Backup diario 05:00 AR, retencion 14, destinatario publico
+age en host; identidad PC. Primera copia 4/10 19:19:01 UTC: checksum cifrado/
+original y restore aislado de cinco archivos OK; plaintext retirado.
+Copia PC 19:20 UTC: RPO 0,02 h; no acredita RTO productivo.
 
-Si OCI reclama compute: comprobar volumen/ultimo backup, sin restaurar sobre
-la unica copia; revisar recreacion IaC y autorizaciones, revocar el conector/token
-perdido, conservar hostname, montar/restaurar datos, descargar mismos digests,
-smoke y passkey existente. No cambiar RP ID para resolver la incidencia.
-Registrar causa, RPO real y tiempo de recuperacion.
+Copiar/verificar a PC diariamente por Bastion temporal y
+restaurar mensualmente; proximo simulacro 4/11. Resguardo independiente diferido.
+Perder la PC puede impedir recuperar; coach-auth requiere reconexion.
+Antes de deploy, backup y pausa del timer. Hasta cinco backups de
+volumen dentro de cuota no sustituyen copia externa.
 
-Comandos en [restauracion](PRODUCTION_RUNBOOK.md#restauracion-de-datos) y
-[recreacion](../../ops/oci/DESTROY_RECREATE.md). Objetivos a confirmar con
-simulacro: RPO 24 h y RTO 60 min. Salida: perder compute no implica perder datos.
+Ante reclamacion, comprobar volumen/ultimo backup sin pisar la unica copia;
+revisar IaC/permisos, revocar conector/token perdido, conservar hostname/RP ID,
+restaurar con mismos digests y probar smoke/passkey. Registrar causa/RPO/tiempo.
+[Restauracion](PRODUCTION_RUNBOOK.md#restauracion-de-datos) y
+[recreacion](../../ops/oci/DESTROY_RECREATE.md). Objetivos: RPO 24 h/RTO 60 min;
+RTO pendiente de ensayo productivo.
 
 ## Fase 9 - Operacion normal
 
