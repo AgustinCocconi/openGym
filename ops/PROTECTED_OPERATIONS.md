@@ -74,7 +74,7 @@ registro abierto, health fallido o evento sin confirmar dejan estado pendiente.
 
 ## Copia cifrada y simulacro aislado
 
-Destino elegido: esta PC; resguardo independiente de identidad pendiente.
+Destino elegido: esta PC; propietario difiere resguardo independiente el 4/10.
 Instalar age en el equipo que cifra y
 python3 para verify-backup-restore. Generar identidad privada en el equipo del
 propietario, fuera de Git y OCI, con permisos privados y copia de recuperacion
@@ -107,7 +107,8 @@ del ZIP contrastados con la [release oficial](https://github.com/FiloSottile/age
 Registrar solo destino, permisos y resultado. custody-status.json distingue
 fixture de backup productivo y no confirma resguardo independiente.
 
-Guardar una copia de identity.txt en el medio independiente elegido. Recuperarla
+Cuando el propietario retome el resguardo, copiar identity.txt al medio elegido.
+Recuperarla
 a una ruta privada nueva y verificar con esa copia el descifrado del fixture,
 su SHA-256 y contenido restaurado. Dos carpetas de esta PC no acreditan
 recuperacion ante perder el equipo.

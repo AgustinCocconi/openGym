@@ -7,9 +7,9 @@ las fases contienen controles y evidencia pertinente, sin bitacora de intentos.
 
 ## Checkpoint
 
-Corte: 2026-10-04 02:49 UTC / 3/10 23:49 AR; PC preparada, CI/GHCR `7e77b34` OK.
-Faltan resguardo independiente de identidad, gate remoto y permiso de deploy.
-Token API CF revocado/copia DPAPI retirada; costos hasta 2/10, sin nueva ventana.
+4/10 00:52 AR: deploy autorizado; preflight pendiente.
+Propietario difiere resguardo de identidad: backup/clave solo en esta PC por ahora.
+API OCI: E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 hasta 3/10 UTC OK.
 
 | Fase | Estado | Evidencia / proximo paso |
 | --- | --- | --- |
@@ -19,7 +19,7 @@ Token API CF revocado/copia DPAPI retirada; costos hasta 2/10, sin nueva ventana
 | 3. IaC OCI | COMPLETA | Terraform 1.16.4 / OCI 7.32.0: formato, validacion y cuatro guardrails registrados; E2, swap y storage de 50+50 GB. |
 | 4. Imagenes | COMPLETA | `7e77b34`, workflow `37171003702`: gate/publicacion verdes y digests/plataformas/revision anonimos verificados. |
 | 5. VM y Cloudflare | COMPLETA | Tunnel Healthy/4, tres pruebas confirmadas, cierre sano y token API revocado. |
-| 6. Primer deploy | BLOQUEADO | PC/cifrado preparados; falta resguardo de identidad, gate remoto y permiso de deploy. |
+| 6. Primer deploy | EN CURSO | Deploy autorizado 4/10; resguardo diferido por propietario. Revalidar cuenta/host y bootstrap protegido. |
 | 7. Observacion | PENDIENTE | Ocho dias despues del deploy; memoria no determina reclamacion de E2. |
 | 8. Recuperacion | PENDIENTE | Destino externo y simulacros exigidos antes del deploy; operacion periodica despues. |
 | 9. Operacion | PENDIENTE | Despues de aceptacion productiva. |
@@ -216,7 +216,8 @@ Smoke/gate Linux y recuperacion corresponden a fase 6.
 Gate y permiso de deploy separados. Codigo/CI/GHCR en fase 4.
 [Preparacion local](../../ops/PROTECTED_OPERATIONS.md): Linux/Node 22 AMD64,
 1539 frontend/59 MCP/190 API; diez probes/rollback/restore ficticios OK.
-PC elegida: age/ACL y cifrado/restore OK; resguardo de identidad pendiente.
+PC: age/ACL/cifrado/restore OK; resguardo diferido por propietario el 4/10.
+Perder esta PC puede impedir recuperar backups.
 Seguir [instalacion](PRODUCTION_RUNBOOK.md#instalacion-inicial):
 
 - [ ] Crear `.env` privado: `RP_ID=gym.mientrenadorpersonal.com.ar`,

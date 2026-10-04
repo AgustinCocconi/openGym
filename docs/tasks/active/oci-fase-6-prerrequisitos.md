@@ -5,8 +5,8 @@
 Continuacion autorizada tras fases 2/5. Preparar smoke Access/WAF, gate y
 recuperacion aislada. Checkpoint OCI es el estado canonico; procedimiento en
 ops/PROTECTED_OPERATIONS.md. Commits/push/GHCR autorizados el 3/10 al retomar:
-tres unidades operativas y nueve commits previos. No deploy, ventana OCI,
-cambio CF ni dato real autorizados.
+tres unidades operativas y nueve commits previos. Primer deploy y acceso
+temporal necesario autorizados 4/10. Sin cambios CF ni infraestructura nueva.
 
 ## Estado y alcance
 
@@ -14,7 +14,7 @@ Base publicada: 7e77b34d8e76c1a3da0f3fa8f6d2b0e914264494. Nueve commits
 previos de recency/OCI/agentes/auditoria y tres unidades operativas publicados.
 Cambios locales previos integrados por rutas; sin nuevos cambios de app.
 Candidato actual: HEAD de personal; derivar SHA de Git y verificar reporte CI
-antes del deploy. Resguardo independiente de identidad pendiente.
+antes del deploy. Resguardo independiente diferido expresamente por propietario.
 Upstream main e88062e confirmado remoto, sin ops propios equivalentes.
 
 Preparados smoke loopback/publico con cookie en archivo privado, constancia
@@ -44,13 +44,10 @@ No ejecutar helpers de ventanas CF anteriores: host cerrado/token API revocado.
 Revalidacion: Node 22.23.3 AMD64/10 probes y Windows/Node 24/6 tests contexto
 OK. Desktop Compose 2.20.2 rechazado; no acredita ni invalida el 5.6.0 del host.
 
-## Integracion y publicacion verificadas
+## Gate del candidato
 
-c58b4a0: loopback/logs; c9fdece: sondas/recuperacion; 7e77b34: cierre OCI/handoff.
-Workflow 37171003702 verde: seis jobs de gate y API default/web AMD64+ARM64.
-GHCR anonimo: checksums, labels de revision y alias coinciden con el candidato.
-Digests en fase 4 del plan; reporte TEMP conserva SHA/run/plataformas/resultados.
-Sin Terraform ni deploy; arbol limpio comprobado antes del handoff documental.
+07e9ad7/37172532898: CI/remoto revalidados. Candidato: HEAD al integrar.
+Reporte TEMP: SHA/run/digests/revision/plataformas.
 
 ## Custodia PC y siguiente paso
 
@@ -61,9 +58,12 @@ bajo %LOCALAPPDATA%, fuera de Git/OCI. Identidad generada sin exponerla.
 Cifrado, copia/checksum, descifrado y restore nativos del fixture OK; evidencia
 en openGym-backups/custody-status.json. Sin backup productivo. Helper TEMP
 opengym-phase6-prepare-pc-custody.ps1 conserva existentes; no volver a ejecutarlo.
-Falta resguardo independiente de identidad y probar recuperacion desde el.
+Propietario decide 4/10 conservar clave/backup solo en esta PC por ahora.
+Se difiere resguardo/prueba independiente; no se marcan como realizados.
 Continuar integracion documental autorizada; revalidar gate del SHA resultante.
-Despues acreditar SHA limpio igual a origin/personal y CI/imagenes verdes,
-revalidar costos/cuenta/host y solicitar permiso separado de primer deploy.
-Fase 6 bloqueada por resguardo y deploy. CI/imagenes: consultar reporte por SHA;
-check:context/diff finales OK.
+API 4/10: E2 RUNNING, home/MFA, 50+50 GB/10 VPU ATTACHED, cuota E2 1/1/0,
+presupuesto/alarmas/email activos, USD 0 hasta 3/10 UTC. Informe TEMP:
+opengym-phase6-predeploy-readonly-latest.json. Sin acceso SSH aun.
+Confirmacion de modalidad pendiente; despues preflight host y bootstrap
+protegido. Permiso de deploy recibido; passkey/aceptacion requieren propietario.
+CI/imagenes: reporte por SHA; check:context/diff a verificar al integrar.
