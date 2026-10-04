@@ -90,6 +90,7 @@ if [ -e "$1" ]; then
   while [ "$archive_count" -gt "$retention" ]; do
     expired=$1
     shift
+    [ "$expired" != "$archive" ] || continue
     archive_count=$((archive_count - 1))
     case "$expired" in
       "$backup_dir"/opengym-data-*.tar.gz)

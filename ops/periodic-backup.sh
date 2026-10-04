@@ -75,6 +75,7 @@ if [ -e "$1" ]; then
   while [ "$count" -gt "$retention" ]; do
     expired=$1
     shift
+    [ "$expired" != "$encrypted_dir/$(basename -- "$archive").age" ] || continue
     count=$((count - 1))
     [ -f "$expired" ] && [ ! -L "$expired" ] || production_die 'cifrado vencido no regular'
     rm -f -- "$expired" "$expired.sha256" "$expired.meta"

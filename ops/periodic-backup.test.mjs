@@ -210,6 +210,25 @@ test('an operations-only commit keeps the accepted image SHA and records both re
     new RegExp('operations_commit=' + head));
 });
 
+test('rotation always retains the new archive even when existing names sort after it', async () => {
+  await reset();
+  for (let day = 1; day <= 3; day++) {
+    const base = 'opengym-data-2099010' + day + 'T080000Z-' + commit.slice(0, 12) + '.tar.gz';
+    for (const suffix of ['', '.sha256', '.meta']) {
+      await writeFile(join(root, 'backups', base + suffix), 'older fixture with future name');
+      await writeFile(join(root, 'encrypted', base + '.age' + suffix), 'older fixture with future name');
+    }
+  }
+  const result = await backup({});
+  assert.equal(result.code, 0, result.stdout + result.stderr);
+  const archive = result.stdout.match(/BACKUP_ARCHIVE=(.+)/)[1];
+  assert.ok((await readFile(archive)).length > 0);
+  const encrypted = result.stdout.match(/ENCRYPTED_ARCHIVE=(.+)/)[1];
+  assert.ok((await readFile(encrypted)).length > 0);
+  assert.equal((await readdir(join(root, 'backups'))).filter(x => x.endsWith('.tar.gz')).length, 2);
+  assert.equal((await readdir(join(root, 'encrypted'))).filter(x => x.endsWith('.age')).length, 2);
+});
+
 test('an application change cannot borrow an earlier accepted deployment', async () => {
   await reset();
   await writeFile(join(repo, 'application-change.js'), 'unaccepted application fixture change');
