@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
+import TrainingPanel from '../components/adaptive-training/TrainingPanel.jsx'
 import { workoutControls } from '../lib/workout-controls.js'
 import { useUI } from '../store/useUI.js'
 import { exOr } from '../lib/exercises.js'
@@ -1011,6 +1012,7 @@ function ActiveWorkout() {
       </div>
     </>) : <div className="empty"><div className="ico"><Icon name="shuffle" /></div>{t('Freestyle workout — add your first exercise.')}</div>}
 
+    <TrainingPanel />
     <div style={{ height: 12 }} />
     {!listMode && <div className="row">
       <Button icon="chevronLeft" disabled={unitIdx <= 0} onClick={() => navigateUnit(-1)}>{t('Prev')}</Button>
@@ -1019,10 +1021,7 @@ function ActiveWorkout() {
     {!listMode && <div style={{ height: 10 }} />}
     {wc.exerciseButtons && listMode && A.entries.length > 0 && <div className="muted small" style={{ marginBottom: 6 }}>{t('Move, swap and remove below act on the exercise marked {0}.', t('Current'))}</div>}
     <Button onClick={() => exercisePicker((ex, quick) => {
-      // A freehand add inherits the current unit's routine (its `rid`) so it lands in that
-      // routine's block in a combined session and gets a real prescription; a routine-less
-      // freestyle session has no `rid` to inherit. `noProg` is never set independently here —
-      // the only mid-session route to an excluded entry is "Add routine".
+      // Manual additions inherit this unit's routine and prescription; only Add routine sets noProg.
       const curRid = A.entries[A.cur]?.rid
       const routine = curRid ? S.routines.find(r => r.id === curRid) : null
       const freestyle = !routine

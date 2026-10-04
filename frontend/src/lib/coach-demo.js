@@ -17,11 +17,13 @@ import { modeOf, workoutVolume } from './history.js'
 import { isWarmupRow } from './workout-model.js'
 import { best1RM } from './onerm.js'
 import { fmtNum } from './format.js'
+import { CONSENT_VERSION } from '../../../api/coach/core/categories.js'
 import { planHash } from './coach.js'
 import { t } from './i18n.js'
 
 const DELAY = 2200      // long enough to see "the Coach is thinking…", short enough to forgive
 
+let last = null
 let pending = null
 let job = null
 let timer = null
@@ -156,15 +158,20 @@ export function demoCohort(S) {
 
 /* ---------------- the API surface the demo stands in for ---------------- */
 
-export const demoStatus = () => ({ job, pending, cap: { used: 0, limit: 0 } })
+export const demoStatus = () => ({ job, pending, last, cap: { used: 0, limit: 0 } })
 
 function start(kind, make) {
   if (job) throw Object.assign(new Error(t('The Coach is already thinking about your training.')), { status: 409 })
   job = { id: 'demo-' + kind, kind, state: 'running', startedAt: Date.now() }
   clearTimeout(timer)
-  timer = setTimeout(() => { pending = make(); job = null }, DELAY)
+  timer = setTimeout(() => {
+    if (kind === 'question') last = { id: 'demo-question-' + Date.now(), kind, reading: t('Demo consultation: questions never change your exercises. Configure the AI to receive answers about your training.') }
+    else pending = make()
+    job = null
+  }, DELAY)
   return { job }
 }
+export const demoQuestion = () => start('question', () => null)
 export const demoReview = S => start('review', () => buildReview(S))
 export const demoPlan = (S, intake) => start('create', () => buildPlan(S, intake))
 export const demoRefine = S => start('create', () => {
@@ -178,5 +185,5 @@ export const demoDebrief = (S, workoutId) => {
 export const demoResolve = () => { pending = null; return { ok: true } }
 export const demoDisclosure = () => ({
   provider: 'demo', providerLabel: t('the configured AI provider'),
-  categories: ['plan', 'training', 'bodyweight', 'profile', 'prefs'], version: 1
+  categories: ['plan', 'training', 'bodyweight', 'profile', 'prefs'], version: CONSENT_VERSION
 })

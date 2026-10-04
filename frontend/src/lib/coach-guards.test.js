@@ -71,3 +71,33 @@ describe('resulting Coach rep ranges', () => {
     expect(s.routines[0].ex[0]).toMatchObject({ repsMin: 12, repsMax: 15 })
   })
 })
+
+describe('request candidate guards at confirmation', () => {
+  it('rejects an unoffered replacement before taking a snapshot', () => {
+    const s = state(), before = structuredClone(s)
+    const p = proposal([change({ type: 'swap-exercise', after: { id: '0023', sets: 3 } })], { candidateIds: ['0001'] })
+    expect(() => applyChangeSet(s, p, ['c1'])).toThrow()
+    expect(s).toEqual(before)
+  })
+  it('rejects an unoffered exercise in a created plan before import', () => {
+    const s = state(), before = structuredClone(s)
+    const p = { id: 'p', kind: 'create', candidateIds: ['0001'], bundle: { routines: [{ id: 'new', ex: [{ id: '0023', sets: 3 }] }] } }
+    expect(() => applyCreatedPlan(s, p, { schedule: true })).toThrow()
+    expect(s).toEqual(before)
+  })
+})
+
+it('rejects a plan proposal when available equipment changed since the request',()=>{
+  const s=state();s.coach.profile={equipment:['body weight']};const p=proposal([change()],{equipmentContext:'["dumbbell"]'});const before=structuredClone(s);
+  expect(()=>applyChangeSet(s,p,['c1'])).toThrow();expect(s).toEqual(before);
+})
+
+it('allows confirmed removal with reported shoulder pain while rejecting dose changes without changing the draft',()=>{
+  const s=state();s.coach.chat=[{role:'user',at:100,text:'Tengo dolor de hombro'}];
+  const dose=proposal([change()],{candidateIds:[]});const before=structuredClone(s);
+  expect(()=>applyChangeSet(s,dose,['c1'])).toThrow();expect(s).toEqual(before);
+  const removal=proposal([change({type:'remove-exercise',after:null})],{candidateIds:[]});
+  expect(applyChangeSet(s,removal,['c1']).applied).toBe(1);
+  expect(s.routines[0].ex.some(ex=>ex.id==='0001')).toBe(false);expect(s.workouts).toEqual(before.workouts);
+  revertLast(s);expect(s.routines).toEqual(before.routines);
+})

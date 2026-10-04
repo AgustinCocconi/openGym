@@ -47,6 +47,8 @@ export const coachStatus = async () => DEMO ? (await demo()).demoStatus() : LOCA
 export const requestReview = async note => DEMO ? (await demo()).demoReview(S()) : LOCAL() ? (await local()).localReview(S(), note) : api('/api/coach/review', { method: 'POST', body: JSON.stringify({ note: note || '' }) })
 export const requestPlan = async intake => DEMO ? (await demo()).demoPlan(S(), intake) : LOCAL() ? (await local()).localPlan(S(), intake) : api('/api/coach/plan', { method: 'POST', body: JSON.stringify({ intake }) })
 export const refinePlan = async text => DEMO ? (await demo()).demoRefine(S()) : LOCAL() ? (await local()).localRefine(S(), text) : api('/api/coach/plan', { method: 'POST', body: JSON.stringify({ refine: text }) })
+export const requestQuestion = async (note, activeWorkoutSnapshot) => DEMO ? (await demo()).demoQuestion() : LOCAL() ? (await local()).localQuestion(S(),note,activeWorkoutSnapshot) : api('/api/coach/question',{method:'POST',body:JSON.stringify({note,activeWorkoutSnapshot})})
+export const requestActiveChange = async (note, activeWorkoutSnapshot) => LOCAL() ? (await local()).localActiveChange(S(),note,activeWorkoutSnapshot) : api('/api/coach/active',{method:'POST',body:JSON.stringify({note,activeWorkoutSnapshot})})
 export const requestDebrief = async workoutId => DEMO ? (await demo()).demoDebrief(S(), workoutId) : LOCAL() ? (await local()).localDebrief(S(), workoutId) : api('/api/coach/debrief', { method: 'POST', body: JSON.stringify({ workoutId: workoutId || null }) })
 // The room: anonymous medians across the profiles on this instance that opted in. Only a
 // server has a room; a phone with its own key and the demo both answer locally.
@@ -81,18 +83,19 @@ export function useCoachStatus(active = true) {
   const [state, setState] = useState({ job: null, pending: null, cap: null, loading: true })
   const timer = useRef(null)
   const loop = useRef(null)   // the running poll loop's `tick`, so a manual refresh can re-pace it
+  const seq = useRef(0)       // upstream 43a2054: discard older status requests
 
   const refresh = useCallback(async () => {
+    const mine = ++seq.current
     try {
       const s = await coachStatus()
+      if (mine !== seq.current) return undefined
       setState({ ...s, loading: false })
-      // A refresh that finds a job in flight — the one the caller just started — must not leave
-      // the loop asleep on its idle cadence: without this the card shows up to a minute after
-      // the job ended, sitting on "thinking…" the whole time.
-      if (s?.job && loop.current) { clearTimeout(timer.current); timer.current = setTimeout(loop.current, POLL_MS) }
+      // Re-pace accepted answers; an older poll cannot cancel this newer timer.
+      if (loop.current) { clearTimeout(timer.current); timer.current = setTimeout(loop.current, s?.job ? POLL_MS : IDLE_MS) }
       return s
     } catch {
-      setState(s => ({ ...s, loading: false }))
+      if (mine === seq.current) setState(s => ({ ...s, loading: false }))
       return null
     }
   }, [])
@@ -102,13 +105,13 @@ export function useCoachStatus(active = true) {
     let stopped = false
     const tick = async () => {
       const s = await refresh()
-      if (stopped) return
+      if (stopped || s === undefined) return
       clearTimeout(timer.current)
       timer.current = setTimeout(tick, s?.job ? POLL_MS : IDLE_MS)
     }
     loop.current = tick
     tick()
-    return () => { stopped = true; loop.current = null; clearTimeout(timer.current) }
+    return () => { seq.current++; stopped = true; loop.current = null; clearTimeout(timer.current) }
   }, [active, refresh])
 
   return { ...state, refresh }

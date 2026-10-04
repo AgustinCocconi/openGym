@@ -35,7 +35,7 @@ const state = () => ({
   week: { 1: 'r1' }, dayPlan: {}, customEx: [], bodyweight: [], workouts: [
     { d: '2026-08-20', start: 1, end: 3600001, entries: [{ id: EX, target: { sets: 3, reps: 8 }, sets: [{ done: true, w: 40, r: 8 }, { done: true, w: 40, r: 8 }, { done: true, w: 40, r: 8 }] }] }
   ],
-  coach: { consent: { agreedAt: '2026-08-01T00:00:00Z', version: 1 }, profile: null, cadence: 'off', lastReview: null, log: [], snapshots: [] }
+  coach: { consent: { agreedAt: '2026-08-01T00:00:00Z', version: 2 }, profile: null, cadence: 'off', lastReview: null, log: [], snapshots: [] }
 })
 const chat = content => ({ status: 200, body: { choices: [{ finish_reason: 'stop', message: { content } }] } })
 const review = { coach_contract: 1, summary: 'One tweak.', evidence: { from: '2026-08-01', to: '2026-08-20', sessions: 1 },
@@ -208,4 +208,29 @@ describe('timeouts on the phone', () => {
     expect(m).toBeTruthy()
     expect(+m[1] * 60000).toBeGreaterThan(25 * 60000)
   })
+})
+
+describe('read-only and live Coach on a phone',()=>{
+  beforeEach(async()=>{_resetCoachDevice();local._resetLocal();device.data={mode:'byok',provider:'openai',model:'gpt-t'};wire.calls=[];secret.key='sk-test-1'})
+  it('answers a question through the real HTTP adapter without clearing pending or changing the workout',async()=>{
+    const S=state(),before=structuredClone(S),pending={id:'plan',kind:'create',bundle:{}};
+    await saveCoachDevice({pending});wire.answer=chat(JSON.stringify({answer:'Respuesta sin cambios.'}));
+    await local.localQuestion(S,'Como se hace?',{id:'live',cur:0,entries:[{id:'0652',target:{sets:2,reps:4},sets:[{r:3,done:true},{r:4,done:false}]}]});
+    const result=await settle();expect(result.pending).toEqual(pending);expect(result.last.reading).toBe('Respuesta sin cambios.');expect(S).toEqual(before);
+    expect(JSON.stringify(device.data)).not.toContain('activeWorkoutSnapshot');expect(wire.calls[0].body.messages[1].content).toContain('activeWorkoutSnapshot');
+  })
+  it('validates a live proposal and refuses to acknowledge a different pending ID',async()=>{
+    const snapshot={id:'live',cur:0,entries:[{id:'0652',target:{sets:2,reps:4},sets:[{r:3,done:true},{r:4,done:false}]}]};
+    wire.answer=()=>{const p=JSON.parse(wire.calls.at(-1).body.messages[1].content.match(/```json\s*([\s\S]*?)```/)[1]);return chat(JSON.stringify({protocolVersion:'active-workout/v1',scope:'active_workout',baseFingerprint:p.activeFingerprint,reasonCode:'user_request',summary:'Saltear lo pendiente',operations:[{type:'skip_pending_exercise',index:0}]}))};
+    await local.localActiveChange(state(),'Saltear',snapshot);const result=await settle();expect(result.pending.kind).toBe('active');expect(result.pending.evidence.loggedSets).toBe(1);
+    expect(await local.localResolve({proposalId:'other'})).toEqual({ok:false,stale:true});expect((await local.localStatus()).pending.id).toBe(result.pending.id);
+  })
+  it('rejects oversized context before spending a run',async()=>{
+    await expect(local.localActiveChange(state(),'Cambiar',{id:'x',entries:Array(41).fill({})})).rejects.toThrow();expect((await local.localStatus()).cap.used).toBe(0);
+  })
+})
+
+it('old consent does not authorize the expanded live context on a phone',async()=>{
+  const S=state();S.coach.consent.version=1;
+  await expect(local.localQuestion(S,'Pregunta')).rejects.toMatchObject({code:'consent'});
 })

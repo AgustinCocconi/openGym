@@ -1,9 +1,4 @@
-// The conversation with the Coach.
-//
-// Everything the Coach does happens here: your answers as the opening message, a typing
-// bubble while a job runs (with how long it usually takes), the plan or the suggestions as a
-// card you page through, a composer to say what to change, and one button that imports the
-// result. History stays in the thread — come back any time, ask for a review, refine again.
+// Questions and confirmed changes share this Coach thread.
 //
 // The thread is `S.coach.chat` (small, synced) plus whatever is live right now from the
 // status poll: a running job or a pending proposal. Nothing about the proposal is copied into
@@ -33,6 +28,8 @@ import Icon from '../components/Icon.jsx'
 import LineChart from '../components/LineChart.jsx'
 import { Button, Check, Switch, Section, Row, SelectRow } from '../components/ui.jsx'
 import '../coach.css'
+import { ConversationMode, sendCoachMessage, QuestionReplies } from '../components/adaptive-training/ConversationMode.jsx'
+import { ActiveProposalCard } from '../components/adaptive-training/TrainingPanel.jsx'
 
 export default function CoachChat() {
   const nav = useNavigate()
@@ -46,6 +43,7 @@ export default function CoachChat() {
   const openSheet = useUI(s => s.openSheet)
   const { job, pending, cap, loading, lastError, last, refresh } = useCoachStatus(true)
   const [text, setText] = useState('')
+  const [mode, setMode] = useState('question')
   const [busy, setBusy] = useState(false)
   const endRef = useRef(null)
   const prevJob = useRef(null)
@@ -68,7 +66,7 @@ export default function CoachChat() {
     if (loading) return
     const was = prevJob.current
     prevJob.current = job
-    if (!was || job) return
+    if (!was || job || ['question','active'].includes(was.kind)) return
     const ms = was.startedAt ? Date.now() - was.startedAt : 0
     update(s => {
       recordTiming(s, ms)
@@ -94,11 +92,7 @@ export default function CoachChat() {
     if (!msg || busy) return
     setBusy(true)
     try {
-      // A message about a proposed plan refines it. With no plan at all — the first attempt
-      // failed, or nothing was ever built — the message asks for one; a review would only
-      // answer that there is no workout to look at, which is how people got stuck.
-      if (pending?.kind === 'create' || !(S.routines || []).length) await refinePlan(msg)
-      else await requestReview(msg)
+      await sendCoachMessage(S, pending, msg, mode)
       update(s => appendChat(s, { role: 'user', kind: 'text', text: msg }))
       setText('')
       refresh()
@@ -183,6 +177,7 @@ export default function CoachChat() {
       <button className="iconbtn" onClick={menu} aria-label={t('More')}><Icon name="list" /></button>
     </div>
 
+    <QuestionReplies last={last} job={job} S={S} update={update} />
     <div className="msgs">
       <Bubble role="coach">{t('Hi — I’m your Coach. I build your plan from your answers and adjust it from what you actually log. Nothing changes until you say so.')}</Bubble>
 
@@ -190,7 +185,8 @@ export default function CoachChat() {
 
       {job && <Typing S={S} kind={job.kind} coachLocal={coachLocal} config={config} />}
 
-      {pending && !job && (pending.kind === 'create'
+      {pending?.kind === 'active' && !job && <ActiveProposalCard p={pending} S={S} update={update} refresh={refresh} />}
+      {pending && pending.kind !== 'active' && !job && (pending.kind === 'create'
         ? <PlanCard p={pending} S={S} update={update} toast={toast} nav={nav} refresh={refresh} />
         : pending.kind === 'debrief'
           ? <DebriefCard p={pending} S={S} update={update} toast={toast} refresh={refresh} />
@@ -200,6 +196,7 @@ export default function CoachChat() {
     </div>
 
     <div className="composer">
+      <ConversationMode mode={mode} onChange={setMode} pending={pending} />
       {idle && !busy && <div className="chips-row">
         <button className="qchip" onClick={askReview}><Icon name="sparkles" />{t('Review my training')}</button>
         {!!lastWorkout && <button className="qchip" onClick={askDebrief}><Icon name="checkCircle" />{t('Last workout')}</button>}
@@ -207,7 +204,7 @@ export default function CoachChat() {
         {community && <button className="qchip" onClick={showCohort}><Icon name="person" />{t('Compare')}</button>}
       </div>}
       <div className="composer-in">
-        <textarea rows={1} value={text} maxLength={1000} placeholder={placeholder} disabled={!!job}
+        <textarea rows={1} value={text} maxLength={1000} placeholder={mode === 'question' ? t('Ask about an exercise or your technique') : placeholder} disabled={!!job}
           onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
         <button className="send" onClick={send} disabled={!text.trim() || busy || !!job} aria-label={t('Send')}><Icon name="arrowUp" /></button>

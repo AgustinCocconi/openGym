@@ -10,6 +10,7 @@ import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
 import { DEMO } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
 import { coachAvailable } from '../lib/coach.js'
+import SkillsPanel from '../components/adaptive-training/SkillsPanel.jsx'
 
 export default function Plan() {
   const nav = useNavigate()
@@ -19,7 +20,7 @@ export default function Plan() {
   const coachMode = useStore(s => s.coachLocal?.mode)
   const user = useStore(s => s.user)
 
-  /* The Coach's only entry point in the app. Its screens have existed since the UI landed and
+  /* The entry point for conversation and confirmed changes to saved routines. Its screens have existed since the UI landed and
      nothing linked to them, so the feature was reachable only by typing the URL — enabled,
      configured, and invisible. The same predicate every other Coach surface uses gates it, so
      an instance without the feature sees exactly the Plan screen it saw before. */
@@ -46,11 +47,12 @@ export default function Plan() {
       <span className="coach-cta-av"><Icon name="sparkles" /></span>
       <span className="coach-cta-t">
         <b>{t('Coach')}</b>
-        <span>{t('Plan design and reviews, from your own training')}</span>
+        <span>{t('Ask questions or request confirmed changes to your saved routines')}</span>
       </span>
       <Icon name="chevronRight" className="coach-cta-chev" />
     </button>}
 
+    <SkillsPanel />
     <div className="cols"><div>
       <h4 className="sec">{t('Week schedule')}</h4>
       <div className="list" style={{ display: 'flex', flexDirection: 'column' }}>

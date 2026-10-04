@@ -102,6 +102,21 @@ Medir por separado:
 Un fallback debe ser visible en reportes de cobertura aunque la aplicacion no se
 rompa. La meta para los recorridos criticos es cero texto ingles visible.
 
+## Cobertura implementada
+
+es-AR es seleccionable y reutiliza es para UI, nombres e instrucciones; fechas
+usan su locale regional. El overlay propio revisa 18 IDs de calistenia y mantiene
+los aliases ingleses. No se importa ni duplica el catalogo anterior. El generador
+Coach incluye instrucciones castellanas/inglesas solo de esos IDs; contexto de
+pregunta selecciona hasta ocho ejercicios y marca la fuente documental.
+
+Los tests comprueban traducciones de los controles nuevos y paridad de claves
+(14 locales, 1.361 claves). Otros idiomas tienen fallback ingles explicito para
+estos controles. Fuera de la seleccion curada hay nombres/instrucciones sin
+traduccion; el informe general de strings conserva faltantes previos. Calidad
+y castellano de un modelo real, todos los ejercicios y navegador siguen sin
+validacion; no se presenta esta cobertura como castellano integral.
+
 ## Procedencia y licencias
 
 - Conservar fuente, licencia y estado de revision de cada texto importado.

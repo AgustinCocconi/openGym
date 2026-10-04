@@ -4,13 +4,8 @@
 // local editing — snapshot, mutate the draft, log — which is what makes it work offline, sync
 // like every other change, and stay reversible without the server knowing anything about it.
 //
-// Every function here is pure over a draft state `s` (call them inside store.update), so the
-// interesting parts are testable without a browser, a server or an AI account. That matters
-// more here than elsewhere in the app: this is the code that edits a plan on the strength of
-// something a language model said, and "it looked right on my phone" is not a standard.
+// Functions edit a draft inside store.update; deterministic guards are tested without a model.
 //
-// The screens that call it arrive in PR 4. Nothing in this file needs one to be tested, which
-// is the point of it being separate from them.
 
 import { EXIDX } from './exercises.js'
 import { modeOf, isBw, isPerSide, cleanupSg } from './history.js'
@@ -18,11 +13,15 @@ import { uid, todayISO, DAYN } from './format.js'
 import { mergePlan } from './plan-share.js'
 import { deleteRoutine } from './routines.js'
 import { reviewResultErrors } from '../../../api/coach/core/review-result.js'
+import { proposalCandidateErrors, planJointSignalErrors } from '../../../api/coach/core/candidates.js'
+import { equipmentContext } from '../../../api/coach/core/library.js'
+import { jointSignalsForState } from '../../../api/coach/core/joint-signals.js'
 import { POLICIES } from './progression.js'
 import { t } from './i18n.js'
 
 // Bumping this re-prompts everyone: it means what we share, or who we share it with, changed.
-export const CONSENT_VERSION = 1
+export { CONSENT_VERSION } from '../../../api/coach/core/categories.js'
+import { CONSENT_VERSION } from '../../../api/coach/core/categories.js'
 
 // Bounds. The whole state has to stay inside the server's 5 MB body limit, and a Coach log
 // that grows forever is exactly the kind of thing that eats it invisibly. Worst case here is
@@ -65,9 +64,9 @@ export const coachAvailable = (config, user, { demo, mobile, coachMode } = {}) =
 // builder uses (api/coach/core/categories.js), so the screen cannot promise less than leaves.
 export const CATEGORY_TEXT = {
   plan: ['Your plan', 'Routines, exercises, sets and reps, your weekly schedule and progression settings.'],
-  training: ['Your logged training', 'Sets you logged in the review window — weights, reps, times, effort ratings and how long sessions took.'],
+  training: ['Your logged training', 'Logged sets and skill evidence. When you ask during a workout, the current exercises, targets and logged sets are also shared.'],
   bodyweight: ['Body weight', 'Weigh-ins from the same window, and your goal weight if you set one.'],
-  profile: ['What you tell the Coach', 'Your intake answers, including any limitations or injuries you describe.'],
+  profile: ['What you tell the Coach', 'Your answers, reported joint symptoms, skill goals and prerequisites.'],
   prefs: ['A few preferences', 'Your unit, your language and which effort scale you log.']
 }
 export const hasConsent = S => !!S?.coach?.consent?.agreedAt && S.coach.consent.version === CONSENT_VERSION
@@ -193,6 +192,7 @@ export const applicable = proposal => (proposal?.changes || []).filter(c => c.st
 
 /** Client-side mirror of the server's gate — the plan must survive a bad day at either end. */
 export function validateProposal(p) {
+  if (proposalCandidateErrors(p, p?.candidateIds).length) throw new Error(t('That proposal can’t be read.'))
   if (!p || typeof p !== 'object') throw new Error(t('That proposal can’t be read.'))
   if (p.bundle) {
     if (!Array.isArray(p.bundle.routines) || !p.bundle.routines.length) throw new Error(t('That proposal can’t be read.'))
@@ -525,6 +525,9 @@ function findExIn(s, c) { return findEx(findRoutine(s, c.target.routineId), c.ta
 function need(x) { if (!x) throw new Error('missing target'); return x }
 
 function requireCurrentPlan(s, proposal) {
+  if (proposalCandidateErrors(proposal, proposal.candidateIds, s).length) throw new Error(t('That proposal can’t be read.'))
+  if (proposal.equipmentContext != null && proposal.equipmentContext !== equipmentContext(s.coach?.profile?.equipment)) throw new Error(t(STALE_PLAN_MESSAGE))
+  if (planJointSignalErrors(proposal, jointSignalsForState(s)).length) throw new Error(t('Reported joint pain blocks AI plan changes. Use consultation or adjust manually.'))
   if (proposal.planHash && proposal.planHash !== planHash(s)) {
     throw new Error(t(STALE_PLAN_MESSAGE))
   }

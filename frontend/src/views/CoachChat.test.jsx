@@ -10,7 +10,7 @@ import { planHash } from '../lib/coach.js'
 // The chat is where a plan is imported. These pin that the Import button applies the pending
 // plan through the store, writes the decision into the thread, and leaves today startable.
 const mocks = vi.hoisted(() => {
-  const state = { S: null, pending: null, job: null, community: false, nav: vi.fn(), toast: vi.fn(), openSheet: vi.fn(), refresh: vi.fn() }
+  const state = { S: null, pending: null, job: null, last:null, community: false, nav: vi.fn(), toast: vi.fn(), openSheet: vi.fn(), refresh: vi.fn() }
   state.storeSnapshot = () => ({
     S: state.S,
     user: { id: 'u1' },
@@ -35,9 +35,11 @@ vi.mock('../store/useUI.js', () => {
 })
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.nav }))
 vi.mock('../lib/coach-api.js', () => ({
-  useCoachStatus: () => ({ pending: mocks.pending, job: mocks.job, cap: null, loading: false, lastError: null, last: null, refresh: mocks.refresh }),
+  useCoachStatus: () => ({ pending: mocks.pending, job: mocks.job, cap: null, loading: false, lastError: null, last: mocks.last, refresh: mocks.refresh }),
   resolvePending: vi.fn(() => Promise.resolve({})),
   refinePlan: vi.fn(() => Promise.resolve({})),
+  requestQuestion: vi.fn(() => Promise.resolve({})),
+  requestActiveChange: vi.fn(() => Promise.resolve({})),
   requestReview: vi.fn(() => Promise.resolve({})),
   requestDebrief: vi.fn(() => Promise.resolve({})),
   cohortStats: vi.fn(() => Promise.resolve({ ok: false, enabled: true, sharing: false })),
@@ -69,7 +71,7 @@ const state = () => ({
   unit: 'kg', lang: 'en', customEx: [], workouts: [], bodyweight: [], exWeights: {},
   dayPlan: {}, routines: [], week: {},
   coach: {
-    consent: { agreedAt: '2026-07-01T00:00:00Z', version: 1 },
+    consent: { agreedAt: '2026-07-01T00:00:00Z', version: 2 },
     profile: { goal: 'muscle', experience: 'new', daysPerWeek: 3, sessionMin: 60, preferredDays: [1, 3, 5], equipment: [] },
     log: [], snapshots: [], chat: [{ id: 'c1', role: 'user', kind: 'intake', at: 1 }], timings: []
   },
@@ -102,7 +104,7 @@ async function click(el) {
   await act(async () => { el.dispatchEvent(new dom.Event('click', { bubbles: true })) })
 }
 
-beforeEach(() => { vi.clearAllMocks() })
+beforeEach(() => { vi.clearAllMocks(); mocks.last=null })
 afterEach(async () => {
   if (root) { await act(async () => { root.unmount() }); root = null }
   container = null; dom = null
@@ -229,4 +231,45 @@ describe('the Coach chat', () => {
     await mount(null, null, { community: true })
     expect(byText(/^Compare$/)).toBeTruthy()
   })
+})
+
+describe('conversation mode',()=>{
+  const props=element=>element[Object.keys(element).find(key=>key.startsWith('__reactProps$'))]
+  it('defaults to a question while a plan is pending and keeps session and routine unchanged',async()=>{
+    const {requestQuestion,requestReview,refinePlan}=await import('../lib/coach-api.js')
+    const S=state();S.active={id:'live',cur:0,entries:[{id:'0652',target:{sets:2,reps:4},sets:[{r:3,done:true},{r:4,done:false}]}]}
+    const pending={id:'p',kind:'create',bundle:bundle(everyDay)},before=structuredClone({active:S.active,routines:S.routines,week:S.week})
+    await mount(pending,null,{S})
+    expect(props(container.querySelector('.composer select')).value).toBe('question')
+    await act(async()=>props(container.querySelector('.composer textarea')).onChange({target:{value:'Tengo una duda de tecnica'}}))
+    await click(container.querySelector('.send'))
+    expect(requestQuestion).toHaveBeenCalledWith('Tengo una duda de tecnica',expect.objectContaining({id:'live'}))
+    expect(requestReview).not.toHaveBeenCalled();expect(refinePlan).not.toHaveBeenCalled()
+    expect({active:S.active,routines:S.routines,week:S.week}).toEqual(before)
+  })
+  it('uses plan modification only when that mode was explicitly selected',async()=>{
+    const {requestQuestion,refinePlan}=await import('../lib/coach-api.js')
+    await mount(null)
+    await act(async()=>props(container.querySelector('.composer select')).onChange({target:{value:'plan'}}))
+    await act(async()=>props(container.querySelector('.composer textarea')).onChange({target:{value:'Quiero otro plan'}}))
+    await click(container.querySelector('.send'))
+    expect(refinePlan).toHaveBeenCalledWith('Quiero otro plan');expect(requestQuestion).not.toHaveBeenCalled()
+  })
+})
+
+it('adding and removing before a workout changes the saved routine only after confirmation',async()=>{
+  const S=state();S.routines=[{id:'r',name:'Calistenia',ex:[{id:'0652',mode:'reps',sets:2,reps:4}]}];S.workouts=[{id:'history',entries:[{id:'0652',sets:[{done:true,r:3}]}]}];const recorded=structuredClone(S.workouts),original=structuredClone(S.routines)
+  const p={id:'edit',kind:'review',planHash:planHash(S),candidateIds:['0662'],summary:'Agregar flexiones y quitar dominadas',changes:[
+    {id:'add',type:'add-exercise',target:{routineId:'r'},after:{id:'0662',mode:'reps',sets:2,reps:5},why:'pedido'},
+    {id:'remove',type:'remove-exercise',target:{routineId:'r',exId:'0652'},after:null,why:'pedido'}]}
+  await mount(p,null,{S});expect(container.textContent).toContain('saved routines');expect(S.routines).toEqual(original)
+  await click(byText(/Apply 2 changes/));expect(S.routines[0].ex.map(e=>e.id)).toEqual(['0662']);expect(S.workouts).toEqual(recorded)
+})
+it('shows a fast question failure and records each answer once without needing a running poll',async()=>{
+  mocks.last={id:'failed-question',kind:'question',outcome:'failed'}
+  await mount(null);expect(mocks.S.coach.chat.at(-1)).toMatchObject({kind:'error',jobId:'failed-question'})
+  mocks.last={id:'answered-question',kind:'question',outcome:'nochange',reading:'Respuesta sin cambios.'}
+  await act(async()=>root.render(React.createElement(CoachChat)))
+  await act(async()=>root.render(React.createElement(CoachChat)))
+  expect(mocks.S.coach.chat.filter(message=>message.jobId==='answered-question')).toHaveLength(1)
 })

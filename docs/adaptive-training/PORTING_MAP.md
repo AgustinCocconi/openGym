@@ -20,9 +20,11 @@ logica pura, UI y adaptadores.
 
 ## Correcciones de producto sobre la base
 
-La base integrada sigue en `a68a88d`; no hubo merge ni fetch de upstream.
+La base integrada sigue en `a68a88d`. El 2026-10-04 se hizo fetch y se reviso
+`upstream/main` en `e88062ed034edb232836b98619ae65eb6fd5851d`, sin merge.
+No contiene estas operaciones activas ni objetivos de habilidad.
 La [auditoria por subsistemas](../agents/SUBSYSTEM_AUDIT.md) registra H01-H10
-y su verificacion local. Son correcciones del producto existente; no completan
+y su verificacion local. Son correcciones previas; no completan
 las fases adaptativas pendientes.
 
 Referencias locales reutilizadas: `585f372` para eliminar rutinas y sus punteros;
@@ -34,16 +36,11 @@ Los escenarios de la auditoria fijan las invariantes sin importar todo upstream.
 
 ## Gobernanza del fork
 
-La gobernanza del fork ya tiene [router comun](../../AGENTS.md),
-[indice por tarea](README.md), [protocolo de continuidad](../agents/WORKFLOW.md)
-y gate `npm run check:context`. Su baseline y auditoria viven en
-`scripts/context-budget.json` y [CONTEXT_AUDIT.md](../agents/CONTEXT_AUDIT.md).
-Esto no marca como portada ninguna capacidad de entrenamiento.
-
-Delta de instrucciones/tooling: cambios puntuales en `CLAUDE.md` y
-`CONTRIBUTING.md` para enlazar politica comun y corregir hechos obsoletos;
-scripts propios sin dependencias nuevas, dos comandos en `package.json` y gate
-reutilizable `context.yml` desde `test.yml`. No cambia contratos runtime ni proveedores.
+[Router](../../AGENTS.md), [indice](README.md) y
+[continuidad](../agents/WORKFLOW.md) rigen las tareas. check:context usa
+scripts/context-budget.json; [auditoria](../agents/CONTEXT_AUDIT.md) registra
+la base. Tooling propio sin dependencias nuevas, gate context.yml desde test.yml
+y enlaces puntuales en CLAUDE/CONTRIBUTING; no marca capacidades runtime portadas.
 
 ## Portar comportamiento y tests
 
@@ -57,18 +54,44 @@ reutilizable `context.yml` desde `test.yml`. No cambia contratos runtime ni prov
 | Candidatos | BE `src/application/planning-candidates.ts` | `frontend/src/lib/adaptive-training/candidates.js` | Reimplementar adaptador de catalogo y conservar orden |
 | Explicaciones | BE `src/application/planning-explanations.ts` | logica pura + locale de openGym | Conservar codigos; localizar mensajes |
 | Fechas locales | BE `src/application/planning-time.ts` | helper puro existente o nuevo | Reutilizar upstream si ya resuelve fechas locales |
-| Habilidades | BE `src/application/skill-progression.ts` | fase posterior de adaptive training | Portar grafo/evidencia, no almacenamiento |
+| Habilidades | BE `src/application/skill-progression.ts` | `api/coach/core/skills.js` | Parcial: grafo/evidencia sobre workouts canonicos |
 | Escenarios | BE `test/fixtures/planning-scenarios.ts` | tests junto a `adaptive-training` | Convertir datos, no copiar harness D1 |
 
 ## Estado del nucleo adaptativo
 
-Recencia/variedad: **parcial**, modulo puro `recency.js` y test al lado en
-`9324f29940b4efe864b36862cf6ad9a4a51b858b`. Pasan 12 tests de bandas, score,
-desempate por ID y preservacion de entrada, derivados de
-[exercise-recency-ranking.json](scenarios/exercise-recency-ranking.json).
-Usan IDs canonicos de openGym. No hay dependencia runtime de las aplicaciones
-anteriores. Pendientes: adaptador de historial/fechas locales, candidatos e
-integracion UI/Coach; no se marca portada la capacidad completa.
+Recencia/variedad parcial: recency.js y 12 tests de bandas, score y desempate
+por ID en 9324f29940b4efe864b36862cf6ad9a4a51b858b, derivados de
+[exercise-recency-ranking](scenarios/exercise-recency-ranking.json).
+IDs canonicos; faltan historial/fechas, ranking de candidatos e integracion
+UI/Coach. No se marca portada la capacidad completa.
+
+## Recorrido local de calistenia y sesion activa
+
+Core compartido bajo api/coach/core: question, active-workout, candidates,
+joint-signals y skills. Se reutilizan Coach, Zustand, historial y adaptadores;
+no hay dependencia runtime de los repositorios anteriores. Habilidades adapta
+solo grafo/evidencia de la fuente habilitada cuyo hash consta en LEGACY_SOURCES.
+Las demas politicas siguen pendientes.
+
+Consulta es el modo inicial. Siete operaciones activas cerradas incluyen alta,
+baja sin registro, sustitucion y continuacion parcial. Dosis usa solamente
+pending-volume-reduction/v1 para reducir series rectas totalmente pendientes.
+Snapshot acotado, allowlist/equipo/prerrequisitos, evidencia derivada,
+confirmacion, undo e idempotencia del acuse comparten contrato servidor/BYOK.
+El polling adapta la guarda de respuestas viejas de upstream 43a2054.
+
+## Verificacion del recorrido
+
+Windows, Node 24.15.0: frontend 1.559 tests, API 229, MCP 59, build, assets,
+locales, carga Node y check:context pasan. DOM simulado y proveedores fixture;
+sin modelo real, navegador, dispositivos, CI Node 22 ni produccion. El chequeo
+general de strings sigue mostrando 33 faltantes heredados fuera del flujo nuevo.
+
+Base a68a88d sin modificaciones: frontend 1.468, MCP 58 y build pasan. API
+falla en Windows por URL de fixture-cli C:\C:\...; personal corrige ese defecto.
+El gate de base queda parcial, sin presentar ese fallo como un test adaptativo.
+Main bundle crece aproximadamente 153 kB (29 kB gzip) frente al personal previo;
+se mantienen los avisos de Vite heredados y los presupuestos de contexto.
 
 ## Reimplementar sobre la arquitectura de openGym
 
@@ -109,47 +132,36 @@ contra upstream sin mejorar el objetivo principal.
 
 ### P0: fork limpio
 
-- Crear remotos y ramas segun `UPSTREAM_STRATEGY.md`.
-- Ejecutar tests/build de upstream y registrar commit base.
-- Copiar este paquete e integrar el router de agentes.
-- Activar AI Coach sin modificaciones y recorrerlo en castellano.
+Remotos, base y router creados. Gate limpio registrado arriba; API de base falla
+en Windows. No confundir la correccion de personal con un gate limpio completo.
 
 ### P1: nucleo adaptativo puro
 
-- Convertir escenarios de frecuencia, recencia, equipo y bloqueos a Vitest.
-- Crear adaptadores desde el estado de openGym hacia `adaptive-context/v1`.
-- No agregar todavia mutaciones por IA.
+Recencia pura parcial y filtros del primer flujo. Faltan frecuencia/exposiciones,
+adaptador de historial/fechas y adaptive-context/v1 completo.
 
 ### P2: entrenador de solo lectura
 
-- Preguntas durante la sesion.
-- Explicaciones basadas en catalogo y contexto.
-- Sugerencia de proxima sesion con evidencia de 7/14/28 dias.
-- Gate de paridad por proveedor/modelo.
+Consulta implementada con contexto activo/documental. Faltan gate real por
+modelo y sugerencia de proxima sesion basada en exposiciones 7/14/28.
 
 ### P3: cambio durante la sesion
 
-- Reemplazo de item pendiente.
-- Equipo, variedad, dificultad y sintomas.
-- Diff, confirmacion, fingerprint y rechazo de propuesta obsoleta.
-- Preservacion de series parciales y continuacion con otro ejercicio.
+Siete operaciones implementadas con diff, confirmacion y preservacion parcial.
+Sintomas sin clasificacion compatible solo permiten omision/baja.
 
 ### P4: planificacion avanzada
 
-- Ajustes por tiempo y recuperacion con politica nueva.
-- Habilidades y prerrequisitos.
-- Revisiones de bloques y objetivos.
+Objetivos/prerrequisitos manuales y reduccion de dosis sobre items pendientes simples ya existen.
+Faltan grafos curados, politica de recuperacion y revisiones de bloques.
 
 ### P5: castellano integral
 
-- Overlay de nombres por ID y aliases de busqueda.
-- Importar solo coincidencias curadas y con procedencia.
-- Completar recorridos y pruebas `es`/`es-AR`.
+Controles nuevos y 18 nombres curados. Faltan cobertura integral y gate real es/es-AR.
 
 ### P6: acceso externo
 
-- Evaluar MCP write/remoto despues de revisar lo que haya incorporado upstream.
-- Reutilizar ideas de scopes, idempotencia y payload compacto solo donde falten.
+Evaluar MCP write/remoto despues de validar estos flujos y revisar upstream.
 
 ## Definition of migrated
 

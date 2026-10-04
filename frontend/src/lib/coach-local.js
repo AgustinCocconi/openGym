@@ -95,8 +95,14 @@ export const localRefine = async (S, text) => {
   const pendingCreate = d.pending && d.pending.kind === 'create' ? d.pending : null
   return start(S, 'create', { refine: String(text || '').slice(0, 1000), previous: pendingCreate?.bundle || null, iteration: (pendingCreate?.iteration || 1) + 1 })
 }
+export const localQuestion = (S, note, activeWorkoutSnapshot) => start(S,'question',{note,activeWorkoutSnapshot})
+export const localActiveChange = (S, note, activeWorkoutSnapshot) => start(S,'active',{note,activeWorkoutSnapshot})
 export const localDebrief = (S, workoutId) => start(S, 'debrief', { workoutId: workoutId || null })
-export async function localResolve() { await saveCoachDevice({ pending: null }); return { ok: true } }
+export async function localResolve({ proposalId = null } = {}) {
+  const d = await loadCoachDevice()
+  if (proposalId && d.pending && d.pending.id !== proposalId) return { ok: false, stale: true }
+  await saveCoachDevice({ pending: null }); return { ok: true }
+}
 export async function localForget() { job = null; lastError = null; await saveCoachDevice({ pending: null, daily: null }); return { ok: true } }
 
 export async function localDisclosure() {
@@ -105,7 +111,7 @@ export async function localDisclosure() {
   const base = d.provider ? baseUrlFor(d.provider, cfgOf(d)) : ''
   return {
     provider: d.provider, providerLabel: meta.label || t('the configured AI provider'),
-    categories: payloadLib.DATA_CATEGORIES, version: 1,
+    categories: payloadLib.DATA_CATEGORIES, version: payloadLib.CONSENT_VERSION,
     // The honest difference from the self-hosted flow: it is the user's own account.
     payer: 'you', host: hostOf(base)
   }
@@ -124,13 +130,15 @@ const hostOf = url => { try { return new URL(url).host } catch { return url || '
 
 async function start(S, kind, opts) {
   if (job) throw Object.assign(new Error(t('The Coach is already thinking about your training.')), { status: 409, code: 'busy' })
-  if (!S?.coach?.consent?.agreedAt) throw Object.assign(new Error(t('The Coach needs your go-ahead first.')), { status: 403, code: 'consent' })
+  if ((!S?.coach?.consent?.agreedAt || S.coach.consent.version !== payloadLib.CONSENT_VERSION)) throw Object.assign(new Error(t('The Coach needs your go-ahead first.')), { status: 403, code: 'consent' })
   const d = await loadCoachDevice()
   const adapter = ADAPTERS[d.provider]
   if (d.mode !== 'byok' || !adapter) throw Object.assign(new Error(t('The Coach isn’t set up on this phone.')), { status: 503, code: 'off' })
   const cap = await capState()
   if (cap.used >= cap.limit) throw Object.assign(new Error(t('The Coach is resting — you have used today’s {0} runs on this phone.', cap.limit)), { status: 429, code: 'cap' })
 
+  if (opts.activeWorkoutSnapshot) opts = { ...opts, activeWorkoutSnapshot: payloadLib.activeSnapshotForRequest(opts.activeWorkoutSnapshot) }
+  if (kind === 'active' && !opts.activeWorkoutSnapshot) throw new Error('active snapshot required')
   await bumpDaily()
   job = { id: 'local-' + Date.now().toString(36), kind, state: 'running', startedAt: Date.now() }
   lastError = null
@@ -142,7 +150,7 @@ async function start(S, kind, opts) {
 async function run(S, kind, opts, d, adapter) {
   const key = await getApiKey()
   const payload = payloadLib.build(S, {
-    handle: await handle(), kind, intake: opts.intake, note: opts.note, refine: opts.refine, previous: opts.previous, workoutId: opts.workoutId
+    handle: await handle(), kind, intake: opts.intake, note: opts.note, refine: opts.refine, previous: opts.previous, workoutId: opts.workoutId, activeWorkoutSnapshot:opts.activeWorkoutSnapshot
   })
   const attempt = await runPipeline({
     adapter, cfg: cfgOf(d), kind, payload,
@@ -168,8 +176,9 @@ async function run(S, kind, opts, d, adapter) {
   const pending = {
     id: job.id, kind, createdAt: Date.now(), expiresAt: Date.now() + PENDING_DAYS * 86400000,
     planHash: planHash(S), iteration: opts.iteration || 1,
-    ...(kind === 'debrief' ? { workout: workoutMetaOf(S, opts.workoutId) } : {}),
-    ...attempt.result
+    ...(kind === 'debrief' ? { workout: workoutMetaOf(S, opts.workoutId) } : { candidateIds: payload.library.map(e => e.id), equipmentContext:payload.equipmentContext }),
+    ...attempt.result,
+    ...(kind==='active'?{jointSignals:payload.jointSignals}:{})
   }
   await saveCoachDevice({ pending })
   last = { id: job.id, kind, outcome: 'ready', errorClass: null, at: Date.now() }

@@ -8,6 +8,11 @@ entender pedidos en lenguaje natural, usar el historial y los objetivos, actuar
 con criterio parecido al de un personal trainer durante la rutina y explicar
 sus propuestas en castellano.
 
+Para el uso personal, las prioridades incluyen calistenia con
+progresion de habilidades y adaptacion durante la sesion de entrenamiento.
+Registrar repeticiones o segundos no acredita por si solo dominar una
+habilidad ni habilita una variante mas avanzada.
+
 La aplicacion no busca reemplazar a un profesional ni diagnosticar lesiones.
 Ante senales articulares o situaciones inciertas debe ser conservadora, dejar
 de proponer movimientos incompatibles y hacer visible el limite de su consejo.
@@ -96,6 +101,35 @@ La persona puede:
   contratos de aplicacion.
 - Ejecutar en castellano los recorridos de crear plan, iniciar rutina,
   consultar, cambiar ejercicio y cerrar sesion.
+
+## Adecuacion actual al objetivo personal
+
+Estado local del 2026-10-04: el primer recorrido ya permite conversar y adaptar
+calistenia con confirmacion. Consulta es el modo inicial; una respuesta
+informativa conserva ejercicios, series y propuestas pendientes. Antes de
+entrenar se usa el Coach de rutinas guardadas; durante, un snapshot efimero de
+la sesion permite altas, bajas, sustituciones, continuacion parcial, reduccion
+de dosis, omision y orden. No se modifica la rutina guardada desde ese panel.
+
+La baja activa solo elimina items sin registro ni grupo. En uno empezado se
+omite lo pendiente y se conservan las filas. Confirmacion valida candidatos,
+equipo, prerrequisitos y fingerprint; el undo deja de estar disponible ante
+nuevo registro o cambios materiales. Navegar entre ejercicios no lo invalida.
+
+Plan incluye objetivos manuales por ejercicio, prerrequisitos y pruebas sobre
+entrenamientos reales. Tres dominadas no aprueban una meta de cuatro; la tecnica
+y ausencia de dolor requieren confirmacion del atleta. La IA no desbloquea.
+Dolor reportado restringe propuestas posteriores; sin clasificacion compatible
+se permite quitar/omitir, sin recomendar otra variante como segura.
+
+Controles criticos en castellano, es-AR y 18 nombres/instrucciones curados por
+ID. La nueva divulgacion exige consentimiento Coach v2 para compartir contexto
+activo, sintomas y habilidades. No se traducen todos los ejercicios.
+
+Verificacion y divergencias en [PORTING_MAP](PORTING_MAP.md). Faltan gate con
+proveedores/modelos reales, navegador/dispositivos, catalogo completo y grafos
+curados de habilidades avanzadas. Exposiciones 7/14/28 y ranking integrado por
+patrones siguen pendientes; no se declara completo el entrenador adaptativo.
 
 ## Fuera del primer alcance
 
