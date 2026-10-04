@@ -21,7 +21,7 @@ logica pura, UI y adaptadores.
 ## Correcciones de producto sobre la base
 
 La base integrada sigue en `a68a88d`. El 2026-10-04 se hizo fetch y se reviso
-`upstream/main` en `e88062ed034edb232836b98619ae65eb6fd5851d`, sin merge.
+`upstream/main` en `1350409`, sin merge; sus cuatro commits nuevos son docs/web.
 No contiene estas operaciones activas ni objetivos de habilidad.
 La [auditoria por subsistemas](../agents/SUBSYSTEM_AUDIT.md) registra H01-H10
 y su verificacion local. Son correcciones previas; no completan
@@ -88,9 +88,9 @@ Windows/Node 24: check:context y seis tests OK.
 DOM simulado y proveedores fixture; faltan modelos reales, navegador/dispositivos,
 CI del nuevo codigo y deploy. Reporte general: 33 strings heredados sin traducir.
 
-Base a68a88d sin modificaciones: frontend 1.468, MCP 58 y build pasan. API
-falla en Windows por URL de fixture-cli C:\C:\...; personal corrige ese defecto.
-El gate de base queda parcial, sin presentar ese fallo como un test adaptativo.
+Base a68a88d intacta, Linux/Node 22.23.3: frontend 1.468, API 181, MCP 58,
+build/carga MCP OK (frontend ignore-scripts). Gate Linux completo; Windows
+falla por fixture-cli C:\C:\..., corregido en personal.
 Main bundle crece aproximadamente 153 kB (29 kB gzip) frente al personal previo;
 se mantienen los avisos de Vite heredados y los presupuestos de contexto.
 
@@ -134,7 +134,7 @@ contra upstream sin mejorar el objetivo principal.
 ### P0: fork limpio
 
 Remotos, base y router creados. Gate limpio registrado arriba; API de base falla
-en Windows. No confundir la correccion de personal con un gate limpio completo.
+en Windows; el gate de base sin modificaciones pasa en Linux/Node 22.
 
 ### P1: nucleo adaptativo puro
 

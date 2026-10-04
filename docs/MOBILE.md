@@ -67,16 +67,17 @@ into both native projects — re-run it after every web-code change before build
 
 ## App icons & splash screens
 
-`frontend/resources/icon.svg` is the 1024×1024 source (the app's dumbbell glyph on the
-app background). Generate all platform assets from it on a machine with the tooling:
+Generate from `frontend/resources/icon.svg` (1024×1024); export to
+`resources/icon.png` first if the generator cannot read SVG:
 
 ```sh
 cd frontend
 npx @capacitor/assets generate --iconBackgroundColor '#0c0e12' --splashBackgroundColor '#0c0e12'
 ```
 
-(If the generator won't take the SVG directly, export it to `resources/icon.png` at
-1024×1024 first — any image tool can do it.)
+The fork scopes overrides to sharp 0.35.5, tar 7.5.22 and uuid 11.1.1.
+Android/iOS/PWA generation and Xcode parse/write/UUID pass on Linux/Node 22.
+Revisit overrides when their parent packages adopt fixed versions.
 
 ## Distribution — deliberately no app stores
 

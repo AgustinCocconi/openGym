@@ -142,6 +142,26 @@ Mantener esta tabla en el fork:
 | Entrenador adaptativo | pendiente | pendiente | pendiente | pendiente | pendiente |
 | Sesion activa | pendiente | pendiente | pendiente | pendiente | pendiente |
 | Castellano y ejercicios | pendiente | pendiente | pendiente | pendiente | pendiente |
+| Dependencias | a68a88d | undici >=7.29.1, lockfiles auditados y overrides de tooling | api/frontend manifests y tres lockfiles | medio | upstream 1350409 revisado 4/10/2026, sin merge |
+
+Auditoria 4/10/2026, Linux/Node 22.23.3/npm 10.9.9: cero hallazgos en API
+omit=dev,optional, API con SDK, MCP omit=dev y frontend completo/omit=dev.
+Se corrigen fast-uri, hono, ip-address, qs, xmldom, brace-expansion, nanoid y
+postcss; Trapezedev 7.1.10 retira transitivas obsoletas. Overrides de tooling:
+sharp 0.35.5, tar 7.5.22 y uuid 11.1.1; revisar cuando sus padres adopten fixes.
+Capacitor runtime conserva major 7. Fuentes:
+[undici](https://github.com/nodejs/undici/security/advisories/GHSA-w293-vg96-wgc3),
+[fast-uri](https://github.com/fastify/fast-uri/security/advisories/GHSA-hrr3-gc8f-f4qj),
+[tar](https://github.com/isaacs/node-tar/security/advisories/GHSA-r292-9mhp-454m),
+[sharp](https://github.com/lovell/sharp/security/advisories/GHSA-rgj7-g3m4-5g8c),
+[uuid](https://github.com/uuidjs/uuid/security/advisories/GHSA-w5hq-g745-h8pq).
+
+Gate del candidato: frontend 1.559, API 229 con/sin SDK, MCP 59; build,
+locales/assets/carga/probes/contexto, 19 tests ops y 7 Python OK. Imagenes
+locales default/coach/publicada: build/arranque/aislamiento OK. Compose 2.39.4
+verificado por checksum: loopback/logging OK; el guard rechaza el 2.20.2 local.
+Sharp/Xcode y 87 assets Android, 10 iOS, 46 PWA OK. Evidencia ignorada:
+.production-state/dependency-review. CI/publicacion pendientes; OCI sin cambios.
 
 ## Supuestos de upstream a revalidar
 
