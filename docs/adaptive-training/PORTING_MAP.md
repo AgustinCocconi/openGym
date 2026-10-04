@@ -82,10 +82,11 @@ El polling adapta la guarda de respuestas viejas de upstream 43a2054.
 
 ## Verificacion del recorrido
 
-Windows, Node 24.15.0: frontend 1.559 tests, API 229, MCP 59, build, assets,
-locales, carga Node y check:context pasan. DOM simulado y proveedores fixture;
-sin modelo real, navegador, dispositivos, CI Node 22 ni produccion. El chequeo
-general de strings sigue mostrando 33 faltantes heredados fuera del flujo nuevo.
+4/10/2026, 526bbb0: Linux/Docker Node 22, frontend 1.559 tests,
+API 229, MCP 59, build, assets, locales, carga Node y probes de fatiga OK.
+Windows/Node 24: check:context y seis tests OK.
+DOM simulado y proveedores fixture; faltan modelos reales, navegador/dispositivos,
+CI del nuevo codigo y deploy. Reporte general: 33 strings heredados sin traducir.
 
 Base a68a88d sin modificaciones: frontend 1.468, MCP 58 y build pasan. API
 falla en Windows por URL de fixture-cli C:\C:\...; personal corrige ese defecto.
