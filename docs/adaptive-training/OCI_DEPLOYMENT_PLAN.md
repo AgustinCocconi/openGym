@@ -7,9 +7,9 @@ las fases contienen controles y evidencia pertinente, sin bitacora de intentos.
 
 ## Checkpoint
 
-Corte local: 2026-10-04 02:17 UTC / 3/10 23:17 AR; fase 6 revalidada.
-Commits/push/GHCR autorizados al retomar; faltan SHA/CI, custodia y permiso de deploy.
-Token API CF revocado/copia DPAPI retirada; costos hasta 2/10, GHCR heredado.
+Corte: 2026-10-04 02:49 UTC / 3/10 23:49 AR; PC preparada, CI/GHCR `7e77b34` OK.
+Faltan resguardo independiente de identidad, gate remoto y permiso de deploy.
+Token API CF revocado/copia DPAPI retirada; costos hasta 2/10, sin nueva ventana.
 
 | Fase | Estado | Evidencia / proximo paso |
 | --- | --- | --- |
@@ -17,9 +17,9 @@ Token API CF revocado/copia DPAPI retirada; costos hasta 2/10, GHCR heredado.
 | 1. Compatibilidad | COMPLETA | ARM64 probado en `905f44e`; imagenes publicadas para AMD64 y ARM64 en fase 4. Consumo local orientativo. |
 | 2. Cuentas | COMPLETA | OCI Always Free/MFA/USD 0, alertas activas y E2 1/1/0. CF zona activa Free por API; propietario confirma Zero Trust Free/2FA. |
 | 3. IaC OCI | COMPLETA | Terraform 1.16.4 / OCI 7.32.0: formato, validacion y cuatro guardrails registrados; E2, swap y storage de 50+50 GB. |
-| 4. Imagenes | COMPLETA | `52fb8e6`, workflow `36660062726`: gate y publicacion multiarch verdes; digests abajo. |
+| 4. Imagenes | COMPLETA | `7e77b34`, workflow `37171003702`: gate/publicacion verdes y digests/plataformas/revision anonimos verificados. |
 | 5. VM y Cloudflare | COMPLETA | Tunnel Healthy/4, tres pruebas confirmadas, cierre sano y token API revocado. |
-| 6. Primer deploy | BLOQUEADO | Smoke/recuperacion local probados; faltan SHA limpio/CI, custodia externa y permiso de deploy. |
+| 6. Primer deploy | BLOQUEADO | PC/cifrado preparados; falta resguardo de identidad, gate remoto y permiso de deploy. |
 | 7. Observacion | PENDIENTE | Ocho dias despues del deploy; memoria no determina reclamacion de E2. |
 | 8. Recuperacion | PENDIENTE | Destino externo y simulacros exigidos antes del deploy; operacion periodica despues. |
 | 9. Operacion | PENDIENTE | Despues de aceptacion productiva. |
@@ -170,13 +170,13 @@ revision explicita del cambio de guardrail. Salida: plan revisado sin sorpresas.
 
 ## Fase 4 - Publicar imagenes propias por commit
 
-Evidencia del 2026-09-29: SHA
-`52fb8e678afcacb5e33d6dd5f51ac40299baba86`, workflow `36660062726`, gate y
-publicacion `linux/amd64,linux/arm64` verdes. Paquetes del fork publicos y
-manifests consultados sin autenticacion; alias e indices inmutables coincidieron:
+Evidencia del 2026-10-03: SHA
+`7e77b34d8e76c1a3da0f3fa8f6d2b0e914264494`, workflow `37171003702`, gate y
+publicacion `linux/amd64,linux/arm64` verdes. Consulta anonima: checksums de
+indices/manifests/configs, labels de revision y alias personal coincidentes:
 
-- API `default`: `sha256:3510bf43666315c0bbfb66866238d3dbe9fea1b39e6d07bef14d50053007637b`.
-- Web: `sha256:0be53325812c7b3ec12bc68d721e21dcd3a12469441d87ed29378639d524fc2c`.
+- API `default`: `sha256:58324b44c772b07a92b8cba0767dfd00efcf721720187171c419bcb9ec7a1221`.
+- Web: `sha256:b6ff5e41ba1a296238f3528b4e1075a30f0a07c400657284d1de1283c5bb234a`.
 
 `.github/workflows/personal-publish.yml` llama a `test.yml` antes de publicar.
 El deploy verifica revision y registra digests. Esa evidencia corresponde solo
@@ -213,10 +213,10 @@ Smoke/gate Linux y recuperacion corresponden a fase 6.
 
 ## Fase 6 - Primer despliegue controlado
 
-Responsable conjunto; requiere gate completo y autorizacion separada.
-[Preparacion local](../../ops/PROTECTED_OPERATIONS.md): Linux/Node 22 AMD64
-(1539 frontend/59 MCP/190 API), diez probes y rollback/restore ficticios OK.
-Workspace sin integrar; no acredita CI/imagenes del SHA ni capacidad de E2.
+Gate y permiso de deploy separados. Codigo/CI/GHCR en fase 4.
+[Preparacion local](../../ops/PROTECTED_OPERATIONS.md): Linux/Node 22 AMD64,
+1539 frontend/59 MCP/190 API; diez probes/rollback/restore ficticios OK.
+PC elegida: age/ACL y cifrado/restore OK; resguardo de identidad pendiente.
 Seguir [instalacion](PRODUCTION_RUNBOOK.md#instalacion-inicial):
 
 - [ ] Crear `.env` privado: `RP_ID=gym.mientrenadorpersonal.com.ar`,

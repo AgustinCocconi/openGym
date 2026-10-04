@@ -16,7 +16,7 @@ sigue en `../SELF_HOSTING.md` y `../SELF_HOSTING_HTTPS.md`.
 | Dominio HTTPS definitivo | `gym.mientrenadorpersonal.com.ar` |
 | Checkout | `/srv/opengym` |
 | Backups locales | `/srv/opengym-backups` |
-| Copia cifrada fuera del host | `PENDIENTE` |
+| Copia cifrada fuera del host | Esta PC: `%LOCALAPPDATA%/openGym-backups`; resguardo de identidad pendiente |
 | Target de API | `default`; el workflow productivo aun no publica `coach` |
 | Retencion local | 14 backups por defecto |
 

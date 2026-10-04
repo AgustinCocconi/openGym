@@ -10,11 +10,11 @@ cambio CF ni dato real autorizados.
 
 ## Estado y alcance
 
-Base personal 552599bfcaefc8c1c85e1f532e86c1d4796427a8; remoto antes del push
-57ad20bf5a53f025facca27d62115e4700f53b63 confirmado. Nueve commits previos
-de recency/OCI/agentes y auditoria (training, coach, sync/mobile). Preservados
-cambios anteriores en test.yml, Compose, production-common.sh/test, plan/runbook,
-context-budget.json y capsulas OCI. Tres unidades operativas; sin cambios de app.
+Base publicada: 7e77b34d8e76c1a3da0f3fa8f6d2b0e914264494. Nueve commits
+previos de recency/OCI/agentes/auditoria y tres unidades operativas publicados.
+Cambios locales previos integrados por rutas; sin nuevos cambios de app.
+Candidato actual: HEAD de personal; derivar SHA de Git y verificar reporte CI
+antes del deploy. Resguardo independiente de identidad pendiente.
 Upstream main e88062e confirmado remoto, sin ops propios equivalentes.
 
 Preparados smoke loopback/publico con cookie en archivo privado, constancia
@@ -41,29 +41,29 @@ opengym-phase6-probes.log, opengym-phase6-rehearsal-latest.json/log y opengym-ph
 Rehearsal solo fixtures; adaptador Git Bash evita conversion solo en Docker.
 No ejecutar helpers de ventanas CF anteriores: host cerrado/token API revocado.
 
-Reanudacion 3/10 23:17 AR: HEAD/remoto y nueve commits sin cambios. Diez probes
-Linux/Node 22.23.3 AMD64 con HTTP/TLS, age y restore reales OK, solo fixtures.
-Windows/Node 24: syntax shell, parser PowerShell, siete casos Compose y seis
-tests de contexto OK. Desktop Compose 2.20.2 rechazado; no acredita ni invalida
-el 5.6.0 del host. Corregidos punteros obsoletos de fase/smoke.
+Revalidacion: Node 22.23.3 AMD64/10 probes y Windows/Node 24/6 tests contexto
+OK. Desktop Compose 2.20.2 rechazado; no acredita ni invalida el 5.6.0 del host.
 
-## Alcance preparado para integracion
+## Integracion y publicacion verificadas
 
-Alcance autorizado: commits acotados de loopback/logs (Compose/common
-y test), sondas/recuperacion (deploy/smoke/accept, wrapper, encrypt/restore,
-probes, test.yml, capsula/runbook) y cierre OCI/handoff (plan, capsulas OCI,
-helper de token existente, presupuesto reducido y tarea). Solo esas rutas.
-Publicacion: gate y GHCR default/web AMD64+ARM64 por SHA y alias personal;
-sin Terraform ni deploy.
+c58b4a0: loopback/logs; c9fdece: sondas/recuperacion; 7e77b34: cierre OCI/handoff.
+Workflow 37171003702 verde: seis jobs de gate y API default/web AMD64+ARM64.
+GHCR anonimo: checksums, labels de revision y alias coinciden con el candidato.
+Digests en fase 4 del plan; reporte TEMP conserva SHA/run/plataformas/resultados.
+Sin Terraform ni deploy; arbol limpio comprobado antes del handoff documental.
 
-## Pendientes y siguiente paso
+## Custodia PC y siguiente paso
 
-Pregunta de destino externo pendiente: PC/disco externo recomendado o servicio
-existente. Falta identidad age real/resguardo separado, destinatario publico
-y comprobacion de custodia; clave privada fuera de OCI/Git/chat.
-Integrar las tres unidades autorizadas, push ordinario de personal y seguir
-gate/publicacion del SHA resultante. El permiso incluye nueve commits previos.
+Destino elegido: esta PC. age v1.3.2 Windows AMD64 oficial/SHA-256 verificado,
+portable en %LOCALAPPDATA%/openGym-tools/age/v1.3.2. ACL solo del usuario:
+openGym-backups (cifrados/recipient.txt/informe) y openGym-recovery (identity.txt),
+bajo %LOCALAPPDATA%, fuera de Git/OCI. Identidad generada sin exponerla.
+Cifrado, copia/checksum, descifrado y restore nativos del fixture OK; evidencia
+en openGym-backups/custody-status.json. Sin backup productivo. Helper TEMP
+opengym-phase6-prepare-pc-custody.ps1 conserva existentes; no volver a ejecutarlo.
+Falta resguardo independiente de identidad y probar recuperacion desde el.
+Continuar integracion documental autorizada; revalidar gate del SHA resultante.
 Despues acreditar SHA limpio igual a origin/personal y CI/imagenes verdes,
 revalidar costos/cuenta/host y solicitar permiso separado de primer deploy.
-Fase 6 bloqueada por custodia externa y deploy. Check:context/diff OK; seguir
-CI/imagenes del HEAD publicado en el pointer, sin convertirlos en permiso de deploy.
+Fase 6 bloqueada por resguardo y deploy. CI/imagenes: consultar reporte por SHA;
+check:context/diff finales OK.

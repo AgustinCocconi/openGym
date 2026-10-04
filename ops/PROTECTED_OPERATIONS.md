@@ -74,8 +74,8 @@ registro abierto, health fallido o evento sin confirmar dejan estado pendiente.
 
 ## Copia cifrada y simulacro aislado
 
-Destino definitivo y custodia aun requieren eleccion del propietario. Recomendacion:
-PC/disco externo existente, sin costo. Instalar age en el equipo que cifra y
+Destino elegido: esta PC; resguardo independiente de identidad pendiente.
+Instalar age en el equipo que cifra y
 python3 para verify-backup-restore. Generar identidad privada en el equipo del
 propietario, fuera de Git y OCI, con permisos privados y copia de recuperacion
 separada. A OCI se entrega solo el destinatario publico.
@@ -97,3 +97,30 @@ Ensayar sh ops/verify-backup-restore.sh <tar.gz> <directorio-aislado-vacio>.
 Rechaza checksum, rutas fuera de data, traversal y enlaces antes de extraer;
 no reemplaza data de un checkout. Comparar los datos ficticios restaurados.
 Antes de deploy acreditar tambien custodia externa/identidad recuperable.
+
+## Recuperacion Windows
+
+Usar %LOCALAPPDATA%/openGym-backups para age/sha256/meta y recipient.txt;
+identity.txt queda en %LOCALAPPDATA%/openGym-recovery, con ACL solo del usuario.
+Age portable: %LOCALAPPDATA%/openGym-tools/age/v1.3.2/age. Version/SHA-256
+del ZIP contrastados con la [release oficial](https://github.com/FiloSottile/age/releases/tag/v1.3.2).
+Registrar solo destino, permisos y resultado. custody-status.json distingue
+fixture de backup productivo y no confirma resguardo independiente.
+
+Guardar una copia de identity.txt en el medio independiente elegido. Recuperarla
+a una ruta privada nueva y verificar con esa copia el descifrado del fixture,
+su SHA-256 y contenido restaurado. Dos carpetas de esta PC no acreditan
+recuperacion ante perder el equipo.
+
+Con rutas privadas elegidas, para descifrar una copia transferida:
+
+~~~powershell
+$age = Join-Path $env:LOCALAPPDATA 'openGym-tools\age\v1.3.2\age\age.exe'
+if (Test-Path -LiteralPath $restoredArchive) { throw 'Elegir un archivo nuevo.' }
+& $age --decrypt -i $recoveredIdentity -o $restoredArchive $encryptedArchive
+if ($LASTEXITCODE -ne 0) { throw 'Descifrado fallido.' }
+Get-FileHash -LiteralPath $restoredArchive -Algorithm SHA256
+~~~
+
+Contrastar con original_sha256 del .meta privado; verificar tambien checksum
+del .age copiado. Una restauracion productiva requiere su permiso separado.
