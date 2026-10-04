@@ -34,6 +34,11 @@ jobs:
             file: ./api/Dockerfile
             target: default
             tag_suffix: -default
+          - image: api
+            context: ./api
+            file: ./api/Dockerfile
+            target: coach
+            tag_suffix: -coach
           - image: web
             context: .
             file: ./web/Dockerfile

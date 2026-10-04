@@ -56,10 +56,9 @@ verifican la etiqueta OCI de revision y registran los digestos efectivos. No
 compilan en la VM. Los paquetes deben marcarse publicos en GHCR despues de su
 primera publicacion para permitir pulls anonimos; si permanecen privados, el
 propietario debe configurar un token de lectura directamente en la VM.
-La primera publicacion usa el target `default`. No hace falta el target Docker
-`coach` para Anthropic, OpenAI, Gemini o un endpoint compatible mediante API
-key. Antes de usar Claude Agent SDK o Codex CLI dentro del contenedor se debe
-extender el workflow para publicar y validar explicitamente esa imagen.
+El workflow publica targets `default` y `coach` tras el mismo gate.
+`default` sirve proveedores HTTPS; `coach` incluye los runtimes Claude/Codex.
+Codex CLI queda fijado en 0.160.0; elegir target/modelo explicitamente.
 
 ## Secuencia de despliegue
 

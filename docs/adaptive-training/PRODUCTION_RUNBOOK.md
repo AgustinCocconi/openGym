@@ -1,8 +1,7 @@
 # Runbook de la instancia productiva personal
 
 Este runbook opera una unica instancia de openGym publicada desde la rama
-`personal`. La VM consume imagenes multi-arquitectura de GHCR por commit y no
-compila en produccion.
+`personal`. La VM descarga imagenes GHCR por commit; no compila.
 
 La politica esta en `PRODUCTION_DEPLOYMENT.md`; estado y gate en
 [el plan OCI](OCI_DEPLOYMENT_PLAN.md#checkpoint). La configuracion general
@@ -17,7 +16,7 @@ sigue en `../SELF_HOSTING.md` y `../SELF_HOSTING_HTTPS.md`.
 | Checkout | `/srv/opengym` |
 | Backups locales | `/srv/opengym-backups` |
 | Copia cifrada fuera del host | Esta PC: `%LOCALAPPDATA%/openGym-backups`; resguardo diferido por propietario |
-| Target de API | `default`; el workflow productivo aun no publica `coach` |
+| Target de API | `default` o `coach`; elegir el publicado para el proveedor |
 | Retencion local | 14 backups por defecto |
 
 No registrar passkeys con un hostname provisional. `RP_ID` queda ligado al
@@ -238,7 +237,7 @@ Conservar, sin secretos:
 
 - fecha UTC y commit desplegado;
 - resultado del workflow **Publish personal images**;
-- target `default` y digestos de imagen;
+- target efectivo (`default`/`coach`), proveedor/modelo y digestos;
 - ruta y SHA-256 del backup previo;
 - resultado del smoke;
 - rollback realizado, si lo hubo.

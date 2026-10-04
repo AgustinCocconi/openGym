@@ -74,9 +74,8 @@ fi
 
 api_target=${API_TARGET:-default}
 case "$api_target" in
-  default) ;;
-  coach) production_die 'el workflow productivo aun no publica la imagen coach; usar API_TARGET=default' ;;
-  *) production_die 'API_TARGET debe ser default' ;;
+  default|coach) ;;
+  *) production_die 'API_TARGET debe ser default o coach' ;;
 esac
 registry_owner=${OPENGYM_REGISTRY_OWNER:-agustincocconi}
 printf '%s' "$registry_owner" | grep -Eq '^[a-z0-9][a-z0-9-]*$' ||

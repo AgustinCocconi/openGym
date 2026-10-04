@@ -56,7 +56,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y age
-          node --test ops/production-probes.test.mjs ops/periodic-backup.test.mjs
+          node --test ops/production-probes.test.mjs ops/periodic-backup.test.mjs ops/deploy-production.test.mjs
           python3 -B ops/observe-production.test.py
       - name: Render production Compose override
         env:
@@ -69,6 +69,13 @@ jobs:
           rendered=$(docker compose -f docker-compose.yml -f ops/compose.production.yml config)
           printf '%s\n' "$rendered" | grep -Fq 'image: ghcr.io/agustincocconi/opengym-api:0123456789abcdef0123456789abcdef01234567-default'
           printf '%s\n' "$rendered" | grep -Fq 'image: ghcr.io/agustincocconi/opengym-web:0123456789abcdef0123456789abcdef01234567'
+          API_TARGET=coach docker compose -f docker-compose.yml -f ops/compose.production.yml config --format json | python3 -c '
+          import json, sys
+          services = json.load(sys.stdin)["services"]
+          assert services["api"]["image"].endswith("0123456789abcdef0123456789abcdef01234567-coach")
+          assert services["web"]["ports"][0]["host_ip"] == "127.0.0.1"
+          assert "ports" not in services["api"]
+          '
           sh ops/production-common.test.sh
           docker compose -f docker-compose.yml -f ops/compose.production.yml config --format json | python3 -c '
           import json, sys
