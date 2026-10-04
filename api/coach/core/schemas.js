@@ -111,4 +111,10 @@ export const DEBRIEF_SCHEMA = {
   required: ['coach_contract', 'summary', 'score']
 };
 
-export const SCHEMAS = { review: REVIEW_SCHEMA, create: CREATE_SCHEMA, refine: CREATE_SCHEMA, debrief: DEBRIEF_SCHEMA };
+export const QUESTION_SCHEMA = { type: 'object', properties: { coach_contract: { type: 'integer' }, answer: STR }, required: ['coach_contract', 'answer'] };
+
+export const ACTIVE_SCHEMA = { type:'object', properties: {
+  coach_contract:{type:'integer'}, protocolVersion:STR, scope:STR, baseFingerprint:STR, summary:STR, reasonCode:{type:'string',enum:['user_request','difficulty','equipment','joint_signal','time_limit']}, answer:STR, dosePolicyVersion:STR,
+  operations:{type:'array',maxItems:1,items:{type:'object',properties:{type:STR,index:{type:'integer'},exerciseId:STR,position:{type:'integer'},prescription:{type:'object',properties:{mode:STR,sets:{type:'integer'},reps:{type:'integer'},sec:{type:'integer'}}}},required:['type']}}
+},required:['coach_contract'] };
+export const SCHEMAS = { question: QUESTION_SCHEMA, active: ACTIVE_SCHEMA, review: REVIEW_SCHEMA, create: CREATE_SCHEMA, refine: CREATE_SCHEMA, debrief: DEBRIEF_SCHEMA };

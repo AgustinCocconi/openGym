@@ -56,6 +56,20 @@ Los tests de dominio no llaman modelos. El gate de modelo reutiliza los mismos
 escenarios con fixtures pequenas y evalua estructura/invariantes, no estilo
 literario.
 
+## Escenarios conectados al recorrido actual
+
+| Escenario canonico | Test ejecutable |
+| --- | --- |
+| coach-candidate-allowlist | core/candidates.test.js; paridad spawn/HTTP |
+| calisthenics-live-management | core/active-workout.test.js; alta/baja/parcial |
+| novice-pullup-foundation | core/skills.test.js; tres reps no aprueban cuatro |
+| reported-pain-plan-removal | core/candidates.test.js; baja sin alternativa |
+
+Rutas de tests relativas a api/coach. Question, senales, dosis y confirmacion
+se cubren en tests puros; API y DOM prueban adapters y flujo. Los restantes
+escenarios son contrato objetivo, sin afirmar que todo el ranking esta portado.
+No se ejecutaron estos casos contra modelos reales.
+
 ## Regla para agregar conocimiento
 
 Ante un bug o una regla descubierta:

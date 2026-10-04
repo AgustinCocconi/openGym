@@ -10,8 +10,9 @@ import { EXERCISES } from './library-data.js';
 export const LIBRARY = EXERCISES;
 export const LIB_BY_ID = new Map(LIBRARY.map(e => [e.id, e]));
 
+export const equipmentContext = equipment => JSON.stringify([...new Set((equipment || []).map(value => String(value).toLowerCase()))].sort());
 export const libraryHas = id => LIB_BY_ID.has(id);
-export const libraryName = id => LIB_BY_ID.get(id)?.n || null;
+export const libraryName = (id, locale='en') => LIB_BY_ID.get(id)?.labels?.[locale.split('-')[0]] || LIB_BY_ID.get(id)?.n || null;
 
 /* ---------- the library slice the model gets to choose from ----------
    Bounded. The whole catalogue is 1,324 rows — 10k+ tokens on every job, which costs real money
@@ -24,23 +25,26 @@ export const MAX_LIBRARY = 160;
 
 // What one library entry tells the model: enough to pick it, nothing more. The taxonomy
 // fields beyond body part never appear in a rationale and cost ~30 tokens an entry.
-const slim = e => ({ id: e.id, n: e.n, bp: e.bp, ...(e.custom ? { custom: true } : {}) });
+const slim = (e, locale) => ({ id: e.id, n: libraryName(e.id,locale) || e.n, bp: e.bp, ...(e.custom ? { custom: true } : {}) });
 
-export function librarySlice(S, equipment, { keep = [], max = MAX_LIBRARY } = {}) {
+export function librarySlice(S, equipment, { keep = [], max = MAX_LIBRARY, locale='en', strictEquipment=false } = {}) {
   const wanted = (equipment || []).map(x => String(x).toLowerCase());
   const customs = (S.customEx || []).map(c => ({ id: c.id, n: c.n, bp: c.bp, tg: null, eq: 'custom', custom: true }));
   // No equipment stated (or "everything") ⇒ the whole catalogue. Filtering to nothing would
   // leave the Coach unable to propose anything at all, which is a worse failure than a
   // slightly larger payload.
   const filtered = wanted.length ? LIBRARY.filter(e => wanted.includes((e.eq || '').toLowerCase())) : LIBRARY;
-  const base = filtered.length ? filtered : LIBRARY;
+  const base = strictEquipment ? filtered : filtered.length ? filtered : LIBRARY;
 
   const pinned = new Set(keep.filter(id => LIB_BY_ID.has(id)));
   const out = [];
   const taken = new Set();
   const add = e => { if (!taken.has(e.id)) { taken.add(e.id); out.push(e); } };
   // What the user already trains comes first, filter or no filter.
-  for (const id of pinned) add(LIB_BY_ID.get(id));
+  for (const id of pinned) {
+    const exercise = LIB_BY_ID.get(id);
+    if ((!strictEquipment || !wanted.length || wanted.includes((exercise.eq || '').toLowerCase())) && out.length < max) add(exercise);
+  }
   if (base.length + out.length <= max) {
     base.forEach(add);
   } else {
@@ -59,5 +63,5 @@ export function librarySlice(S, equipment, { keep = [], max = MAX_LIBRARY } = {}
       }
     }
   }
-  return [...customs, ...out].map(slim);
+  return (strictEquipment ? [...(!wanted.length ? customs : []), ...out].slice(0,max) : [...customs, ...out]).map(e=>slim(e,locale));
 }

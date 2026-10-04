@@ -10,8 +10,11 @@
  * handle stands in), passkey and credential material, push subscriptions, invite data, theme
  * and appearance settings, and every other profile's everything.
  */
-import { LIBRARY, LIB_BY_ID, libraryHas, libraryName, librarySlice, MAX_LIBRARY } from './library.js';
+import { LIBRARY, LIB_BY_ID, libraryHas, libraryName, librarySlice, equipmentContext, MAX_LIBRARY } from './library.js';
 
+import { activeSnapshot, activeFingerprint, ACTIVE_DOSE_POLICY } from './active-workout.js';
+import { skillProgression, skillExerciseAllowed } from './skills.js';
+import { jointSignalsForState } from './joint-signals.js';
 export const CONTRACT = 1;
 // Bounds from FR-22. A review reads a training block, not a training career: more history
 // makes the payload bigger and the reading vaguer, not better.
@@ -21,7 +24,7 @@ export const MAX_SESSIONS = 60;
 /* ---------- the data categories the consent screen names (FR-09/10) ----------
    Kept here, next to the code that acts on it, and rendered by the consent UI from the same
    list — a screen that drifts from the payload is worse than no screen. */
-export { DATA_CATEGORIES } from './categories.js';
+export { DATA_CATEGORIES, CONSENT_VERSION } from './categories.js';
 
 /* ---------- reading a session the way the engine reads it ----------
    Duplicated from frontend/src/lib/history.js rather than shared: the two runtimes have no
@@ -221,6 +224,7 @@ function aggregates(S, workouts) {
 function trainedIds(S, workouts) {
   const ids = new Set();
   (S.routines || []).forEach(r => (r.ex || []).forEach(e => ids.add(e.id)));
+  (S.coach?.skillGoals || []).forEach(goal => ids.add(goal.exerciseId));
   (workouts || []).forEach(w => (w.entries || []).forEach(en => ids.add(en.id)));
   return [...ids];
 }
@@ -334,7 +338,7 @@ export function build(S, opts = {}) {
   const profile = opts.intake || coach.profile || null;
   const p = {
     coach_contract: CONTRACT,
-    task: opts.kind === 'review' ? 'review' : opts.kind === 'debrief' ? 'debrief' : 'create',
+    task: ['question','active'].includes(opts.kind) ? opts.kind : opts.kind === 'review' ? 'review' : opts.kind === 'debrief' ? 'debrief' : 'create',
     meta: {
       profile: opts.handle,
       lang: S.lang || 'en',
@@ -354,8 +358,37 @@ export function build(S, opts = {}) {
       dislikes: profile.dislikes || '',
       notes: profile.notes || ''
     } : null,
-    plan: cleanPlan(S)
+    plan: cleanPlan(S),
+    equipmentContext: equipmentContext(profile?.equipment),
+    jointSignals:jointSignalsForState({...S,coach:{...coach,profile}},{note:opts.note,extra:opts.activeWorkoutSnapshot?.trainerSignals})
   };
+
+  p.skills=skillProgression(coach.skillGoals||[],p.jointSignals);
+  if (['question','active'].includes(opts.kind)) {
+    p.userNote=String(opts.note||'').slice(0,1000);
+    p.jointSignals=jointSignalsForState({...S,coach:{...coach,profile}},{note:opts.note,extra:opts.activeWorkoutSnapshot?.trainerSignals});
+    if (opts.activeWorkoutSnapshot) p.activeWorkoutSnapshot=activeSnapshot(opts.activeWorkoutSnapshot);
+    p.activeDosePolicyVersion=ACTIVE_DOSE_POLICY;
+    if (p.activeWorkoutSnapshot) p.activeFingerprint=activeFingerprint(p.activeWorkoutSnapshot);
+    if (opts.kind==='active' && !p.activeWorkoutSnapshot) throw new Error('active snapshot required');
+    p.library=librarySlice(S,profile?.equipment,{max:60,locale:S.lang||'en',strictEquipment:true,keep:[...(coach.skillGoals||[]).map(goal=>goal.exerciseId),...(p.activeWorkoutSnapshot?.entries||[]).map(entry=>entry.id),'0652','1326','0662','0017']});
+    if (p.jointSignals.length || p.activeWorkoutSnapshot?.trainerSignals.length) p.library=[];
+    else p.library=p.library.filter(exercise=>skillExerciseAllowed(coach.skillGoals||[],exercise.id));
+    const focused=p.activeWorkoutSnapshot?.entries[p.activeWorkoutSnapshot.cur]?.id;
+    const query=String(opts.note||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const mentioned=LIBRARY.filter(ex=>ex.instructions && [ex.n,...Object.values(ex.labels||{})].some(name=>query.includes(name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()))).map(ex=>ex.id);
+    const planned=(p.activeWorkoutSnapshot?.entries||[]).map(entry=>entry.id);
+    const ids=[...new Set([...(focused?[focused]:[]),...mentioned,...planned,...(S.routines||[]).flatMap(r=>(r.ex||[]).map(e=>e.id))])].slice(0,8);
+    p.exerciseDetails=[...new Set(ids)].map(id=>{
+      const ex=LIB_BY_ID.get(id);
+      return {id,name:ex?.labels?.[String(S.lang||'').split('-')[0]]||ex?.n||null,
+        instructions:ex?.instructions?.[String(S.lang||'en').split('-')[0]]||[],
+        source:'catalogue'};
+    });
+    p.recentWorkouts=(S.workouts||[]).slice(-3).map(cleanWorkout);
+    const said=conversation(coach,[opts.note]); if(said.length)p.conversation=said;
+    return p;
+  }
 
   // What the user already turned down, so the Coach does not re-propose it without new
   // evidence (FR-26). Summaries only — the log's full before/after stays on the device.
@@ -402,9 +435,9 @@ export function build(S, opts = {}) {
     if (opts.note) p.userNote = String(opts.note).slice(0, 1000);
     if (opts.cohort) p.cohort = opts.cohort;
     // A review names mostly what is already trained; 60 candidates is plenty for a swap.
-    p.library = librarySlice(S, profile?.equipment, { keep: trainedIds(S, workouts), max: 60 });
+    p.library = librarySlice(S, profile?.equipment, { keep: trainedIds(S, workouts), max: 60, strictEquipment:true, locale:S.lang||'en' });
   } else {
-    p.library = librarySlice(S, profile?.equipment, { keep: trainedIds(S, S.workouts || []) });
+    p.library = librarySlice(S, profile?.equipment, { keep: trainedIds(S, S.workouts || []), strictEquipment:true, locale:S.lang||'en' });
     // Creation for a returning user: what they have actually handled, so proposed baselines
     // start from evidence rather than optimism (B2/FR-20).
     const best = {};
@@ -431,6 +464,8 @@ export function build(S, opts = {}) {
     const said = conversation(coach, [opts.note, opts.refine]);
     if (said.length) p.conversation = said;
   }
+  if (p.jointSignals.length) p.library=[];
+  else if (p.library) p.library=p.library.filter(exercise=>skillExerciseAllowed(coach.skillGoals||[],exercise.id));
   return p;
 }
 
@@ -450,3 +485,5 @@ function conversation(coach, current) {
     .slice(-CONVERSATION_LINES)
     .map(m => ({ who: m.role === 'user' ? 'user' : 'coach', text: m.text.trim().slice(0, CONVERSATION_CHARS) }));
 }
+
+export const activeSnapshotForRequest = activeSnapshot;

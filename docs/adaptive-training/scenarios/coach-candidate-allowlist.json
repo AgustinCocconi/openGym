@@ -1,0 +1,64 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "coach-rejects-catalogue-exercise-outside-request-candidates",
+  "purpose": "Un ID valido del catalogo no basta cuando el ejercicio no es un candidato permitido para el pedido.",
+  "given": {
+    "locale": "es",
+    "scope": "plan",
+    "coachProfile": {
+      "daysPerWeek": 1,
+      "equipment": [
+        "body weight"
+      ]
+    },
+    "library": [
+      {
+        "id": "0001",
+        "n": "3/4 sit-up",
+        "bp": "waist"
+      }
+    ],
+    "unofferedExercise": {
+      "id": "0023",
+      "equipment": "barbell"
+    }
+  },
+  "when": {
+    "modelResponse": {
+      "coach_contract": 1,
+      "name": "Calistenia",
+      "summary": "Plan propuesto",
+      "week": {
+        "1": "r1"
+      },
+      "routines": [
+        {
+          "id": "r1",
+          "name": "Rutina",
+          "ex": [
+            {
+              "id": "0023",
+              "sets": 3,
+              "reps": 5,
+              "why": "Propuesta de fixture"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "expect": {
+    "kind": "rejected",
+    "operationTypes": [],
+    "invariants": [
+      "candidate_id_exists",
+      "candidate_id_allowed_by_context",
+      "provider_contract_is_equivalent"
+    ],
+    "forbidden": [
+      "accept_unoffered_catalogue_id",
+      "equipment_filter_bypass",
+      "state_mutation"
+    ]
+  }
+}

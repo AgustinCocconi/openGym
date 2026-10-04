@@ -171,6 +171,29 @@ habilidad tampoco evita filtros de equipo, preferencias o bloqueos articulares.
 12. Toda propuesta lleva fingerprint del estado base y se rechaza si quedo
     obsoleta.
 
+## Reglas del primer recorrido implementado
+
+- Allowlist de candidatos del pedido obligatoria para introducciones de ejercicios;
+  equipo y prerrequisitos se revisan al confirmar. Los IDs existentes que son
+  solo objetivos de una baja no necesitan figurar como candidatos nuevos.
+- Cada cambio activo contiene una sola operacion. Alta no depende del estado del
+  ejercicio enfocado. Baja solo para item sin registro ni grupo; con registro
+  parcial se omite lo pendiente o se continua, sin borrar filas ni cargas hechas.
+- Un undo conserva la sesion anterior y requiere que no haya cambiado ningun dato
+  material; mover el foco entre ejercicios no lo invalida. El acuse por ID no
+  puede limpiar una propuesta posterior ni ejecutar dos veces una aplicacion.
+- Consulta no cambia entrenamiento. Un reporte propio directo de dolor en las
+  ultimas 40 lineas de chat puede bloquear una propuesta posterior. Texto negado,
+  hipotetico, historico o del asistente no crea una senal. El control explicito
+  permite declarar que termino; un reporte nuevo o limitacion nueva vuelve a
+  activar la guarda. No se inventa una fecha de recuperacion.
+- Sin candidatos con clasificacion articular compatible no hay sustitucion/alta
+  por IA. Se permite baja de rutinas/ejercicios guardados y omision/baja activa.
+  No se mezcla una baja con incremento de dosis. DOMS no crea un sintoma articular.
+- Habilidad solo avanza con evidencia registrada real, prerrequisitos dominados
+  y confirmacion del atleta de tecnica y ausencia de dolor. Una meta manual no
+  constituye recomendacion clinica ni un grafo avanzado curado por el sistema.
+
 ## Explicaciones
 
 Los codigos son estables y el texto es localizable. Codigos heredados:

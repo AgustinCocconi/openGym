@@ -1,0 +1,120 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "calisthenics-live-management",
+  "purpose": "Consultas y cambios durante calistenia preservan registros y alcance.",
+  "given": {
+    "locale": "es-AR",
+    "active": {
+      "id": "session",
+      "unit": "kg",
+      "d": "2026-10-04",
+      "cur": 0,
+      "entries": [
+        {
+          "id": "0652",
+          "target": {
+            "mode": "reps",
+            "sets": 2,
+            "reps": 4
+          },
+          "sets": [
+            {
+              "r": 3,
+              "w": 0,
+              "done": true
+            },
+            {
+              "r": 4,
+              "w": 0,
+              "done": false
+            }
+          ]
+        },
+        {
+          "id": "0662",
+          "target": {
+            "mode": "reps",
+            "sets": 2,
+            "reps": 5
+          },
+          "sets": [
+            {
+              "r": 5,
+              "w": 0,
+              "done": false
+            },
+            {
+              "r": 5,
+              "w": 0,
+              "done": false
+            }
+          ]
+        }
+      ]
+    },
+    "candidateIds": [
+      "1326"
+    ]
+  },
+  "when": {
+    "mode": "active"
+  },
+  "cases": [
+    {
+      "operation": {
+        "type": "remove_pending_exercise",
+        "index": 1
+      },
+      "ok": true
+    },
+    {
+      "operation": {
+        "type": "remove_pending_exercise",
+        "index": 0
+      },
+      "ok": false
+    },
+    {
+      "operation": {
+        "type": "add_active_exercise",
+        "exerciseId": "1326",
+        "prescription": {
+          "mode": "reps",
+          "sets": 1,
+          "reps": 3
+        }
+      },
+      "ok": true
+    },
+    {
+      "operation": {
+        "type": "replace_pending_exercise",
+        "index": 0,
+        "exerciseId": "1326",
+        "prescription": {
+          "mode": "reps",
+          "sets": 1,
+          "reps": 3
+        }
+      },
+      "ok": false
+    }
+  ],
+  "expect": {
+    "invariants": [
+      "answer_is_read_only",
+      "partial_sets_preserved",
+      "completed_sets_immutable",
+      "explicit_confirmation_required",
+      "no_saved_routine_mutation",
+      "candidate_id_exists",
+      "load_not_carried_between_exercises"
+    ],
+    "forbidden": [
+      "remove_logged_work",
+      "implicit_apply",
+      "assistant_skill_unlock"
+    ]
+  },
+  "legacyEvidence": []
+}

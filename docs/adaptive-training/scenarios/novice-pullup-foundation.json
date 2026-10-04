@@ -1,0 +1,49 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "novice-pullup-foundation",
+  "purpose": "Tres dominadas no acreditan un objetivo de cuatro ni desbloquean otra variante.",
+  "given": {
+    "locale": "es-AR",
+    "goal": {
+      "id": "base",
+      "name": "Dominadas",
+      "exerciseId": "0652",
+      "mode": "reps",
+      "target": 4,
+      "prerequisiteIds": [],
+      "attempts": []
+    },
+    "nextGoal": {
+      "id": "advanced",
+      "name": "Siguiente objetivo",
+      "exerciseId": "1326",
+      "mode": "reps",
+      "target": 4,
+      "prerequisiteIds": [
+        "base"
+      ],
+      "attempts": []
+    },
+    "loggedReps": 3
+  },
+  "when": {
+    "message": "Me cuestan cuatro dominadas y tengo que cuidar el hombro"
+  },
+  "expect": {
+    "invariants": [
+      "evidence_comes_from_logged_work",
+      "athlete_confirms_technique",
+      "athlete_confirms_pain_free",
+      "prerequisites_required",
+      "joint_signal_blocks_advancement"
+    ],
+    "forbidden": [
+      "diagnosis",
+      "invent_advanced_thresholds",
+      "assistant_skill_unlock"
+    ]
+  },
+  "legacyEvidence": [
+    "BE:src/application/skill-progression.ts"
+  ]
+}

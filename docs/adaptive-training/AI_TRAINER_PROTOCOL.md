@@ -13,33 +13,14 @@ upstream.
 
 ## Arquitectura objetivo
 
-```text
-UI de chat / accion rapida
-          |
-          v
-clasificador de intencion del entrenador
-          |
-          +---- pregunta --------> respuesta de solo lectura
-          |
-          +---- cambio ----------> contexto adaptativo compacto
-                                      |
-                                      v
-                              motor deterministico
-                         bloqueos + candidatos + reglas
-                                      |
-                                      v
-                              modelo intercambiable
-                           seleccion + explicacion
-                                      |
-                                      v
-                           validador de operaciones
-                                      |
-                                      v
-                         diff -> confirmar -> aplicar
-```
+La UI separa consulta y cambio de manera explicita. Consulta es el valor inicial:
+no se deja que un clasificador generativo decida si una duda modifica ejercicios.
 
-El modelo nunca recibe una herramienta de escritura directa. Devuelve una
-estructura que el cliente valida y aplica por caminos de codigo cerrados.
+UI -> modo -> payload acotado -> modelo intercambiable -> validador compartido
+   -> respuesta de solo lectura, o diff -> confirmar -> aplicar.
+
+El modelo nunca recibe escritura directa. Devuelve estructuras aplicadas por
+codigo cerrado; las guardas se recalculan al confirmar sobre el estado vigente.
 
 ## Proveedor y modelo intercambiables
 
@@ -80,7 +61,8 @@ Un modelo apto para modo entrenador debe:
 8. Mantener paridad semantica al cambiar de proveedor.
 
 La aprobacion se registra por `provider + model + protocolVersion`; un cambio de
-modelo vuelve a ejecutar el gate.
+modelo vuelve a ejecutar el gate. Este registro es objetivo pendiente: hoy se
+prueba el contrato con fixtures, sin declarar aprobado ningun modelo real.
 
 ## Intenciones admitidas
 
@@ -108,6 +90,7 @@ continue_after_partial_exercise
 add_active_exercise
 adjust_pending_prescription
 skip_pending_exercise
+remove_pending_exercise
 reorder_pending_exercise
 ```
 
@@ -144,23 +127,11 @@ allowlist igual que la del Coach actual.
 
 ### Puente para la sesion activa
 
-En la fotografia actual de upstream, `active` pertenece al dispositivo que esta
-ejecutando la rutina y el servidor lo elimina al sincronizar el estado. Por eso
-el Coach del servidor no puede reconstruir una sesion activa desde el documento
-persistido.
-
-La integracion objetivo es que el cliente envie con cada pedido un
-`activeWorkoutSnapshot` efimero y acotado por allowlist:
-
-- no se persiste solo para alimentar a la IA;
-- contiene revision/fingerprint, item enfocado, items pendientes y series ya
-  hechas necesarias para la decision;
-- el servidor lo incluye unicamente en ese job del Coach;
-- la respuesta vuelve como propuesta y se aplica en el mismo dispositivo;
-- una revision distinta al regresar invalida la propuesta.
-
-En modo BYOK movil, el mismo constructor y validador pueden ejecutarse en el
-cliente. Ambos caminos deben compartir fixtures de paridad.
+Upstream elimina active al sincronizar: el servidor no puede reconstruirlo.
+El cliente manda activeWorkoutSnapshot efimero, con foco, targets, registro y
+fingerprint. Solo vive en ese job; la respuesta se confirma en el dispositivo
+emisor y se rechaza si el estado cambia. Servidor/BYOK comparten constructor,
+validador y fixtures; no se persiste una copia del entrenamiento para la IA.
 
 ## Comportamiento durante la rutina
 
@@ -227,8 +198,8 @@ El cliente:
 ## Idioma
 
 El system prompt base puede mantenerse estable para aprovechar cache. El
-payload incluye `locale` y el validador exige que los campos humanos respeten
-ese idioma. IDs, enum y `reasonCode` permanecen estables en ingles.
+payload implementado incluye `meta.lang`; los prompts piden respetarlo.
+El gate real de idioma sigue pendiente. IDs, enums y `reasonCode` son estables.
 
 Para `es-AR`:
 
@@ -237,16 +208,29 @@ Para `es-AR`:
 - unidades segun el perfil;
 - terminos tecnicos acompanados de una explicacion sencilla cuando haga falta.
 
-## Fases
+## Estado implementado y validacion
 
-1. Reutilizar Coach actual y agregar tests de paridad de proveedor.
-2. Generar contexto compacto y respuestas de solo lectura en sesion activa.
-3. Agregar sustitucion de ejercicio pendiente.
-4. Preservar trabajo parcial y continuar con otro ejercicio.
-5. Agregar ajustes de dosis y tiempo con politicas versionadas.
-6. Sugerir proxima sesion y revisar bloques recientes.
-7. Considerar MCP remoto solo despues de validar estos flujos dentro de la app.
+Implementado: question y active usan el mismo pipeline servidor/BYOK y una ronda
+de reparacion. El contrato actual es coach_contract:1. Question solo admite
+answer (hasta 2.000 caracteres); rechaza formas de mutacion y conserva pending.
+Active usa active-workout/v1 y exige exactamente una operacion, motivo cerrado,
+summary, scope, fingerprint y confirmacion. La evidencia se deriva del snapshot,
+no de afirmaciones del modelo. Una aclaracion sin operacion es de solo lectura.
 
-Referencia del estado efimero de upstream:
-https://github.com/DuarteSantos8/openGym/blob/main/api/openapi.yaml
+Snapshot: 40 items, 30 filas por item, profundidad 3 y 40.000 caracteres; unidad,
+item enfocado, target, registro anidado y senales permitidas. Viaja efimeramente:
+no se guarda como sesion del servidor. Cambios de registro/unidad/equipo o
+prerrequisitos invalidan la propuesta. No se traslada carga al cambiar ejercicio.
+
+Solo se elimina un item sin registro ni grupo; parcial se conserva y continua
+con otra entrada, o se omite lo pendiente. Completados son inmutables. Dosis
+pending-volume-reduction/v1 solo reduce series rectas totalmente pendientes.
+Sin clasificacion articular compatible, una senal permite omision/baja; para
+rutinas guardadas solo bajas, sin mezclarlas con otra mutacion. Undo local exige
+que no haya registro nuevo ni otro cambio material; navegar no lo invalida.
+El retry del acuse usa proposalId y no aplica nuevamente el cambio.
+
+Pendientes: gate registrado por proveedor/modelo/idioma, contexto de frecuencia
+7/14/28, sugerencia de proxima sesion con esa evidencia y politicas de tiempo,
+DOMS y grafos curados avanzados. No se habilita MCP remoto de escritura.
 

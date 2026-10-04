@@ -1,0 +1,57 @@
+{
+  "id": "reported-pain-plan-removal",
+  "given": {
+    "jointSignals": [
+      {
+        "region": "shoulder",
+        "type": "pain"
+      }
+    ],
+    "candidateIds": [],
+    "plan": {
+      "routines": [
+        {
+          "id": "r1",
+          "name": "Base",
+          "ex": [
+            {
+              "id": "0652",
+              "sets": 2,
+              "reps": 4
+            }
+          ]
+        }
+      ],
+      "week": {}
+    }
+  },
+  "when": {
+    "removal": {
+      "type": "remove-exercise",
+      "target": {
+        "routineId": "r1",
+        "exId": "0652"
+      },
+      "why": "El atleta pide quitar las dominadas",
+      "after": null
+    },
+    "unsafeMutation": {
+      "type": "sets",
+      "target": {
+        "routineId": "r1",
+        "exId": "0652"
+      },
+      "why": "No hay politica compatible",
+      "after": 3
+    }
+  },
+  "then": {
+    "removalAllowed": true,
+    "mixedMutationAllowed": false,
+    "invariants": [
+      "explicit_confirmation_required",
+      "completed_sets_immutable",
+      "articular_signal_blocks_incompatible"
+    ]
+  }
+}

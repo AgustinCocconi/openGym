@@ -141,11 +141,12 @@ test('the library slice is capped, balanced across body parts, deterministic, an
   assert.equal(kept[0].id, barbell.id);
   assert.ok(kept.length <= MAX_LIBRARY + 1);
 
-  // …and through build(): the plan's own exercises are in the slice for a review.
+  // Through build(), the plan remains readable while candidates require available equipment.
   const S = sampleState();
   const planIds = S.routines.flatMap(r => r.ex.map(e => e.id));
   const p = payload.build(S, { handle: 'h'.repeat(16), kind: 'review' });
-  assert.ok(planIds.every(id => p.library.some(e => e.id === id)), 'every plan exercise is in the slice');
+  assert.ok(p.plan.routines.flatMap(r => r.ex).every(e => planIds.includes(e.id)));
+  assert.ok(p.library.every(e => LIBRARY.find(ex => ex.id === e.id).eq === 'dumbbell'));
   assert.ok(p.library.length <= MAX_LIBRARY + planIds.length);
 });
 

@@ -24,7 +24,7 @@ export function writeState(dir, uid, S) {
 export function sampleState(over = {}) {
   return {
     unit: 'kg', lang: 'en', effort: 'rpe', targetW: 80,
-    coach: { consent: { agreedAt: new Date().toISOString(), version: 1 }, profile: { goal: 'muscle', daysPerWeek: 3, equipment: ['dumbbell'] } },
+    coach: { consent: { agreedAt: new Date().toISOString(), version: 2 }, profile: { goal: 'muscle', daysPerWeek: 3, equipment: ['dumbbell'] } },
     routines: [{
       id: 'r1', name: 'Full body A', emoji: '💪', prog: 'linear',
       ex: [

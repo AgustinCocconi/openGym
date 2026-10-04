@@ -22,6 +22,7 @@ import * as payloadLib from './core/payload.js';
 import { runPipeline } from './core/pipeline.js';
 import { extractJSON } from './core/parse.js';
 import { hashPlan } from './core/plan-hash.js';
+import { activeSnapshot } from './core/active-workout.js';
 import { buildPrompt } from './core/prompt.js';
 import { handleFor } from './handle.js';
 import { fetchFor } from './node-fetch.js';
@@ -188,7 +189,12 @@ export function enqueue(uid, opts) {
   const S = readState(uid);
   // Consent is enforced here, server-side, not by the screen that collects it: a UI-only gate
   // is not a gate (FR-08/13).
-  if (!S?.coach?.consent?.agreedAt) throw new CoachError('consent', 'the Coach needs your go-ahead first');
+  if ((!S?.coach?.consent?.agreedAt || S.coach.consent.version !== payloadLib.CONSENT_VERSION)) throw new CoachError('consent', 'the Coach needs your go-ahead first');
+  let snapshot = null;
+  try {
+    if (opts.activeWorkoutSnapshot) snapshot = activeSnapshot(opts.activeWorkoutSnapshot);
+    if (opts.kind === 'active' && !snapshot) throw new Error('active snapshot required');
+  } catch { throw new CoachError('snapshot', 'invalid or oversized active workout'); }
 
   // Whose account pays. In instance mode the credential binds to the first profile that spends
   // it and every other profile is refused outright — not warned. A warning would move the
@@ -232,6 +238,7 @@ export function enqueue(uid, opts) {
     intake: opts.intake || null,
     note: opts.note || null,
     refine: opts.refine || null,
+    activeWorkoutSnapshot: snapshot,
     state: 'queued',
     startedAt: Date.now()
   };
@@ -269,7 +276,7 @@ function finish(job, result) {
     // leaves the user with a job that finished and nothing to show for it. It lives here, in
     // the profile's own file — deliberately not in `detail`, which goes to the instance log
     // the admin card renders, and which carries counts and outcomes only (FR-12/42).
-    ...(result.reading ? { reading: String(result.reading).slice(0, 1200) } : {})
+    ...(result.reading ? { reading: String(result.reading).slice(0, 2000) } : {})
   }].slice(-HISTORY_MAX);
   writeUser(job.uid, {
     ...rec,
@@ -296,7 +303,7 @@ async function execute(job) {
   if (!S) return finish(job, { outcome: 'failed', errorClass: 'nostate' });
   // Checked again here, not only at enqueue: a job can wait behind two others, and consent
   // withdrawn or the Coach switched off in the meantime means no payload leaves for it.
-  if (!S.coach?.consent?.agreedAt) return finish(job, { outcome: 'failed', errorClass: 'consent' });
+  if ((!S.coach?.consent?.agreedAt || S.coach.consent.version !== payloadLib.CONSENT_VERSION)) return finish(job, { outcome: 'failed', errorClass: 'consent' });
   if (!cfgStore.isEnabled()) return finish(job, { outcome: 'failed', errorClass: 'off' });
 
   const cfg = cfgStore.load();
@@ -316,6 +323,7 @@ async function execute(job) {
     refine: job.refine,
     previous: pendingCreate?.bundle || null,
     workoutId: job.workoutId,
+    activeWorkoutSnapshot: job.activeWorkoutSnapshot,
     // The room's medians ride along on a review or a debrief when the admin allows it and
     // this person opted in; null otherwise, and the payload then carries no `cohort` at all.
     cohort: (job.kind === 'review' || job.kind === 'debrief') ? cohortForPayload(job.uid) : null
@@ -342,7 +350,7 @@ async function execute(job) {
       return finish(job, { outcome: 'failed', errorClass, detail: attempt.detail });
     }
     if (attempt.nochange) {
-      return finish(job, { outcome: 'nochange', pending: null, detail: null, reading: attempt.reading });
+      return finish(job, { outcome: 'nochange', pending: ['question','active'].includes(job.kind) ? undefined : null, detail: null, reading: attempt.reading });
     }
     const pending = {
       id: job.id,
@@ -352,8 +360,9 @@ async function execute(job) {
       planHash: hashPlan(payloadLib.canonicalPlan(S)),
       iteration: job.refine ? (pendingCreate?.iteration || 1) + 1 : 1,
       // A debrief names the session it read, so the card can show it after the fact.
-      ...(job.kind === 'debrief' ? { workout: payloadLib.workoutMeta(S, job.workoutId) } : {}),
-      ...attempt.result
+      ...(job.kind === 'debrief' ? { workout: payloadLib.workoutMeta(S, job.workoutId) } : { candidateIds: payload.library.map(e => e.id), equipmentContext:payload.equipmentContext }),
+      ...attempt.result,
+      ...(job.kind==='active'?{jointSignals:payload.jointSignals}:{})
     };
     return finish(job, { outcome: 'ready', pending });
   } finally {
@@ -365,9 +374,10 @@ async function execute(job) {
 /* ---------- decisions ---------- */
 
 /** The client has applied (or discarded) the pending proposal. Record it and clear. */
-export function resolvePending(uid, { accepted = [], rejected = [], dismissed = false } = {}) {
+export function resolvePending(uid, { accepted = [], rejected = [], dismissed = false, proposalId = null } = {}) {
   const rec = readUser(uid);
   if (!rec.pending) return { ok: true };
+  if (proposalId && rec.pending.id !== proposalId) return { ok: false, stale: true };
   const history = [...(rec.history || []), {
     id: rec.pending.id, kind: rec.pending.kind,
     outcome: dismissed ? 'dismissed' : 'applied',

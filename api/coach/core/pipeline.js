@@ -15,6 +15,8 @@ import { buildPrompt, buildPromptParts } from './prompt.js';
 import { SCHEMAS } from './schemas.js';
 import { extractJSON, contractOK } from './parse.js';
 import { validatePlan, validateReview, validateDebrief } from './validate.js';
+import { validateQuestion } from './question.js';
+import { validateActiveProposal } from './active-workout.js';
 
 /**
  * One attempt: prompt → provider → parse → validate.
@@ -58,13 +60,14 @@ export async function attemptOnce({ adapter, cfg, kind, payload, model, timeoutM
   // time. A model that cannot be told is a failed job, not a retry loop.
   // The user's own exercises are in the library slice the model was given (flagged `custom`),
   // so they are a legitimate thing for it to name back — the validator has to agree.
+  const candidateIds = (payload.library || []).map(e => e.id);
   const customIds = (payload.library || []).filter(e => e && e.custom).map(e => e.id);
-  const checked = kind === 'review'
-    ? validateReview(parsed.value, payload.plan, { customIds })
+  const checked = kind === 'active' ? (parsed.value?.answer != null ? validateQuestion(parsed.value) : validateActiveProposal(parsed.value, payload.activeWorkoutSnapshot, candidateIds, payload.jointSignals)) : kind === 'question' ? validateQuestion(parsed.value) : kind === 'review'
+    ? validateReview(parsed.value, payload.plan, { customIds, candidateIds, jointSignals:payload.jointSignals })
     : kind === 'debrief'
       ? validateDebrief(parsed.value)
       : validatePlan(parsed.value, {
-      customIds,
+      customIds, candidateIds, jointSignals:payload.jointSignals,
       workingWeights: payload.history?.workingWeights,
       daysPerWeek: payload.coachProfile?.daysPerWeek
     });

@@ -9,7 +9,7 @@ import * as jobs from './jobs.js';
 import { computeCohort } from './cohort.js';
 import { adapterFor } from './adapters/index.js';
 import { canDropPrivileges } from './adapters/spawn.js';
-import { DATA_CATEGORIES } from './core/payload.js';
+import { DATA_CATEGORIES, CONSENT_VERSION } from './core/payload.js';
 import { validateBaseUrl, baseUrlFor } from './core/providers.js';
 
 // Job failures the user sees, in the app's own voice. The raw provider detail never reaches
@@ -53,7 +53,7 @@ export function coachRoutes({ json, readBody, readSession, requireAdmin }) {
         provider: cfg.provider,
         providerLabel: cfgStore.providerMeta(cfg).label,
         categories: DATA_CATEGORIES,
-        version: 1
+        version: CONSENT_VERSION
       });
     },
 
@@ -62,6 +62,18 @@ export function coachRoutes({ json, readBody, readSession, requireAdmin }) {
       json(res, 200, jobs.status(user.id));
     },
 
+    'POST /api/coach/question': async (req, res) => {
+      const user = guard(req, res); if (!user) return;
+      const body = await readBody(req);
+      try { json(res, 202, { job: jobs.enqueue(user.id, { kind:'question', note:String(body.note||'').slice(0,1000), activeWorkoutSnapshot:body.activeWorkoutSnapshot||null }) }); }
+      catch (e) { failEnqueue(res,e); }
+    },
+    'POST /api/coach/active': async (req, res) => {
+      const user = guard(req, res); if (!user) return;
+      const body = await readBody(req);
+      try { json(res, 202, { job: jobs.enqueue(user.id, { kind:'active', note:String(body.note||'').slice(0,1000), activeWorkoutSnapshot:body.activeWorkoutSnapshot }) }); }
+      catch (e) { failEnqueue(res,e); }
+    },
     'POST /api/coach/plan': async (req, res) => {
       const user = guard(req, res); if (!user) return;
       const body = await readBody(req);
@@ -113,7 +125,8 @@ export function coachRoutes({ json, readBody, readSession, requireAdmin }) {
       json(res, 200, jobs.resolvePending(user.id, {
         accepted: Array.isArray(body.accepted) ? body.accepted : [],
         rejected: Array.isArray(body.rejected) ? body.rejected : [],
-        dismissed: !!body.dismissed
+        dismissed: !!body.dismissed,
+        proposalId: typeof body.proposalId === 'string' ? body.proposalId : null
       }));
     },
 

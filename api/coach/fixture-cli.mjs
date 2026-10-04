@@ -48,6 +48,11 @@ function payload() {
 }
 const P = payload();
 const kind = P.task || (/change-set/i.test(prompt) ? 'review' : 'create');
+if (kind === 'question') out({ answer: 'Consulta de demostracion sin cambios en ejercicios.', ...(MODE === 'question-with-mutation' ? { changes: [] } : {}) });
+if (kind === 'active') out({ protocolVersion: 'active-workout/v1', scope: 'active_workout',
+  baseFingerprint: MODE === 'stale-active' ? 'stale' : P.activeFingerprint,
+  reasonCode:'user_request', summary:'Saltear lo pendiente conservando el trabajo registrado.',
+  operations:[{type:'skip_pending_exercise',index:P.activeWorkoutSnapshot.cur}] });
 
 // Well-formed JSON naming an exercise nobody has. This is the failure validate.js exists for,
 // and it is not the same as garbage: every check upstream of the validator is happy with it.

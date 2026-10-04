@@ -16,6 +16,7 @@
  */
 import { libraryHas, libraryName } from './library.js';
 import { reviewResultErrors } from './review-result.js';
+import { proposalCandidateErrors, planJointSignalErrors } from './candidates.js';
 
 // The closed list (FR-23 / C3). Adding a member here is a deliberate act with an apply
 // implementation on the client to match; there is no default case anywhere.
@@ -66,7 +67,8 @@ const INVERTED_RANGE = where =>
  * Returns { ok, bundle } or { ok:false, errors }.
  */
 export function validatePlan(data, ctx = {}) {
-  const errors = [];
+  const errors = proposalCandidateErrors(data, ctx.candidateIds);
+  if (ctx.jointSignals?.length) errors.push('joint symptoms block AI plan creation');
   if (!data || typeof data !== 'object') return fail(['the answer was not an object']);
   if (data.nochange) return fail(['a plan was requested but the answer said "no change"']);
   if (!Array.isArray(data.routines) || !data.routines.length) errors.push('routines must be a non-empty array');
@@ -217,7 +219,8 @@ export function validateReview(data, plan, ctx = {}) {
   if (data.nochange) {
     return { ok: true, nochange: true, reading: clampStr(data.reading || data.summary || '', 1200) };
   }
-  const errors = [];
+  const errors = proposalCandidateErrors(data, ctx.candidateIds);
+  errors.push(...planJointSignalErrors(data, ctx.jointSignals));
   const routines = new Map((plan?.routines || []).map(r => [r.id, r]));
   // payload.librarySlice offers the model the user's own exercises alongside the catalogue, so
   // rejecting them here made every proposal naming one fail — and burn the single repair round.

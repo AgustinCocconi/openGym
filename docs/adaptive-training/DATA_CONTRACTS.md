@@ -1,7 +1,33 @@
 # Contratos de datos objetivo
 
-Estos contratos son independientes del proveedor. Son una guia para schemas y
-tests del fork, no representan endpoints ya existentes en openGym.
+Estos contratos describen el objetivo independiente del proveedor. Los ejemplos
+adaptive-trainer/v1 y adaptive-context/v1 de abajo siguen siendo futuros; el
+subconjunto implementado reutiliza Coach, como se precisa a continuacion.
+
+## Subconjunto implementado
+
+POST /api/coach/question recibe note y activeWorkoutSnapshot opcional. POST
+/api/coach/active exige ese snapshot. BYOK reutiliza el mismo pipeline. Consent
+v2 obligatorio. El snapshot efimero se limita por allowlist y presupuesto; la
+sesion activa no pasa a ser estado sincronizado del servidor.
+
+Payload usa coach_contract:1, task, meta.lang/unit, jointSignals, skills,
+library, exerciseDetails y, cuando corresponde, activeWorkoutSnapshot,
+activeFingerprint y activeDosePolicyVersion. Candidatos/equipamiento se guardan
+como metadatos de la propuesta y se revisan nuevamente en el cliente.
+
+Question: {coach_contract:1,answer:"..."} normaliza a nochange/reading. No permite
+changes, operations, bundle ni otros contenedores de entrenamiento. Active:
+{coach_contract:1,protocolVersion:"active-workout/v1",scope:"active_workout",
+baseFingerprint:"8hex",summary:"...",reasonCode:"user_request",operations:[...]}
+usa index de ocurrencia, exerciseId, prescription o position segun el tipo.
+Evidencia y confirmationState son derivadas por codigo. El fingerprint FNV32 es
+una guarda de obsolescencia, no un hash criptografico ni una autorizacion.
+
+Contrato ejecutable: api/coach/core/question.js, active-workout.js, schemas.js,
+skills.js y tests al lado. Operaciones/limites en AI_TRAINER_PROTOCOL. Los
+objetivos manuales viven en coach.skillGoals; el estado historico usa IDs/filas
+canonicos y no adopta los UUID ilustrativos del objetivo futuro.
 
 ## Pedido al entrenador
 
