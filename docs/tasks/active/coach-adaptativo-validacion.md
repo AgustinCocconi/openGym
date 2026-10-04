@@ -2,53 +2,54 @@
 
 ## Objetivo y alcance
 
-Validar el primer recorrido adaptativo con proveedores/modelos y navegador antes
-de desplegarlo. Estado del porte en PORTING_MAP; no ampliar aqui el alcance a
-todas las politicas pendientes.
+Validar el primer recorrido adaptativo con modelos y navegador antes de
+proponer deploy. Estado del porte en [PORTING_MAP](../../adaptive-training/PORTING_MAP.md);
+contratos/gate en [AI_TRAINER_PROTOCOL](../../adaptive-training/AI_TRAINER_PROTOCOL.md).
+Core api/coach/core, adaptadores y UI components/adaptive-training.
 
 ## Criterios de aceptacion
 
-- Gate registrado por proveedor/modelo/protocolo/idioma es y es-AR.
-- Consulta conserva entrenamiento y pending; cambio muestra diff/motivo/alcance,
-  confirma, preserva registros y permite undo antes de datos materiales nuevos.
+- Gate por proveedor/modelo/protocolo/idioma es y es-AR.
+- Consulta conserva entrenamiento y pending; cambio confirma diff/motivo/alcance,
+  preserva registros y permite undo antes de datos materiales nuevos.
 - Dolor/prerrequisitos/equipo/candidatos bloquean propuestas incompatibles.
-- Flujo manual completo cuando el modelo no esta disponible.
-- Verificar navegador y dispositivos para plan, sesion parcial, habilidades y
-  reintento del acuse sin aplicar dos veces.
+- Registro y finalizacion manual completos sin modelo.
+- Navegador/dispositivos: plan, sesion parcial, habilidades y acuse idempotente.
 
-## Referencias y zona afectada
+## Estado y verificaciones
 
-[Mapa](../../adaptive-training/PORTING_MAP.md),
-[protocolo](../../adaptive-training/AI_TRAINER_PROTOCOL.md),
-[contratos](../../adaptive-training/DATA_CONTRACTS.md),
-[castellano](../../adaptive-training/LOCALIZATION_ES.md).
-Core api/coach/core; adaptadores Coach existentes; UI components/adaptive-training.
-Escenarios: calisthenics-live-management, novice-pullup-foundation,
-coach-candidate-allowlist y reported-pain-plan-removal. Leer solo rutas pertinentes.
+Dependencias resueltas en 1ee3ac4; upstream 1350409 revisado sin merge.
+Gate Linux/Docker Node 22.23.3: frontend 1.559, API 229 con/sin SDK, MCP 59,
+build/14 locales/1.361 claves/assets/carga/fatiga/contexto y seis tests OK.
+Imagenes/default/SDK y ops OK; todas las variantes npm audit en cero.
+La tarea de auditoria se retiro; delta documentado en UPSTREAM_STRATEGY.
 
-## Estado actual
+Codex CLI 0.160.0/gpt-6.1-sol: 14/14 escenarios, 15 llamadas exitosas,
+coach_contract:1 / active-workout/v1 / pending-volume-reduction/v1, es y es-AR.
+Consulta parcial, omision, dosis, dolor, habilidad bloqueada, equipo/allowlist
+y aclaracion. Reduccion de dosis es necesito una reparacion; hubo una falla
+transitoria de proveedor en otra consulta, completada al retomar.
+Los dos primeros probes de creacion se excluyeron: el harness no enviaba la
+restriccion en intake. Repetidos correctamente mediante profile.notes, pasan.
 
-Core e9ad79d y UI 526bbb0 comiteados localmente. Consulta/operaciones activas,
-habilidades/evidencia y es-AR implementados con consentimiento v2. Produccion
-conserva app e8771b1 y operaciones 9fdb243: este Coach aun no esta desplegado.
-Publicacion y CI del codigo nuevo pendientes; no avanzar checkout OCI sin
-planificar deploy/aceptacion y pausa del timer de backups.
-
-## Verificaciones
-
-Linux/Docker Node 22, checkout limpio 526bbb0: frontend 1.559 tests, API 229,
-MCP 59, build/14 locales/1.361 claves/assets/carga directa/probes de fatiga OK.
-Windows Node 24.15.0: check:context y seis tests OK. Log local ignorado:
-.production-state/final-review-evidence/node22-gate.log. Fixtures y DOM simulado;
-no prueba modelos reales ni navegador. [Auditoria de dependencias](dependencias-auditoria.md) registrada; lockfiles
-sin cambios. Resolver ese pendiente antes de proponer publicacion.
+Chrome 153.0.8010.53: nueve casos en cada combinacion es/es-AR × 1280/390,
+36/36 OK. Confirma plan/propuesta reales, preserva sesion/historial/rutina,
+consulta con pending, omision manual/undo, acuse con 503 y reintento sin duplicar,
+tres reps insuficientes y bloqueo por dolor. Endpoints HTTP interceptados;
+viewport movil no acredita dispositivo fisico ni flujo completo servidor/modelo.
+Logs, harnesses, respuestas y capturas locales ignorados:
+.production-state/coach-validation/{summary.json,real-model-results.jsonl,browser-results.json}.
+Gate/instalaciones/Compose: .production-state/dependency-review.
 
 ## Pendientes y siguiente accion
 
-Preparar matriz de pruebas y proveedor disponible con el propietario; ejecutar
-escenarios reales en es/es-AR y registro manual offline antes de proponer deploy.
-No declarar aprobacion de modelos por las pruebas con fixtures. Traduccion total
-sigue pendiente: 33 strings heredados y nombres fuera de 18 IDs curados.
-Frecuencia/exposiciones 7/14/28, ranking integrado, grafos avanzados, recuperacion,
-revision de bloques y acceso MCP remoto siguen en PORTING_MAP para otras tareas.
-Al aprobar, actualizar capsulas y retirar esta tarea.
+- Repetir matriz con otro proveedor real y BYOK; registrar paridad y modelos.
+- Ejecutar UI con API/credencial real conectada, sin interceptar transporte.
+- Verificar telefono/dispositivos, finalizacion manual offline y undo bloqueado
+  por nuevos datos materiales. No confundir fixtures o capturas con estos gates.
+- Registro automatico de modelos aprobados y operaciones activas restantes.
+
+Produccion conserva app e8771b1/ops 9fdb243; nuevo Coach sin publicar/desplegar.
+No avanzar OCI ni pausar backups para este candidato sin pedido de deploy.
+Castellano integral y politicas pendientes siguen en PORTING_MAP. Al completar
+aceptacion, integrar evidencia en capsulas y retirar esta tarea.

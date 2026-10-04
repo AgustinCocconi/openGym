@@ -82,11 +82,11 @@ El polling adapta la guarda de respuestas viejas de upstream 43a2054.
 
 ## Verificacion del recorrido
 
-4/10/2026, 526bbb0: Linux/Docker Node 22, frontend 1.559 tests,
-API 229, MCP 59, build, assets, locales, carga Node y probes de fatiga OK.
-Windows/Node 24: check:context y seis tests OK.
-DOM simulado y proveedores fixture; faltan modelos reales, navegador/dispositivos,
-CI del nuevo codigo y deploy. Reporte general: 33 strings heredados sin traducir.
+4/10/2026, 1ee3ac4: Linux/Node 22.23.3, frontend 1.559, API 229 con/sin SDK,
+MCP 59; build/locales/assets/carga/fatiga/contexto OK, npm audit cero.
+Codex 0.160/gpt-6.1-sol: 14/14 es/es-AR; Chrome 153: 36 casos/HTTP interceptado.
+Otros proveedores/BYOK, API/modelo real, dispositivos y cierre offline
+pendientes: AI_TRAINER_PROTOCOL/handoff. CI/deploy y 33 strings pendientes.
 
 Base a68a88d intacta, Linux/Node 22.23.3: frontend 1.468, API 181, MCP 58,
 build/carga MCP OK (frontend ignore-scripts). Gate Linux completo; Windows

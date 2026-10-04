@@ -61,8 +61,8 @@ Un modelo apto para modo entrenador debe:
 8. Mantener paridad semantica al cambiar de proveedor.
 
 La aprobacion se registra por `provider + model + protocolVersion`; un cambio de
-modelo vuelve a ejecutar el gate. Este registro es objetivo pendiente: hoy se
-prueba el contrato con fixtures, sin declarar aprobado ningun modelo real.
+modelo vuelve a ejecutar el gate. El registro automatico sigue pendiente;
+hay evidencia acotada de Codex real, sin aprobar todas las mutaciones.
 
 ## Intenciones admitidas
 
@@ -199,7 +199,8 @@ El cliente:
 
 El system prompt base puede mantenerse estable para aprovechar cache. El
 payload implementado incluye `meta.lang`; los prompts piden respetarlo.
-El gate real de idioma sigue pendiente. IDs, enums y `reasonCode` son estables.
+Codex responde en es/es-AR; falta validar otros proveedores.
+IDs, enums y `reasonCode` son estables.
 
 Para `es-AR`:
 
@@ -210,12 +211,11 @@ Para `es-AR`:
 
 ## Estado implementado y validacion
 
-Implementado: question y active usan el mismo pipeline servidor/BYOK y una ronda
-de reparacion. El contrato actual es coach_contract:1. Question solo admite
-answer (hasta 2.000 caracteres); rechaza formas de mutacion y conserva pending.
-Active usa active-workout/v1 y exige exactamente una operacion, motivo cerrado,
-summary, scope, fingerprint y confirmacion. La evidencia se deriva del snapshot,
-no de afirmaciones del modelo. Una aclaracion sin operacion es de solo lectura.
+Question/active comparten pipeline servidor/BYOK y una reparacion;
+coach_contract:1. Question admite answer <=2.000 caracteres, rechaza mutaciones
+y conserva pending. Active exige una operacion, motivo, summary, scope,
+fingerprint y confirmacion; evidencia del snapshot. Aclaracion sin operacion
+es solo lectura.
 
 Snapshot: 40 items, 30 filas por item, profundidad 3 y 40.000 caracteres; unidad,
 item enfocado, target, registro anidado y senales permitidas. Viaja efimeramente:
@@ -229,6 +229,10 @@ Sin clasificacion articular compatible, una senal permite omision/baja; para
 rutinas guardadas solo bajas, sin mezclarlas con otra mutacion. Undo local exige
 que no haya registro nuevo ni otro cambio material; navegar no lo invalida.
 El retry del acuse usa proposalId y no aplica nuevamente el cambio.
+
+Matriz 4/10/2026: Codex 0.160/gpt-6.1-sol, 14/14 casos es/es-AR;
+Chrome 153, 36 casos con HTTP interceptado. Gate parcial.
+Detalle en [el handoff](../tasks/active/coach-adaptativo-validacion.md).
 
 Pendientes: gate registrado por proveedor/modelo/idioma, contexto de frecuencia
 7/14/28, sugerencia de proxima sesion con esa evidencia y politicas de tiempo,
