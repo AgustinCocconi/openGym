@@ -219,7 +219,10 @@ test('rotation always retains the new archive even when existing names sort afte
       await writeFile(join(root, 'encrypted', base + '.age' + suffix), 'older fixture with future name');
     }
   }
+  await writeFile(join(bin, 'date'), '#!/bin/sh\ncase "$*" in *%Y%m%d*) printf "20240101T080000Z\\n" ;; *) /bin/date "$@" ;; esac\n');
+  await chmod(join(bin, 'date'), 0o700);
   const result = await backup({});
+  await rm(join(bin, 'date'));
   assert.equal(result.code, 0, result.stdout + result.stderr);
   const archive = result.stdout.match(/BACKUP_ARCHIVE=(.+)/)[1];
   assert.ok((await readFile(archive)).length > 0);
