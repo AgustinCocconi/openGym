@@ -82,17 +82,17 @@ El polling adapta la guarda de respuestas viejas de upstream 43a2054.
 
 ## Verificacion del recorrido
 
-4/10/2026, 1ee3ac4: Linux/Node 22.23.3, frontend 1.559, API 229 con/sin SDK,
-MCP 59; build/locales/assets/carga/fatiga/contexto OK, npm audit cero.
-Codex 0.160/gpt-6.1-sol: 14/14 es/es-AR; Chrome 153: 36 casos/HTTP interceptado.
-Otros proveedores/BYOK, API/modelo real, dispositivos y cierre offline
-pendientes: AI_TRAINER_PROTOCOL/handoff. CI/deploy y 33 strings pendientes.
+4/10/2026, 3dbc82f: gate CI Linux/Node 22, frontend 1.559, API 233, MCP 59;
+build/locales/assets/carga/fatiga/contexto OK, dependencias auditadas en cero.
+Codex 0.160/gpt-6.1-sol: 14/14 es/es-AR; Chrome 153: 36 casos de contrato.
+UI/API/modelo real: consulta parcial, confirmar/undo y registros preservados;
+manual offline completo/sync y undo bloqueado por nuevos datos OK.
+CI/deploy coach aceptado. Otros proveedores/BYOK, telefono y 33 strings
+pendientes: AI_TRAINER_PROTOCOL/handoff.
 
-Base a68a88d intacta, Linux/Node 22.23.3: frontend 1.468, API 181, MCP 58,
-build/carga MCP OK (frontend ignore-scripts). Gate Linux completo; Windows
-falla por fixture-cli C:\C:\..., corregido en personal.
-Main bundle crece aproximadamente 153 kB (29 kB gzip) frente al personal previo;
-se mantienen los avisos de Vite heredados y los presupuestos de contexto.
+Base a68a88d intacta: gate Linux/Node 22.23.3, frontend 1468/API 181/MCP 58,
+build/carga MCP OK. Fixture-cli Windows corregido en personal; Vite mantiene
+avisos heredados. Bundle crece ~153 kB/29 kB gzip frente al personal previo.
 
 ## Reimplementar sobre la arquitectura de openGym
 

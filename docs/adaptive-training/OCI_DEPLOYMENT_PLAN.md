@@ -7,7 +7,7 @@ las fases contienen controles y evidencia pertinente, sin bitacora de intentos.
 
 ## Checkpoint
 
-4/10 16:25 AR: app e8771b1 aceptada; ops 9fdb243 activa y copia PC restaurada.
+4/10 AR: 3dbc82f/coach aceptado, gpt-6.1-sol activo/30 al dia; copia PC restaurada.
 Propietario difiere resguardo de identidad: backup/clave solo en esta PC por ahora.
 OCI E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 al 3/10 UTC OK; sin PAYG.
 
@@ -17,9 +17,9 @@ OCI E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 al 3/10 UTC OK; sin PAYG.
 | 1. Compatibilidad | COMPLETA | ARM64 probado en `905f44e`; imagenes publicadas para AMD64 y ARM64 en fase 4. Consumo local orientativo. |
 | 2. Cuentas | COMPLETA | OCI Always Free/MFA/USD 0, alertas activas y E2 1/1/0. CF zona activa Free por API; propietario confirma Zero Trust Free/2FA. |
 | 3. IaC OCI | COMPLETA | Terraform 1.16.4 / OCI 7.32.0: formato, validacion y cuatro guardrails registrados; E2, swap y storage de 50+50 GB. |
-| 4. Imagenes | COMPLETA | `e8771b1`/`37175784315`: gate/publicacion, digests/plataformas/revision anonimos OK. |
+| 4. Imagenes | COMPLETA | 3dbc82f/37247336190: gate/publicacion default/coach/web; digests/revision OCI OK. |
 | 5. VM y Cloudflare | COMPLETA | Tunnel Healthy/4, tres pruebas confirmadas, cierre sano y token API revocado. |
-| 6. Primer deploy | COMPLETA | e8771b1: HTTPS AR/WAF BR, passkey/admin, backup restaurado y SSH cerrado. |
+| 6. Deploy | COMPLETA | 3dbc82f: HTTPS AR/WAF BR, modelo/aislamiento/30, copia PC restaurada y SSH cerrado. |
 | 7. Observacion | EN CURSO | Revisar ocho dias completos desde 12/10/2026 16:25 AR. |
 | 8. Recuperacion | EN CURSO | Copia PC diaria tras 05:00 AR; simulacro 4/11. RTO pendiente; resguardo independiente diferido |
 | 9. Operacion | PENDIENTE | Rutina tras observacion y recuperacion periodica. |
@@ -127,11 +127,10 @@ esta evidencia no certifica otro SHA. `recency` separado no implica integracion.
 
 `905f44e8695886ef4c006ce4208e737708d58bf3`, 2026-09-17, sin recency: Node 22
 ARM64 paso suites/build/checks; dos tests QEMU necesitaron timeout 30 s, sin
-cambiar codigo. Buildx, downloader, health/config y smoke pasaron. Imagenes:
-default ~166 MiB, coach ~1.022 MiB, web ~78 MiB; API+web ~251-262 MiB bajo
-QEMU/Docker Desktop, sin acreditar capacidad/latencia/inactividad OCI.
-E2 usa AMD64 de fase 4; medir antes de afirmar suficiencia. Mantener default:
-coach exige pruebas/publicacion separadas y no esta en el workflow productivo.
+cambiar codigo. Buildx/downloader/health/config/smoke pasaron; consumo local
+orientativo, sin acreditar capacidad/latencia/inactividad OCI.
+E2 usa AMD64: 3dbc82f publica coach (~1.615 MiB) y web (~104 MiB).
+Prueba real/privilegios/recursos en fase 6; no acredita toda carga sostenida.
 
 ## Fase 2 - Preparar cuentas y elecciones del propietario
 
@@ -170,13 +169,12 @@ revision explicita del cambio de guardrail. Salida: plan revisado sin sorpresas.
 
 ## Fase 4 - Publicar imagenes propias por commit
 
-Evidencia del 2026-10-04: SHA
-`e8771b131b84175fe46d4f8b3c69e7f65649ccf0`, workflow `37175784315`, gate y
-publicacion `linux/amd64,linux/arm64` verdes. Consulta anonima: checksums de
-indices/manifests/configs, labels de revision y alias personal coincidentes:
+3dbc82f7238336fe69e62f4a4d5b9bf8b3759fef, workflow 37247336190:
+gate Linux/Node 22 y publicacion AMD64/ARM64 default/coach/web verdes.
+OCI verifica revision y usa estos digests inmutables:
 
-- API `default`: `sha256:66097a85f033eeb34f355e8799b2a1248e332f40613155a9c56338d8fb39eb81`.
-- Web: `sha256:d2c3e3380a6008d71d7e1bc0fd5548918fca5d8e17a8bc6ff4287378563ae8b3`.
+- API coach: sha256:619f97a6a12412daf83b26bfd03380ca8a18f020f57b1542db2dec8990d9ce6e.
+- Web: sha256:bfb30e196cf83d083360f0fdc716dc89ff422ddf33d2a74f81707f72cc0ae217.
 
 `.github/workflows/personal-publish.yml` llama a `test.yml` antes de publicar.
 El deploy verifica revision y registra digests. Esa evidencia corresponde solo
@@ -213,39 +211,39 @@ Smoke/gate Linux y recuperacion corresponden a fase 6.
 
 ## Fase 6 - Primer despliegue controlado
 
-Deploy autorizado 4/10; SHA/digests en fase 4. [Preparacion](../../ops/PROTECTED_OPERATIONS.md):
-Linux/Node 22 AMD64, 1539 frontend/59 MCP/190 API; probes/rollback/restore OK.
-Deploy 04:19 UTC, aceptado 07:22 UTC. API/web healthy sin OOM/restarts;
-web loopback, API sin puerto, logs local 10m x 3, /srv persistente.
-[Instalacion](PRODUCTION_RUNBOOK.md#instalacion-inicial):
+3dbc82f/coach: deploy 5/10 00:29 UTC, aceptado 00:44 UTC. Modelo activo/30 al dia.
+CI Linux/Node 22: frontend 1559/API 233/MCP 59, imagenes/ops/contexto OK.
+API sin puerto, web loopback, /srv persistente; registros y passkey conservados.
 
-- [x] `.env` 0600; `RP_ID`/`ORIGIN` segun instalacion.
-- [x] e8771b1: labels/digests/smoke OK; HTTPS AR 07:08 UTC. Propietario confirma
-  WAF BR/Block/opengym_argentina_only, Ray a452485da9315e0f (06:55 UTC).
-- [x] Perfil/passkey celular, ADMIN_UIDS coincide; INVITE_ONLY=1, ALLOW_GUEST=0.
-  Login/lectura/escritura/admin confirmados por propietario.
-- [x] Backup 20261004T072203Z-e8771b131b84 con perfil; copia age PC,
-  checksum/descifrado/restore y cinco archivos comparados; plaintext retirado.
-- [x] Mantener Access propietario, WAF y autenticacion openGym.
-- [x] SSH 06:45-07:32 UTC DELETED, claves retiradas; sesiones/consolas activas 0.
+- [x] HTTPS AR 00:33 UTC; Access propietario/OTP/24 h conservado.
+- [x] Propietario confirma WAF BR/Block/opengym_argentina_only, Ray a4585643af02d87c.
+- [x] Un perfil/passkey; INVITE_ONLY=1, ALLOW_GUEST=0, ADMIN_UIDS coincide.
+- [x] Codex CLI 0.160.0/gpt-6.1-sol responde en OCI, sin privilegios; login nuevo
+  autorizado con codigo de dispositivo, cache 0700/0600 fuera de data/backups.
+  chatgpt-cli vinculado al propietario, 30/dia; canary OCI no leido/cero comandos.
+- [x] UI/API/modelo real: consulta parcial, propuesta/confirmacion/undo;
+  manual offline/sync/historial y undo bloqueado por nuevos datos OK.
+- [x] Backup previo/copias PC; posterior 5/10 00:46 UTC, checksum/descifrado/
+  restore seis archivos/2,25 s OK; plaintext retirado. RPO 0,06 h.
+- [x] Ambas ventanas SSH DELETED; claves/config retiradas, sin acceso permanente.
 
-Evidencia privada: %LOCALAPPDATA%/openGym-backups/deployment-e8771b1-20261004.json,
-.age.verification.json y custody-status.json. Clave: openGym-recovery/identity.txt.
-Resguardo independiente diferido por propietario; perder la PC puede impedir recuperar.
-No acredita adaptacion ni toda la rama local.
+Evidencia ignorada: .production-state/deploy-coach; constancias PC de 5/10 00:49 UTC
+en openGym-backups/transfer-*; ruta en handoff.
+Resguardo independiente diferido; no acredita telefono fisico ni otros proveedores.
 
 ## Fase 7 - Observar inactividad sin fabricar carga
 
 [Rutina activa](../../ops/PRODUCTION_ROUTINE.md#observacion-de-ocho-dias):
 primera muestra 2026-10-04T19:18:55Z (16:18:55 AR); cada cinco minutos.
-Cierre desde 12/10 16:18:55 AR, sujeto a cobertura/revision.
+Revisar desde 12/10/2026 16:25 AR, sujeto a ocho dias completos sin brechas.
 
 - [x] Metricas/health locales y cuatro alarmas OCI OK.
 - [ ] Ocho dias completos sin brechas; contrastar CPU/red OCI oficiales.
 - [x] Healthchecks, smoke y backups reales; sin carga sintetica.
 
-Backup inicial reinicio API; loopback OK y Docker starting hasta su healthcheck
-cada cinco minutos. Conservar este evento, no rellenar muestras faltantes.
+Hasta 5/10 00:50 UTC: 68 muestras, sin brechas/errores/OOM; siete starting por
+backups/deploy, loopback siempre OK. 4 reemplazos/5 cambios de arranque;
+memoria maxima 38,9 %, swap 132 MiB. Conservar eventos, no rellenar muestras.
 Propietario revisa alertas y decide.
 
 [Oracle](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)
@@ -259,11 +257,12 @@ Salida: cobertura completa y decision de dimensionamiento sustentada.
 
 ## Fase 8 - Backups y recuperacion ante reclamacion
 
-[Rutina activa](../../ops/PRODUCTION_ROUTINE.md#backup-diario-y-ventanas) en 9fdb243;
-app aceptada e8771b1. Backup diario 05:00 AR, retencion 14, destinatario publico
-age en host; identidad PC. Primera copia 4/10 19:19:01 UTC: checksum cifrado/
-original y restore aislado de cinco archivos OK; plaintext retirado.
-Copia PC 19:20 UTC: RPO 0,02 h; no acredita RTO productivo.
+[Rutina activa](../../ops/PRODUCTION_ROUTINE.md#backup-diario-y-ventanas) en 3dbc82f,
+app/coach aceptada. Backup 05:00 AR, retencion 14, age publico en host/identidad PC.
+Ultima copia 5/10 00:46:11 UTC, transferida 00:49:55 UTC: RPO 0,06 h.
+Checksums y restore aislado de seis archivos en 2,25 s OK; plaintext retirado.
+Timer de backup pausado durante deploy y reactivado; ambos timers activos.
+No acredita RTO productivo ni automatiza la transferencia diaria a PC.
 
 Copiar/verificar a PC diariamente por Bastion temporal y
 restaurar mensualmente; proximo simulacro 4/11. Resguardo independiente diferido.

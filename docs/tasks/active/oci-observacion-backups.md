@@ -21,24 +21,22 @@ Checkpoint y evidencia de fase 6 integrados al cierre autorizado por el propieta
 
 ## Estado actual
 
-Autorizacion previa usada para 9fdb243; esta retoma solo comitea cambios locales.
-Push/deploy requieren pedido explicito. Ops 9fdb243 publicado y activo;
-[gate/publicacion OK](https://github.com/AgustinCocconi/openGym/actions/runs/37227664601).
-App/imagenes e8771b1 aceptadas; delta ops/docs/CI validado sin redesplegar app.
-Host limpio, /srv persistente, modos 0700/0600 y cuatro alarmas OCI OK.
-Cuota ACTIVE y costo cero para 27/9-3/10 UTC; ninguna ampliacion de recursos.
+Actualizacion de produccion solicitada y aceptada: 3dbc82f/coach,
+[gate/publicacion OK](https://github.com/AgustinCocconi/openGym/actions/runs/37247336190).
+Codex/gpt-6.1-sol conectado al propietario; permisos privados, /srv persistente.
+Cuota/costo/alertas: ultima revision 4/10, sin ampliacion de recursos.
 
 Timers activos: observacion cada cinco minutos; backup 08:00 UTC/05:00 AR.
-Primera muestra y fecha de cierre en checkpoint. Tres muestras iniciales,
-sin brechas/errores de captura/OOM. Backup reinicio API una vez; loopback OK,
-Docker starting transitorio registrado; muestra 19:25 UTC api/web healthy.
+Desde primera muestra hasta 5/10 00:50 UTC: 68 muestras, cero brechas/errores/OOM;
+siete Docker starting por backups/deploy, loopback siempre OK. 4 reemplazos/5
+cambios de arranque; conservar eventos para la revision de ocho dias.
 
-Primera copia cifrada productiva 4/10 19:19:01 UTC, transferida 19:20 UTC:
-antiguedad 0,02 h; restore real de cinco archivos en 2,02 s, plaintext retirado.
-Constancias privadas: %LOCALAPPDATA%/openGym-backups/transfer-a909f6e8404244cba2f7679144ce9b55
-(transfer-verification.json y .age.restore-*.json); resumen routine-9fdb243-20261004.json.
+Copia posterior al deploy: 5/10 00:46:11 UTC, transferida 00:49:55 UTC;
+RPO 0,06 h. Restore aislado real: seis archivos/2,25 s; plaintext retirado.
+Constancias privadas: %LOCALAPPDATA%/openGym-backups/transfer-5b0ae69017f4435998f7cc1ff75aed1a
+(transfer-verification.json y .age.restore-*.json).
 No acredita ocho dias, custodia independiente ni RTO productivo.
-Copia externa diaria requiere PC/Bastion temporal; no hay SSH permanente.
+Copia diaria requiere PC/Bastion temporal; no hay SSH permanente.
 
 ## Verificacion
 
@@ -51,8 +49,8 @@ Copia externa diaria requiere PC/Bastion temporal; no hay SSH permanente.
 
 ## Siguiente paso y handoff
 
-Sesion DELETED; claves retiradas, cero sesiones/consolas; resumen privado guardado.
-Retoma: dependencias/Coach locales, sin nueva verificacion remota ni cambios OCI.
+Ambas ventanas propias DELETED; claves/config retiradas; resumen privado guardado.
+Retoma: continuar observacion/copias; no redesplegar por cambios documentales.
 Mantener copia PC diaria tras 05:00 AR; siguiente ventana 5/10/2026. Revisar
 RPO/avisos/colector. Desde 12/10/2026 16:25 AR, ejecutar
 informe desde 2026-10-04T19:18:55Z, exigir ocho dias completos sin brechas,

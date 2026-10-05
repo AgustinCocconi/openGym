@@ -230,11 +230,11 @@ rutinas guardadas solo bajas, sin mezclarlas con otra mutacion. Undo local exige
 que no haya registro nuevo ni otro cambio material; navegar no lo invalida.
 El retry del acuse usa proposalId y no aplica nuevamente el cambio.
 
-Matriz 4/10/2026: Codex 0.160/gpt-6.1-sol, 14/14 casos es/es-AR;
-Chrome 153, 36 casos con HTTP interceptado. Gate parcial.
+4/10: Codex 0.160/gpt-6.1-sol, 14/14 es/es-AR; Chrome 153, 36 casos.
+UI/API/modelo real, offline/sync/undo OK; OCI 3dbc82f/coach, propietario, 30/dia.
+Otros proveedores/dispositivos pendientes.
 Detalle en [el handoff](../tasks/active/coach-adaptativo-validacion.md).
 
-Pendientes: gate registrado por proveedor/modelo/idioma, contexto de frecuencia
-7/14/28, sugerencia de proxima sesion con esa evidencia y politicas de tiempo,
-DOMS y grafos curados avanzados. No se habilita MCP remoto de escritura.
+Pendientes: registro por proveedor/modelo/idioma, frecuencia 7/14/28,
+proxima sesion, tiempo/DOMS y grafos curados. MCP remoto de escritura deshabilitado.
 
