@@ -70,13 +70,20 @@ test('the Codex credential cache is a sibling of ./data, never inside it', () =>
   assert.equal(cfg.jobEnv('/tmp/job', { ok: true }).CODEX_HOME, undefined);
 });
 
-test('the Codex adapter runs with the three flags that keep host state out of a job', () => {
+test('the Codex adapter excludes host tools and ambient configuration', () => {
   // Same reasoning as the Claude lockdown above: these are not stylistic. --ignore-user-config
   // stops $CODEX_HOME/config.toml being an admin-invisible input to every job, --ephemeral stops
   // session files being written, and --skip-git-repo-check is what lets the bare mkdtemp job dir
   // run at all. Dropping any of them was a green build before this test existed.
   assert.deepEqual(argvFor(null), [
-    'exec', '-', '--skip-git-repo-check', '--ephemeral', '--ignore-user-config'
+    'exec', '-', '--skip-git-repo-check', '--ephemeral', '--ignore-user-config',
+    '--ignore-rules', '--sandbox', 'read-only',
+    '--disable', 'shell_tool', '--disable', 'unified_exec',
+    '--disable', 'multi_agent', '--disable', 'view_image',
+    '--disable', 'apps', '--disable', 'plugins', '--disable', 'remote_plugin',
+    '--disable', 'hooks', '--disable', 'browser_use', '--disable', 'computer_use',
+    '--disable', 'code_mode_host', '--disable', 'tool_suggest', '--disable', 'goals',
+    '--config', 'web_search="disabled"'
   ]);
 });
 

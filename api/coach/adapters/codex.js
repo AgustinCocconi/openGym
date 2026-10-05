@@ -11,7 +11,7 @@ const CLI = 'codex';
 /**
  * The exact argv every Codex job runs with.
  *
- * Exported so the three hardening flags are asserted by value rather than trusted: each one
+ * Exported so the isolation flags are asserted by value rather than trusted: each one
  * removes an input the job would otherwise inherit from the host, and dropping one would
  * change what a job can see without changing anything a test looks at.
  */
@@ -20,7 +20,23 @@ export function argvFor(model) {
     'exec', '-',              // non-interactive; '-' reads the prompt from stdin
     '--skip-git-repo-check',  // the job dir is a bare mkdtemp, not a repo -- without this it refuses to run
     '--ephemeral',            // do not write session files; the job dir dies with the job anyway
-    '--ignore-user-config'    // $CODEX_HOME/config.toml would be an admin-invisible input to every job
+    '--ignore-user-config',   // credentials only; ambient config is never an input
+    '--ignore-rules',
+    '--sandbox', 'read-only',
+    '--disable', 'shell_tool',
+    '--disable', 'unified_exec',
+    '--disable', 'multi_agent',
+    '--disable', 'view_image',
+    '--disable', 'apps',
+    '--disable', 'plugins',
+    '--disable', 'remote_plugin',
+    '--disable', 'hooks',
+    '--disable', 'browser_use',
+    '--disable', 'computer_use',
+    '--disable', 'code_mode_host',
+    '--disable', 'tool_suggest',
+    '--disable', 'goals',
+    '--config', 'web_search="disabled"'
   ];
   if (model) argv.push('--model', model);
   return argv;
@@ -45,9 +61,8 @@ export default {
     // refreshable login cache and a job whose HOME is a temp dir would otherwise find no login
     // at all. --ignore-user-config narrows that to credentials only: the cache is read, the
     // config file beside it is not, so an admin cannot be handed job behaviour they never saw.
-    // Sandbox mode is left at the CLI's default (read-only). The job only needs the model
-    // to write an answer to stdout, and this process is already an unprivileged user in a
-    // container -- widening it here would trade that away for nothing.
+    // A read-only sandbox still permits file reads. Disable the host tools explicitly: the
+    // runtime needs its login cache, but the model must only answer the supplied JSON context.
     const r = await run(CLI, argv, { stdin: prompt, cwd: jobDir, env, timeoutMs });
     return { ...r, text: (r.stdout || '').trim() };
   }

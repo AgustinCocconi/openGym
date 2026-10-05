@@ -358,19 +358,21 @@ reason it can be trusted next to your `./data`:
 They are exported as one frozen object and asserted by value in `adapters.test.js`, so
 re-enabling one is a red build rather than a quiet capability grant.
 
-The credential reaches the model process as an environment variable and by no other route. The
-job environment is built from nothing rather than filtered, and the SDK's `env` option *replaces*
-the child environment rather than extending it — so `RP_ID`, `ADMIN_UIDS` and the VAPID keys
-cannot reach it by inheritance even by accident.
+Claude receives its credential through a clean child environment; RP_ID,
+ADMIN_UIDS and VAPID keys are not inherited.
+
+Codex 0.160.0 explicitly disables shell/exec, images, agents, apps/plugins,
+hooks, browser/computer tools and web search. Read-only alone permits reads:
+a synthetic canary in coach-auth was readable before this control and unreadable
+after it. Its CLI still needs the login cache; host compromise can steal that
+credential and spend the subscription outside the app's quotas. Treat auth.json
+like a password. Disconnecting the Coach does not revoke that provider login.
 
 ## Where a credential lives
 
-Everything a provider owns — its credential, its model, and in instance mode the profile its
-credential bound to — is stored **per provider** in `coach.json`, so switching providers never
-throws a key away. An instance upgraded from an earlier build, where the file held one flat
-credential and one model for whichever provider was selected, has them lifted onto that
-provider the first time the new server reads the file. This is one-way: a downgrade will not
-read the maps back, and costs one paste of the key.
+Credentials, models and instance bindings live per provider in coach.json;
+switching providers preserves them. Legacy flat records migrate on first read.
+A downgrade cannot read those maps and requires reconnecting.
 
 Three shapes, because the providers work differently:
 

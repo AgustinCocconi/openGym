@@ -64,12 +64,13 @@ literario.
 | calisthenics-live-management | core/active-workout.test.js; alta/baja/parcial |
 | novice-pullup-foundation | core/skills.test.js; tres reps no aprueban cuatro |
 | reported-pain-plan-removal | core/candidates.test.js; baja sin alternativa |
+| codex-model-no-host-tools | ../test/adapters.test.js; tools deshabilitadas, canary real sintetico |
 | codex-cached-login | ../test/codex-login.test.js; conexion explicita, binding y cache ausente |
 
 Rutas de tests relativas a api/coach. Question, senales, dosis y confirmacion
 se cubren en tests puros; API y DOM prueban adapters y flujo. Los restantes
 escenarios son contrato objetivo, sin afirmar que todo el ranking esta portado.
-No se ejecutaron estos casos contra modelos reales.
+Codex/gpt-6.1-sol: 14 escenarios reales; alcance/evidencia en el handoff activo.
 
 ## Regla para agregar conocimiento
 
