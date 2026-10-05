@@ -7,7 +7,7 @@ las fases contienen controles y evidencia pertinente, sin bitacora de intentos.
 
 ## Checkpoint
 
-5/10 AR: 240605f/coach sano, prompts/HTTPS/modelo/30 y copia PC/restore OK; WAF pendiente.
+5/10 AR: 2eb87ea/coach sano, bandas/cargas/HTTPS/modelo/30/copia PC/restore OK; WAF pendiente.
 Propietario difiere resguardo de identidad: backup/clave solo en esta PC por ahora.
 OCI E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 al 5/10 UTC OK; sin PAYG.
 
@@ -17,9 +17,9 @@ OCI E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 al 5/10 UTC OK; sin PAYG.
 | 1. Compatibilidad | COMPLETA | ARM64 probado en `905f44e`; imagenes publicadas para AMD64 y ARM64 en fase 4. Consumo local orientativo. |
 | 2. Cuentas | COMPLETA | OCI Always Free/MFA/USD 0, alertas activas y E2 1/1/0. CF zona activa Free por API; propietario confirma Zero Trust Free/2FA. |
 | 3. IaC OCI | COMPLETA | Terraform 1.16.4 / OCI 7.32.0: formato, validacion y cuatro guardrails registrados; E2, swap y storage de 50+50 GB. |
-| 4. Imagenes | COMPLETA | 240605f/37346299201: CI/publicacion default/coach/web; digests/revision OCI OK. |
+| 4. Imagenes | COMPLETA | 2eb87ea/37355654587: CI/publicacion default/coach/web; digests/revision OCI OK. |
 | 5. VM y Cloudflare | COMPLETA | Tunnel Healthy/4, tres pruebas confirmadas, cierre sano y token API revocado. |
-| 6. Deploy | EN CURSO | 240605f: HTTPS AR/modelo/30/backup OK; WAF pendiente. |
+| 6. Deploy | EN CURSO | 2eb87ea: HTTPS AR/modelo/30/backup OK; WAF pendiente. |
 | 7. Observacion | EN CURSO | Revisar ocho dias completos desde 12/10/2026 16:25 AR. |
 | 8. Recuperacion | EN CURSO | Copia PC diaria tras 05:00 AR; simulacro 4/11. RTO pendiente; resguardo independiente diferido |
 | 9. Operacion | PENDIENTE | Rutina tras observacion y recuperacion periodica. |
@@ -258,10 +258,10 @@ Salida: cobertura completa y decision de dimensionamiento sustentada.
 ## Fase 8 - Backups y recuperacion ante reclamacion
 
 [Rutina activa](../../ops/PRODUCTION_ROUTINE.md#backup-diario-y-ventanas):
-240605f: WAF pendiente; backup diario bloqueado hasta accepted.
+2eb87ea: WAF pendiente; backup diario exige accepted.
 Backup 05:00 AR, retencion 14, age publico en host/identidad PC.
-Backup 5/10 17:21:22 UTC; copia PC/restore aislado autorizado 17:34 UTC OK.
-Checksums y restore 3,15 s/7 archivos OK; plaintext retirado.
+Backup 5/10 18:30:57 UTC; copia PC/restore aislado autorizado 18:34 UTC OK.
+Checksums y restore 2,29 s/7 archivos OK; plaintext retirado.
 Timer de backup pausado durante deploy y reactivado; ambos timers activos.
 No acredita RTO productivo ni automatiza la transferencia diaria a PC.
 

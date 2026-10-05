@@ -1,50 +1,55 @@
-# Despliegue de pedidos de cambio sin historial
+# Despliegue de correcciones del Coach
 
 ## Objetivo y alcance
 
-Desplegar la correccion del Coach autorizada el 5/10/2026 AR. Preservar datos,
-gpt-6.1-sol, cuotas 30/30 y Access/WAF; sin cambios de infraestructura/autenticacion.
+Correcciones del despliegue autorizado: pedidos sin historial, propuestas
+confirmables con bandas y trabajo con cargas. Preservar datos, gpt-6.1-sol,
+cuotas 30/30 y Access/WAF, sin cambios de infraestructura/autenticacion.
 
 ## Criterios de aceptacion
 
-SHA publicado con CI verde; backup consistente, copia PC y restore aislado;
-API_TARGET=coach, API/web saludables y prompts exactos; HTTPS AR y WAF confirmado;
-timers activos y accesos propios cerrados. Retirar tarea tras aceptacion formal.
+SHA publicado/CI verde; backup consistente, copia PC y restore aislado;
+API_TARGET=coach, API/web saludables, prompts y reglas exactos; HTTPS AR y
+WAF confirmado; timers activos/accesos propios cerrados. Retirar tras accepted.
 
-## Contexto y zona afectada
+## Referencias
 
 [Checkpoint](../../adaptive-training/OCI_DEPLOYMENT_PLAN.md),
 [runbook](../../adaptive-training/PRODUCTION_RUNBOOK.md),
 [operaciones protegidas](../../../ops/PROTECTED_OPERATIONS.md).
-Escenario coach-request-without-history; evidencia en PORTING_MAP. Reemplaza el
-handoff de controles a4e766f: su WAF pendiente queda consolidado en esta tarea.
+Escenario coach-request-without-history, reglas/evidencia en protocolo y mapa.
 
-## Estado actual y verificacion
+## Estado y verificacion
 
-Produccion 240605f75414865a473241e52618542827195ec9/coach, CI/publicacion
-37346299201 verde. API/web healthy y hashes common/review iguales al candidato.
-HTTPS AR 17:24 UTC, registro cerrado/un perfil; modelo real gpt-6.1-sol/Codex
-0.160.0 OK, privilegios reducidos, binding propietario y cuotas 30/30 preservados.
-Windows: API 243 pass/1 skip, frontend relevante 277 pass; build/assets/core/
-contexto OK. Modelo real: pedido/seguimiento 2/2 es-AR, IDs validos/evidencia cero.
-OCI E2/100 GB/USD 0 reportado al 5/10, sin recursos nuevos; timers activos.
+2eb87ea4cdbd74c3b2fe972cf027963c80a4095d/coach instalado; CI/publicacion
+37355654587 verde. HTTPS AR 18:32 UTC; registro cerrado/un perfil, modelo real
+Codex 0.160.0/gpt-6.1-sol OK, privilegios reducidos, propietario y cuotas 30/30.
+API/web healthy del SHA exacto; hashes de prompts, lectura de bandas y
+candidatos cargables instalados verificados en el contenedor.
+Windows Node 24.15.0: API 245 pass/1 skip; frontend 329 pass/7 archivos, incluido
+probe privado de respuesta real. Build/assets/core/contexto OK. Regresion roja
+reprodujo 14 fallos; corregida valida bandas, custom y flags, CLI/HTTP/BYOK,
+confirmar/undo y rechazo sin mutaciones ante edicion real. Modelo sintetico real:
+1 intento/60 candidatos, baja 0991 + 2 altas con barra/maquina; confirmar/undo OK.
+Diagnostico solo lectura: pending usaba hash legado; perfil ya declara cargas.
+60 candidatos pasan de 19 bandas/1 dumbbell a 6 bandas/4 dumbbell y cubren las
+14 clases declaradas. Se incluye eq canonico; no se modifica el plan del usuario.
+Propuesta anterior requiere revision nueva; no reescribir su fingerprint.
 
-Backup previo 17:21:22 UTC de a4e766f, archivo 240605f75414; SHA256
-9f0ee163b30a06fc62b4fdc3994a92c2e2a884030d4c58619f5549f77931fd26.
-Cifrado age en /srv/opengym-encrypted. Propietario autoriza especificamente copia
-a esta PC y restore; transfer-611e7794c40b466d86a07406e7b62939, 7 archivos/3.15 s,
-checksums y limpieza plaintext verificados. Evidencia privada ignorada en
-.production-state/deploy-requests y openGym-backups/transfer-611e7794c40b466d86a07406e7b62939.
-Acceso propio Managed SSH DELETED; claves/config retiradas. Navegador propio
-y puerto de depuracion 9234 cerrados; pruebas finales/contexto OK.
+Backup previo 18:30:57 UTC de 240605f, archivo 2eb87ea4cdbd; SHA256
+e39629ac46ba2fb86bd8d01a4868b83a40f1d7baf595d168464822b2633a27fb.
+Age en /srv/opengym-encrypted; copia PC autorizada en openGym-backups/
+transfer-9b6e80806c6f4769ad0d194e1964c173. Restore 7 archivos/2.29 s, checksums y
+limpieza plaintext verificados. Timers activos; acceso propio deploy-bands
+Managed SSH DELETED; claves/config retiradas. Navegador/CDP cerrado. Evidencia ignorada
+en .production-state/deploy-bands; recuperacion independiente diferida.
 
-## Bloqueo y siguiente paso
+## Pendiente y continuacion
 
-Estado remoto pending-external. WAF 5/10 17:15:10 UTC (14:15 AR), BR/403,
-Ray a45e11210d29864b-GRU: falta confirmacion del propietario de evento
-Block/opengym_argentina_only, solicitada por pregunta asincronica. No inferir
-regla desde 403. Backup diario no puede ejecutarse hasta accepted; copia manual
-consistente ya verificada. Tras confirmacion, abrir nueva ventana propia
-Bastion/navegador: el helper actual conserva lease DELETED. Refrescar HTTPS,
-ejecutar accept-production.sh para SHA exacto y revisar backup/timers.
-Constancia remota .production-state/https-240605f.receipt; renovar si hace falta.
+Estado remoto pending-external. Ultima prueba exterior: 5/10 18:35:18 UTC
+(15:35 AR), BR/403, Ray a45e8681ab20af8f-GRU. Falta confirmacion del propietario
+de evento Block/opengym_argentina_only; pregunta anterior 14:15 AR sin respuesta.
+No inferir regla desde 403. Backup diario bloqueado hasta accepted; manual
+consistente verificado. Tras confirmacion, abrir ventana propia nueva, refrescar
+HTTPS y ejecutar accept-production.sh para SHA exacto; comprobar backup/timers.
+Constancia remota .production-state/https-2eb87ea.receipt, maximo 30 min.
