@@ -27,6 +27,16 @@ SMOKE_ORIGIN_URL=http://127.0.0.1:8080 CHECK_CONTAINER_CONFIG=1 \
   sh ops/smoke-production.sh
 ~~~
 
+## Login web tras vencer Access
+
+Si la app sigue visible pero el login falla con `Failed to fetch`, abrir
+`https://gym.mientrenadorpersonal.com.ar/api/config` en el mismo navegador.
+Completar Access si lo solicita, volver al sitio y usar la passkey existente.
+No borrar datos locales: una sesion del proxy puede faltar aunque la app este
+cacheada. Access no se comparte automaticamente entre navegadores/dispositivos.
+En personal, el gesto de passkey usa redirect manual y renueva por navegacion;
+las requests de datos conservan el comportamiento offline. No retirar Access/WAF.
+
 ## HTTPS argentino con Access
 
 Despues del deploy autorizado y cierre del registro, desde Windows en Argentina,

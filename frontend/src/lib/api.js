@@ -19,6 +19,13 @@ export async function api(path, opts) {
   const headers = Object.assign({ 'Content-Type': 'application/json' }, opts && opts.headers)
   if (remoteToken) headers.Authorization = 'Bearer ' + remoteToken
   const r = await fetch(remoteBase + path, Object.assign({}, opts, { headers }))
+  // The explicit passkey action uses a manual redirect: an expired reverse-proxy session
+  // must be renewed by a page navigation, before opening the authenticator. Background
+  // data requests retain their offline behavior and never reload an active workout.
+  if (opts?.redirect === 'manual' && r.type === 'opaqueredirect') {
+    window.location.reload()
+    throw Object.assign(new Error('Access sign-in required'), { name: 'AbortError' })
+  }
   const data = await r.json().catch(() => ({}))
   // The body rides along on the error: a 409 from /api/data carries the server's document.
   if (!r.ok) { const e = new Error(data.error || ('HTTP ' + r.status)); e.status = r.status; e.data = data; throw e }
@@ -76,7 +83,7 @@ export async function passkeyRegister(name, code) {
   return res.user
 }
 export async function passkeyLogin() {
-  const { cid, options } = await api('/api/login/options', { method: 'POST', body: '{}' })
+  const { cid, options } = await api('/api/login/options', { method: 'POST', body: '{}', redirect: 'manual' })
   const cred = await navigator.credentials.get({ publicKey: toRequestOptions(options) })
   const res = await api('/api/login/verify', { method: 'POST', body: JSON.stringify({ cid, credential: credToJSON(cred) }) })
   return res.user

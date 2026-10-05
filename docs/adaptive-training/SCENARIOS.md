@@ -66,6 +66,7 @@ literario.
 | reported-pain-plan-removal | core/candidates.test.js; baja sin alternativa |
 | codex-model-no-host-tools | ../test/adapters.test.js; tools deshabilitadas, canary real sintetico |
 | codex-cached-login | ../test/codex-login.test.js; conexion explicita, binding y cache ausente |
+| proxy-session-passkey-login | ../../frontend/src/lib/api.test.js; renovar Access por gesto, preservar 401/offline |
 
 Rutas de tests relativas a api/coach. Question, senales, dosis y confirmacion
 se cubren en tests puros; API y DOM prueban adapters y flujo. Los restantes
