@@ -11,10 +11,10 @@ const state = () => ({
   week: structuredClone(scenario.given.week), workouts: [], customEx: [], dayPlan: {},
   coach: { ...emptyCoach(), profile: structuredClone(scenario.given.coachProfile) }
 })
-async function review(S, spawns) {
-  const payload = build(S, { handle: 'test', kind: 'review', note: scenario.when.message })
+async function review(S, spawns, loaded = false) {
+  const payload = build(S, { handle: 'test', kind: 'review', note: loaded ? scenario.when.loadedEquipmentFollowUp : scenario.when.message })
   const existing = new Set(S.routines[0].ex.map(e => e.id))
-  const additions = payload.library.filter(e => !existing.has(e.id)).slice(0, 2)
+  const additions = payload.library.filter(e => !existing.has(e.id) && (!loaded || ['dumbbell', 'barbell', 'cable', 'leverage machine'].includes(e.eq))).slice(0, 2)
   expect(additions).toHaveLength(2)
   const response = { coach_contract: 1, summary: 'Quito el ejercicio y agrego dos opciones.',
     evidence: scenario.expect.evidence, notes: [], changes: [
@@ -23,7 +23,10 @@ async function review(S, spawns) {
         after: { id: e.id, mode: 'reps', sets: 2, reps: 10 }, why: 'Pedido de ampliar la rutina.' }))
     ] }
   const result = await runPipeline({ kind: 'review', payload, cfg: {},
-    adapter: { spawns, invoke: async () => ({ code: 0, text: JSON.stringify(response) }) } })
+    adapter: { spawns, invoke: async options => {
+      if (loaded) expect(options.system || options.prompt).toContain('when they ask to work with weights')
+      return { code: 0, text: JSON.stringify(response) }
+    } } })
   expect(result.ok).toBe(true)
   return { id: 'p', kind: 'review', planHash: serverHash(serverPlan(S)),
     candidateIds: payload.library.map(e => e.id), equipmentContext: payload.equipmentContext, ...result.result }
@@ -49,6 +52,15 @@ describe('requested band plan changes reach confirmation', () => {
     expect(S.routines).toEqual(before.routines)
     expect(S.week).toEqual(before.week)
     expect(S.workouts).toEqual(before.workouts)
+  })
+
+  it.each([true, false])('a requested loaded addition is offered and confirmable (CLI: %s)', async spawns => {
+    const S = state()
+    S.coach.profile.equipment = ['body weight', 'band', 'dumbbell', 'barbell', 'cable', 'leverage machine']
+    const p = await review(S, spawns, true), marked = markStale(p, S)
+    expect(applicable(marked)).toHaveLength(3)
+    expect(applyChangeSet(S, marked, marked.changes.map(c => c.id)).applied).toBe(3)
+    for (const c of marked.changes.filter(c => c.type === 'add-exercise')) expect(S.routines[0].ex).toContainEqual(expect.objectContaining({ id: c.after.id }))
   })
 
   it('a real edit still invalidates the entire proposal without mutations', async () => {

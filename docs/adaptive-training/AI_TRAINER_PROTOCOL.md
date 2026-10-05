@@ -162,7 +162,7 @@ respuesta con propuesta y confirmacion.
 
 ## Propuestas y aplicacion
 
-Review sin historial/bandas: hash paritario; confirma.
+Review sin sesiones: cargas, hash paritario; confirma.
 
 Toda propuesta de mutacion contiene:
 

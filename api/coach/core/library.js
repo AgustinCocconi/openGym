@@ -25,7 +25,7 @@ export const MAX_LIBRARY = 160;
 
 // What one library entry tells the model: enough to pick it, nothing more. The taxonomy
 // fields beyond body part never appear in a rationale and cost ~30 tokens an entry.
-const slim = (e, locale) => ({ id: e.id, n: libraryName(e.id,locale) || e.n, bp: e.bp, ...(e.custom ? { custom: true } : {}) });
+const slim = (e, locale) => ({ id: e.id, n: libraryName(e.id,locale) || e.n, bp: e.bp, eq: e.eq || null, ...(e.custom ? { custom: true } : {}) });
 
 export function librarySlice(S, equipment, { keep = [], max = MAX_LIBRARY, locale='en', strictEquipment=false } = {}) {
   const wanted = (equipment || []).map(x => String(x).toLowerCase());
@@ -39,7 +39,13 @@ export function librarySlice(S, equipment, { keep = [], max = MAX_LIBRARY, local
   const pinned = new Set(keep.filter(id => LIB_BY_ID.has(id)));
   const out = [];
   const taken = new Set();
-  const add = e => { if (!taken.has(e.id)) { taken.add(e.id); out.push(e); } };
+  const equipmentCounts = new Map();
+  const add = e => {
+    if (!taken.has(e.id)) {
+      taken.add(e.id); out.push(e);
+      equipmentCounts.set(e.eq, (equipmentCounts.get(e.eq) || 0) + 1);
+    }
+  };
   // What the user already trains comes first, filter or no filter.
   for (const id of pinned) {
     const exercise = LIB_BY_ID.get(id);
@@ -49,17 +55,22 @@ export function librarySlice(S, equipment, { keep = [], max = MAX_LIBRARY, local
     base.forEach(add);
   } else {
     // Round-robin across body parts so a 292-row "upper arms" cannot crowd out a 37-row
-    // "lower arms"; order within a body part is the catalogue's own.
+    // "lower arms". Within each body part, favour equipment least represented so far;
+    // pinned band/bodyweight work cannot crowd out available weights. Catalogue order breaks ties.
     const groups = new Map();
     for (const e of base) { if (!groups.has(e.bp)) groups.set(e.bp, []); groups.get(e.bp).push(e); }
     const lanes = [...groups.keys()].sort().map(k => groups.get(k));
-    const cursor = lanes.map(() => 0);
     let progressed = true;
     while (out.length < max && progressed) {
       progressed = false;
       for (let i = 0; i < lanes.length && out.length < max; i++) {
-        while (cursor[i] < lanes[i].length && taken.has(lanes[i][cursor[i]].id)) cursor[i]++;
-        if (cursor[i] < lanes[i].length) { add(lanes[i][cursor[i]++]); progressed = true; }
+        let next = null, count = Infinity;
+        for (const e of lanes[i]) {
+          if (taken.has(e.id)) continue;
+          const represented = equipmentCounts.get(e.eq) || 0;
+          if (represented < count) { next = e; count = represented; }
+        }
+        if (next) { add(next); progressed = true; }
       }
     }
   }

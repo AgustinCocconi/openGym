@@ -67,7 +67,8 @@
   "when": {
     "message": "Saquemos el band pull through y agregá más ejercicios, la veo muy corta",
     "followUp": "Es prioritario hacer lo que te digo",
-    "previousRefusal": "Mantengo el plan por ahora: primero conviene registrar sesiones."
+    "previousRefusal": "Mantengo el plan por ahora: primero conviene registrar sesiones.",
+    "loadedEquipmentFollowUp": "Quiero trabajar con peso también, con mancuernas, barras o máquinas; no solo bandas."
   },
   "expect": {
     "kind": "proposal",
@@ -89,7 +90,9 @@
       "response_locale_is_spanish",
       "server_client_fingerprint_equal_for_bands",
       "unchanged_proposal_confirmable_and_reversible",
-      "real_plan_edit_invalidates_all_changes"
+      "real_plan_edit_invalidates_all_changes",
+      "declared_loaded_equipment_represented_in_bounded_candidates",
+      "requested_loaded_training_style_respected"
     ],
     "forbidden": [
       "require_logged_sessions_for_preference_edit",

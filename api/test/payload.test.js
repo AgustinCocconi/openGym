@@ -108,12 +108,13 @@ test('creation payload carries working weights so baselines start from evidence'
 });
 
 test('the library is filtered to the equipment someone actually has', () => {
-  // Slice entries are slimmed to { id, n, bp } — resolve the equipment through the catalogue.
+  // Slice entries include canonical equipment alongside the compact exercise fields.
   const eqOf = id => (payload.LIBRARY.find(e => e.id === id) || {}).eq;
   const dumbbell = payload.librarySlice({}, ['dumbbell']);
   assert.ok(dumbbell.length > 0);
   assert.ok(dumbbell.every(e => eqOf(e.id) === 'dumbbell'), 'nothing outside the filter');
-  assert.ok(dumbbell.every(e => e.eq === undefined && e.id && e.n && e.bp), 'entries are slim');
+  assert.ok(dumbbell.every(e => e.eq === 'dumbbell' && e.id && e.n && e.bp), 'equipment is explicit');
+  assert.deepEqual(Object.keys(dumbbell[0]).sort(), ['bp', 'eq', 'id', 'n'], 'entries stay slim');
   assert.ok(payload.librarySlice({}, ['dumbbell', 'barbell']).some(e => eqOf(e.id) === 'barbell'));
   // Custom exercises always travel: they exist nowhere else and the model cannot guess them.
   const withCustom = payload.librarySlice({ customEx: [{ id: 'cx1', n: 'Sandbag carry', bp: 'back' }] }, ['dumbbell']);

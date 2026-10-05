@@ -4,6 +4,7 @@
 // daily cap, the key never touching S, and a proposal surviving in the device file.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { todayISO } from './format.js'
+import { build } from '../../../api/coach/core/payload.js'
 
 // The device file and the secret store are in-memory here; nativeFetch is the script.
 const device = { data: null }
@@ -167,14 +168,17 @@ describe('the Coach on a phone with its own key', () => {
   })
 
   it('creates a plan from an intake, and refines it against the previous bundle', async () => {
+    const S = { ...state(), routines: [], week: {} }
+    const intake = { goal: 'muscle', daysPerWeek: 3 }
+    const candidates = build(S, { handle: 'test', kind: 'create', intake }).library.filter(e => e.bp !== 'cardio').slice(0, 6)
+    expect(candidates).toHaveLength(6)
     const plan = { coach_contract: 1, opengym_plan: 1, name: 'P', summary: 's', basedOn: 'b', week: { 1: 'r1', 3: 'r2', 5: 'r1' },
       routines: [
-        { id: 'r1', name: 'A', emoji: '💪', why: 'w', ex: [{ id: EX, sets: 3, mode: 'reps', reps: 8, why: 'w' }, { id: EX2, sets: 3, mode: 'reps', reps: 10, why: 'w' }, { id: EXERCISES[2].id, sets: 3, mode: 'reps', reps: 10, why: 'w' }] },
-        { id: 'r2', name: 'B', emoji: '🏋️', why: 'w', ex: [{ id: EXERCISES[3].id, sets: 3, mode: 'reps', reps: 8, why: 'w' }, { id: EXERCISES[4].id, sets: 3, mode: 'reps', reps: 10, why: 'w' }, { id: EXERCISES[5].id, sets: 3, mode: 'reps', reps: 10, why: 'w' }] }
+        { id: 'r1', name: 'A', emoji: '💪', why: 'w', ex: [{ id: candidates[0].id, sets: 3, mode: 'reps', reps: 8, why: 'w' }, { id: candidates[1].id, sets: 3, mode: 'reps', reps: 10, why: 'w' }, { id: candidates[2].id, sets: 3, mode: 'reps', reps: 10, why: 'w' }] },
+        { id: 'r2', name: 'B', emoji: '🏋️', why: 'w', ex: [{ id: candidates[3].id, sets: 3, mode: 'reps', reps: 8, why: 'w' }, { id: candidates[4].id, sets: 3, mode: 'reps', reps: 10, why: 'w' }, { id: candidates[5].id, sets: 3, mode: 'reps', reps: 10, why: 'w' }] }
       ], customEx: [] }
     wire.answer = chat(JSON.stringify(plan))
-    const S = { ...state(), routines: [], week: {} }
-    await local.localPlan(S, { goal: 'muscle', daysPerWeek: 3 })
+    await local.localPlan(S, intake)
     const s = await settle()
     expect(s.pending.kind).toBe('create')
     expect(s.pending.bundle.routines).toHaveLength(2)
