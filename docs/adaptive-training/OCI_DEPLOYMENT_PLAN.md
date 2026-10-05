@@ -7,7 +7,7 @@ las fases contienen controles y evidencia pertinente, sin bitacora de intentos.
 
 ## Checkpoint
 
-4/10 AR: 3dbc82f/coach aceptado, gpt-6.1-sol activo/30 al dia; copia PC restaurada.
+5/10 AR: a4e766f/coach desplegado, HTTPS AR OK; WAF pendiente. Modelo/30 y copia PC OK.
 Propietario difiere resguardo de identidad: backup/clave solo en esta PC por ahora.
 OCI E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 al 3/10 UTC OK; sin PAYG.
 
@@ -17,9 +17,9 @@ OCI E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 al 3/10 UTC OK; sin PAYG.
 | 1. Compatibilidad | COMPLETA | ARM64 probado en `905f44e`; imagenes publicadas para AMD64 y ARM64 en fase 4. Consumo local orientativo. |
 | 2. Cuentas | COMPLETA | OCI Always Free/MFA/USD 0, alertas activas y E2 1/1/0. CF zona activa Free por API; propietario confirma Zero Trust Free/2FA. |
 | 3. IaC OCI | COMPLETA | Terraform 1.16.4 / OCI 7.32.0: formato, validacion y cuatro guardrails registrados; E2, swap y storage de 50+50 GB. |
-| 4. Imagenes | COMPLETA | 3dbc82f/37247336190: gate/publicacion default/coach/web; digests/revision OCI OK. |
+| 4. Imagenes | COMPLETA | a4e766f/37265224939: gate/publicacion default/coach/web; digests/revision OCI OK. |
 | 5. VM y Cloudflare | COMPLETA | Tunnel Healthy/4, tres pruebas confirmadas, cierre sano y token API revocado. |
-| 6. Deploy | COMPLETA | 3dbc82f: HTTPS AR/WAF BR, modelo/aislamiento/30, copia PC restaurada y SSH cerrado. |
+| 6. Deploy | EN CURSO | a4e766f: HTTPS AR/UI/modelo/30/copia PC OK; WAF BR pendiente. |
 | 7. Observacion | EN CURSO | Revisar ocho dias completos desde 12/10/2026 16:25 AR. |
 | 8. Recuperacion | EN CURSO | Copia PC diaria tras 05:00 AR; simulacro 4/11. RTO pendiente; resguardo independiente diferido |
 | 9. Operacion | PENDIENTE | Rutina tras observacion y recuperacion periodica. |
@@ -257,10 +257,11 @@ Salida: cobertura completa y decision de dimensionamiento sustentada.
 
 ## Fase 8 - Backups y recuperacion ante reclamacion
 
-[Rutina activa](../../ops/PRODUCTION_ROUTINE.md#backup-diario-y-ventanas) en 3dbc82f,
-app/coach aceptada. Backup 05:00 AR, retencion 14, age publico en host/identidad PC.
-Ultima copia 5/10 00:46:11 UTC, transferida 00:49:55 UTC: RPO 0,06 h.
-Checksums y restore aislado de seis archivos en 2,25 s OK; plaintext retirado.
+[Rutina activa](../../ops/PRODUCTION_ROUTINE.md#backup-diario-y-ventanas):
+a4e766f: WAF pendiente; backup exige accepted.
+Backup 05:00 AR, retencion 14, age publico en host/identidad PC.
+Copia previa 5/10 04:58:32 UTC, transferida/restore aislado 05:02 UTC: RPO 0,06 h.
+Checksums y restore 1,36 s OK; plaintext retirado.
 Timer de backup pausado durante deploy y reactivado; ambos timers activos.
 No acredita RTO productivo ni automatiza la transferencia diaria a PC.
 
