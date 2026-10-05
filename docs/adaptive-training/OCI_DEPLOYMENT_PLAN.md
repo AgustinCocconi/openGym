@@ -213,21 +213,21 @@ Smoke/gate Linux y recuperacion corresponden a fase 6.
 
 3dbc82f/coach: deploy 5/10 00:29 UTC, aceptado 00:44 UTC. Modelo activo/30 al dia.
 CI Linux/Node 22: frontend 1559/API 233/MCP 59, imagenes/ops/contexto OK.
-API sin puerto, web loopback, /srv persistente; registros y passkey conservados.
+API sin puerto, web loopback, /srv persistente.
 
 - [x] HTTPS AR 00:33 UTC; Access propietario/OTP/24 h conservado.
 - [x] Propietario confirma WAF BR/Block/opengym_argentina_only, Ray a4585643af02d87c.
 - [x] Un perfil/passkey; INVITE_ONLY=1, ALLOW_GUEST=0, ADMIN_UIDS coincide.
-- [x] Codex CLI 0.160.0/gpt-6.1-sol responde en OCI, sin privilegios; login nuevo
-  autorizado con codigo de dispositivo, cache 0700/0600 fuera de data/backups.
-  chatgpt-cli vinculado al propietario, 30/dia; canary OCI no leido/cero comandos.
+- [x] Codex 0.160.0/gpt-6.1-sol: login por dispositivo, cache 0700/0600 fuera de data/backups.
+  Binding propietario, 30/dia; drop/canary sin comandos OK al 4/10 22:19 AR.
+  Propietario confirma MFA ChatGPT/historial reconocido; 62 tests Linux/Node 22 OK.
 - [x] UI/API/modelo real: consulta parcial, propuesta/confirmacion/undo;
   manual offline/sync/historial y undo bloqueado por nuevos datos OK.
 - [x] Backup previo/copias PC; posterior 5/10 00:46 UTC, checksum/descifrado/
   restore seis archivos/2,25 s OK; plaintext retirado. RPO 0,06 h.
-- [x] Ambas ventanas SSH DELETED; claves/config retiradas, sin acceso permanente.
+- [x] Ventanas SSH DELETED; claves/config retiradas.
 
-Evidencia ignorada: .production-state/deploy-coach; constancias PC de 5/10 00:49 UTC
+Evidencia ignorada: .production-state/{deploy-coach,security-final}; constancias PC 5/10 00:49 UTC
 en openGym-backups/transfer-*; ruta en handoff.
 Resguardo independiente diferido; no acredita telefono fisico ni otros proveedores.
 

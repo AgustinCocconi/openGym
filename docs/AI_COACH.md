@@ -296,15 +296,13 @@ a host with no `coach` user still gets the Coach through an API key, and is only
 runtime-backed providers. The admin card reports "this provider runs no child process" in the
 place it would otherwise report the drop.
 
-For Claude Agent SDK and Codex jobs run as an unprivileged `coach` user that cannot read the files holding secrets, with an
+For Claude Agent SDK and Codex, jobs run as an unprivileged `coach` user that cannot read the files holding secrets, with an
 environment built from nothing rather than filtered from the parent — no `RP_ID`, no
 `ADMIN_UIDS`, no VAPID material.
 
-That privilege drop **fails closed**: on Linux, if it cannot be performed, no job is enqueued
-and the admin card says so. It used to fail open — it only engaged when the server ran as root,
-so adding an ordinary `USER` line to the Dockerfile, for unrelated hardening reasons, would have
-quietly left the runtime inheriting the server's uid. A control that switches itself off during
-somebody else's refactor is one you find out about late.
+The privilege drop **fails closed** on Linux: if unavailable, no job is enqueued and the
+admin card reports it. Running the server as a non-root user cannot bypass this control;
+the runtime must run under a different uid from the server.
 
 The secrets are locked file by file — `secret`, `db.json`, `coach.json` at `0600` — rather than
 by sealing `./data` with a blanket `0700`. The directory is a host bind mount and the container
@@ -361,12 +359,14 @@ re-enabling one is a red build rather than a quiet capability grant.
 Claude receives its credential through a clean child environment; RP_ID,
 ADMIN_UIDS and VAPID keys are not inherited.
 
-Codex 0.160.0 explicitly disables shell/exec, images, agents, apps/plugins,
-hooks, browser/computer tools and web search. Read-only alone permits reads:
-a synthetic canary in coach-auth was readable before this control and unreadable
-after it. Its CLI still needs the login cache; host compromise can steal that
-credential and spend the subscription outside the app's quotas. Treat auth.json
-like a password. Disconnecting the Coach does not revoke that provider login.
+Codex 0.160.0 disables shell/exec, images, agents, apps/plugins, hooks,
+browser/computer tools and web search. Read-only alone allows reads; the synthetic
+coach-auth canary was readable before this control and unreadable afterward.
+The CLI requires its login cache. Host compromise can steal it and spend the
+subscription outside app quotas. Treat auth.json like a password; disconnecting
+the Coach does not revoke the provider login.
+MFA protects new sign-ins without ending existing sessions. Review ChatGPT sessions
+and security history; revoke unfamiliar access ([OpenAI](https://help.openai.com/en/articles/8304786-keeping-your-openai-account-secure)).
 
 ## Where a credential lives
 
