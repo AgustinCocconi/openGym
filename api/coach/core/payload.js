@@ -44,9 +44,10 @@ export const modeOf = (cfg, ex) => {
    going up" — reads as a flat zero. A Coach that could not see this would look at a push-up
    progression that is working and propose adding weight to a push-up.
 
-   Absent reads as false on every plan written before these existed, exactly as upstream. */
+   Bodyweight and bands share the no-load default from frontend isBodyweightEq; an explicit
+   flag still wins. This also keeps both canonical plan fingerprints identical. */
 export const isBw = (cfg, ex) =>
-  (cfg && cfg.bodyweight != null ? !!cfg.bodyweight : (ex && ex.eq) === 'body weight');
+  (cfg && cfg.bodyweight != null ? !!cfg.bodyweight : ['body weight', 'band', 'resistance band'].includes(ex?.eq));
 export const isPerSide = cfg => !!(cfg && cfg.side);
 // Mirror of frontend/src/lib/workout-model.js isWarmupRow: an explicit phase wins, else the
 // legacy boolean. A warm-up row is prep, not the session: it is filtered out of the stall

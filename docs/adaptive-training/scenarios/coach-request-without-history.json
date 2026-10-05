@@ -86,7 +86,10 @@
       "candidate_allowlist_and_blockers_enforced",
       "explicit_confirmation_required",
       "read_only_questions_cannot_mutate",
-      "response_locale_is_spanish"
+      "response_locale_is_spanish",
+      "server_client_fingerprint_equal_for_bands",
+      "unchanged_proposal_confirmable_and_reversible",
+      "real_plan_edit_invalidates_all_changes"
     ],
     "forbidden": [
       "require_logged_sessions_for_preference_edit",

@@ -162,7 +162,7 @@ respuesta con propuesta y confirmacion.
 
 ## Propuestas y aplicacion
 
-Review admite pedidos sin historial con confirmacion.
+Review sin historial/bandas: hash paritario; confirma.
 
 Toda propuesta de mutacion contiene:
 
