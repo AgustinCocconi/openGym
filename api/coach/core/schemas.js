@@ -20,7 +20,7 @@ export const REVIEW_SCHEMA = {
     summary: STR,
     evidence: {
       type: 'object',
-      properties: { from: STR, to: STR, sessions: { type: 'integer' } }
+      properties: { from: { type: ['string', 'null'] }, to: { type: ['string', 'null'] }, sessions: { type: 'integer' } }
     },
     changes: {
       type: 'array',

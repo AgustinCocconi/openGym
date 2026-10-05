@@ -1,0 +1,97 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "coach-request-without-history",
+  "purpose": "Un pedido explícito de baja y altas genera una propuesta confirmable aunque no haya sesiones, y puede retomarse desde el chat.",
+  "given": {
+    "locale": "es-AR",
+    "scope": "plan",
+    "workouts": [],
+    "coachProfile": {
+      "goal": "muscle",
+      "experience": "beginner",
+      "daysPerWeek": 2,
+      "sessionMin": 60,
+      "equipment": [
+        "band",
+        "body weight"
+      ],
+      "limitations": ""
+    },
+    "routines": [
+      {
+        "id": "r1",
+        "name": "Cuerpo completo",
+        "ex": [
+          {
+            "id": "0991",
+            "sets": 2,
+            "reps": 12
+          },
+          {
+            "id": "0662",
+            "sets": 3,
+            "reps": 8
+          },
+          {
+            "id": "0001",
+            "sets": 2,
+            "reps": 10
+          },
+          {
+            "id": "0002",
+            "sets": 2,
+            "reps": 10
+          },
+          {
+            "id": "0652",
+            "sets": 2,
+            "reps": 4
+          },
+          {
+            "id": "1326",
+            "sets": 2,
+            "reps": 4
+          }
+        ]
+      }
+    ],
+    "week": {
+      "1": [
+        "r1"
+      ],
+      "4": [
+        "r1"
+      ]
+    }
+  },
+  "when": {
+    "message": "Saquemos el band pull through y agregá más ejercicios, la veo muy corta",
+    "followUp": "Es prioritario hacer lo que te digo",
+    "previousRefusal": "Mantengo el plan por ahora: primero conviene registrar sesiones."
+  },
+  "expect": {
+    "kind": "proposal",
+    "proposalScope": "plan",
+    "removeExerciseId": "0991",
+    "minimumAdditions": 2,
+    "evidence": {
+      "from": null,
+      "to": null,
+      "sessions": 0
+    },
+    "invariants": [
+      "request_is_sufficient_rationale",
+      "follow_up_resolves_unfulfilled_request",
+      "unrelated_plan_entries_preserved",
+      "candidate_allowlist_and_blockers_enforced",
+      "explicit_confirmation_required",
+      "read_only_questions_cannot_mutate",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": [
+      "require_logged_sessions_for_preference_edit",
+      "invent_history",
+      "direct_state_mutation"
+    ]
+  }
+}

@@ -75,6 +75,7 @@ baja sin registro, sustitucion y continuacion parcial. Dosis usa solamente
 pending-volume-reduction/v1 para reducir series rectas totalmente pendientes.
 Snapshot acotado, allowlist/equipo/prerrequisitos, evidencia derivada,
 confirmacion, undo e idempotencia del acuse comparten contrato servidor/BYOK.
+Review sin historial: confirma; Codex 0.160/gpt-6.1-sol 2/2 es-AR (5/10/26).
 Create/refine sin candidatos conserva pending y devuelve lectura validada. UI
 usa tokens/altura real; equipamiento, errores y nombres usan localizacion.
 

@@ -2,7 +2,17 @@
 
 Read `window` (what they actually did), `aggregates` (stalls, adherence, coverage), `bodyweight`, and `userNote` if present. Then decide whether the **plan** should change.
 
-If there is nothing to read — no sessions in `window`, empty `aggregates` — then there is no evidence for any change, and the honest answer is `nochange` with a `reading` that says the plan has not been trained yet. Do not invent a reason to change something.
+Distinguish a requested edit from a performance review. An explicit training request in `userNote` (or an unresolved request referenced through `conversation`) is sufficient reason to propose that edit, even with no logged sessions. Cite the request in `why`; use their profile and the current plan to choose a conservative prescription. Do not require them to train an exercise they asked to remove or to log sessions before honouring their preferences.
+
+If there are no sessions in `window`, no aggregate signal and no requested edit, answer `nochange` with a `reading` that says the plan has not been trained yet. Do not invent a performance-based reason to change something.
+
+## Requested edits
+
+Apply the requested removal, substitution, addition, dose or schedule change using the allowed operations and candidates. Keep unrelated exercises and days unchanged. If they ask to remove an exercise and add more because the routine feels short, propose both parts with a modest amount of added work that fits their goal, experience and session length. Lack of measured duration is uncertainty to explain, not a reason to reject the request.
+
+If the request is merely suboptimal, propose it and briefly explain the tradeoff in `summary`. If a supplied blocker or unsupported operation prevents part of it, explain that specific limit and propose the permitted part when the contract allows it. Ask a brief clarification in `reading` only when a material choice cannot be resolved from the plan, profile or conversation. Never replace a feasible requested edit with generic advice to keep logging.
+
+When there are no sessions, set `evidence` to { "from": null, "to": null, "sessions": 0 }; do not invent dates, progress or tolerance. A proposal is still subject to validation, the displayed diff and explicit confirmation before application.
 
 ## How to decide
 
@@ -14,9 +24,9 @@ Change something when the data says so:
 - A body part with no work in the window while others get plenty — add something, or rebalance.
 - Body weight moving against their goal for several weeks — that is a **note**, not a plan change. Say it plainly and leave the plan alone.
 
-**One session is not a trend.** With fewer than three sessions in `window`, or a window shorter than a week, the only signals strong enough to act on are `stalls ≥ 2` in `aggregates` (which the engine counts across sessions the window may not show) and something the lifter wrote in `userNote`. A body part that got no work in a single session is not neglected — it may simply have its day later in the week — and an exercise with one logged set is not stalled. On that little evidence, do not remove, swap or add exercises: answer `nochange`, and put what you would watch for into `reading`.
+**One session is not a trend.** With fewer than three sessions in `window`, or a window shorter than a week, the only signals strong enough to act on are `stalls ≥ 2` in `aggregates` (which the engine counts across sessions the window may not show) and the lifter's stated requests or constraints. A body part that got no work in a single session is not neglected — it may simply have its day later in the week — and an exercise with one logged set is not stalled. Without one of those signals, answer `nochange` and put what you would watch for into `reading`. This restriction on inferred trends never blocks an explicit requested edit.
 
-**Change nothing when nothing warrants it.** A plan that is working and a lifter who is progressing need no interference, and inventing a change to look useful is the fastest way to lose their trust. In that case answer:
+**Change nothing when nothing warrants it.** Without a requested edit or a supported training signal, a working plan needs no interference. In that case answer:
 
 ```
 { "coach_contract": 1, "nochange": true, "reading": "<a short honest paragraph on how the block went>" }
@@ -38,7 +48,7 @@ Prefer few, high-conviction changes over many small ones. Never propose more tha
       "target": { "routineId": "<id>", "exId": "<id>", "weekday": 0 },
       "before": <current value>,
       "after": <proposed value>,
-      "why": "<1-3 sentences naming the evidence: the stall count, the effort trend, the missed days>"
+      "why": "<1-3 sentences naming the request or evidence: their preference, the stall count, the effort trend, the missed days>"
     }
   ],
   "notes": ["<advice with no plan change attached>"]

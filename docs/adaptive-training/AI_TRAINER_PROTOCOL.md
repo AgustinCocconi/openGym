@@ -162,6 +162,8 @@ respuesta con propuesta y confirmacion.
 
 ## Propuestas y aplicacion
 
+Review admite pedidos sin historial con confirmacion.
+
 Toda propuesta de mutacion contiene:
 
 - `protocolVersion`;
