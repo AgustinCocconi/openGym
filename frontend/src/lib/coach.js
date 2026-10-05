@@ -17,7 +17,7 @@ import { proposalCandidateErrors, planJointSignalErrors } from '../../../api/coa
 import { equipmentContext } from '../../../api/coach/core/library.js'
 import { jointSignalsForState } from '../../../api/coach/core/joint-signals.js'
 import { POLICIES } from './progression.js'
-import { t } from './i18n.js'
+import { t, exerciseNameFor } from './i18n.js'
 
 // Bumping this re-prompts everyone: it means what we share, or who we share it with, changed.
 export { CONSENT_VERSION } from '../../../api/coach/core/categories.js'
@@ -367,7 +367,7 @@ export function profileLines(p) {
   if (exp) lines.push(t(exp))
   if (p.daysPerWeek) lines.push(p.daysPerWeek === 1 ? t('1 day a week') : t('{0} days a week', p.daysPerWeek))
   if (p.sessionMin) lines.push(t('{0} min per session', p.sessionMin))
-  if (p.equipment?.length) lines.push(p.equipment.join(', '))
+  if (p.equipment?.length) lines.push(p.equipment.map(e => t(e)).join(', '))
   if (p.limitations) lines.push(t('Limits: {0}', p.limitations))
   if (p.likes) lines.push(t('Likes: {0}', p.likes))
   if (p.dislikes) lines.push(t('Avoid: {0}', p.dislikes))
@@ -595,7 +595,7 @@ export function recordDebrief(s, proposal) {
 
 /* ============================ display helpers ============================ */
 
-export const exName = id => EXIDX[id]?.n || t('Unknown exercise')
+export const exName = id => exerciseNameFor(EXIDX[id]) || t('Unknown exercise')
 // Catalogue names are lower-case; a title reads better with each word capitalised, and doing it
 // here rather than with CSS keeps a German sentence around the name from being Title Cased too.
 const cap = s => String(s || '').replace(/(^|\s)(\p{L})/gu, (m, sp, ch) => sp + ch.toUpperCase())

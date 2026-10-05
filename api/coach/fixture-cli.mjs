@@ -74,6 +74,8 @@ if (MODE === 'nochange' || (kind === 'review' && !(P.window?.workouts || []).len
   out({ coach_contract: 1, nochange: true, reading: 'Not enough new training to read anything into yet — keep logging and ask again in a week.' });
 }
 
+if (kind === 'create' && Array.isArray(P.library) && !P.library.length) out({ answer: 'Los candidatos están bloqueados por las restricciones declaradas. ¿Qué síntomas tenés actualmente?' });
+
 if (kind === 'create') {
   const lib = (P.library || []).slice(0, 6);
   const ex = (i) => lib[i % Math.max(1, lib.length)] || { id: 'unknown' };

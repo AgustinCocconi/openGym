@@ -1320,5 +1320,19 @@ export default {
   "You asked to remove this unstarted exercise from this session.": "You asked to remove this unstarted exercise from this session.",
   "Propose removing this exercise": "Propose removing this exercise",
   "Plan changes affect saved routines and require confirmation. Session changes are available inside the workout.": "Plan changes affect saved routines and require confirmation. Session changes are available inside the workout.",
-  "Ask questions or request confirmed changes to your saved routines": "Ask questions or request confirmed changes to your saved routines"
+  "Ask questions or request confirmed changes to your saved routines": "Ask questions or request confirmed changes to your saved routines",
+  "The Coach isn’t set up on this instance.": "The Coach isn’t set up on this instance.",
+  "The Coach is resting — try again tomorrow.": "The Coach is resting — try again tomorrow.",
+  "The Coach took too long and gave up.": "The Coach took too long and gave up.",
+  "The Coach couldn’t sign in to its provider — the instance owner needs to check its setup.": "The Coach couldn’t sign in to its provider — the instance owner needs to check its setup.",
+  "The Coach isn’t installed properly on this instance.": "The Coach isn’t installed properly on this instance.",
+  "The Coach couldn’t run — the instance owner needs to check its setup.": "The Coach couldn’t run — the instance owner needs to check its setup.",
+  "The Coach answered with something the app couldn’t use.": "The Coach answered with something the app couldn’t use.",
+  "The server restarted while the Coach was thinking.": "The server restarted while the Coach was thinking.",
+  "The Coach couldn’t read your training data.": "The Coach couldn’t read your training data.",
+  "Something went wrong on the server.": "Something went wrong on the server.",
+  "Your AI provider rejected the key on this phone — check it under Settings → AI Coach.": "Your AI provider rejected the key on this phone — check it under Settings → AI Coach.",
+  "The Coach isn’t set up on this phone — check Settings → AI Coach.": "The Coach isn’t set up on this phone — check Settings → AI Coach.",
+  "Your AI provider couldn’t answer.": "Your AI provider couldn’t answer.",
+  "Something went wrong on this phone.": "Something went wrong on this phone."
 }

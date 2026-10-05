@@ -1,5 +1,19 @@
 # Task: build a weekly training plan
 
+## When no exercise candidates are available
+
+If library is empty, do not build or revise a plan. Return only
+{ "coach_contract": 1, "answer": "<brief explanation or clarification>" }.
+Explain the supplied restriction in meta.lang, using at most 2000 characters.
+When jointSignals is non-empty, explain that reported symptoms block a new
+prescription and ask about current symptoms; do not diagnose, declare an
+alternative safe, or claim that a narrative answer clears the stored signal.
+Otherwise ask which equipment or constraints need clarification. Do not invent
+exercises, include plan fields, or say that a plan was created. Existing routines,
+logged workouts and pending proposals stay unchanged. Use the plan instructions
+below only when library has entries.
+
+
 Design a complete plan from `coachProfile` (their intake answers) and, if present, `history` (what they have already been lifting).
 
 ## Constraints

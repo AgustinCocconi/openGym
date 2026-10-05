@@ -350,7 +350,7 @@ async function execute(job) {
       return finish(job, { outcome: 'failed', errorClass, detail: attempt.detail });
     }
     if (attempt.nochange) {
-      return finish(job, { outcome: 'nochange', pending: ['question','active'].includes(job.kind) ? undefined : null, detail: null, reading: attempt.reading });
+      return finish(job, { outcome: 'nochange', pending: attempt.preservePending || ['question','active'].includes(job.kind) ? undefined : null, detail: null, reading: attempt.reading });
     }
     const pending = {
       id: job.id,

@@ -9,8 +9,8 @@ import { MOBILE } from '../../lib/mobile.js'
 import { DEMO } from '../../lib/demo.js'
 import { activeFingerprint, stateActiveSnapshot, applyActiveProposal, canUndoActive, undoActiveProposal, itemStatus, ACTIVE_PROTOCOL } from '../../../../api/coach/core/active-workout.js'
 import { jointSignalsForState, setShoulderPain } from '../../../../api/coach/core/joint-signals.js'
-import { QuestionReplies } from './ConversationMode.jsx'
-import { Button } from '../ui.jsx'
+import { ConversationMode, QuestionReplies } from './ConversationMode.jsx'
+import { Button, TextArea } from '../ui.jsx'
 
 const operationText = { replace_pending_exercise: 'Replace the pending exercise', continue_after_partial_exercise: 'Keep logged sets and continue with another exercise', add_active_exercise: 'Add an exercise to this session', adjust_pending_prescription: 'Adjust only the remaining sets', skip_pending_exercise: 'Skip the remaining work for this exercise', reorder_pending_exercise: 'Move a pending exercise', remove_pending_exercise: 'Remove an exercise with no logged work' }
 export function ActiveProposalCard({ p, S, update, refresh = () => {} }) {
@@ -46,7 +46,7 @@ export function ActiveProposalCard({ p, S, update, refresh = () => {} }) {
     catch { setError(t('Could not ask the Coach')) }
     setBusy(false)
   }
-  return <div className="item" style={{ display: 'block' }}>
+  return <div className="item adaptive-controls">
     <b>{t('Proposed session change')}</b>
     <p>{p.summary}</p>
     {p.evidence && <p className="small">{t('Recorded sets preserved: {0}', p.evidence.loggedSets || 0)}</p>}
@@ -89,12 +89,12 @@ export default function TrainingPanel() {
     setManual({ protocolVersion: ACTIVE_PROTOCOL, scope: 'active_workout', baseFingerprint: activeFingerprint(snapshot), candidateIds: [],
       reasonCode: 'user_request', summary: t(remove ? 'You asked to remove this unstarted exercise from this session.' : 'You asked to skip the remaining work while keeping anything already logged.'), operations: [{ type: remove ? 'remove_pending_exercise' : 'skip_pending_exercise', index: S.active.cur }] })
   }
-  return <section className="sect" style={{ margin: '12px 0' }}>
+  return <section className="sect adaptive-controls" style={{ margin: '12px 0' }}>
     <Button size="sm" variant="tinted" onClick={() => setOpen(!open)}>{t('Ask or adapt this session')}</Button>
     {open && <>
       <p className="small">{t('Questions never change exercises. Adaptation always requires a proposal and your confirmation.')}</p>
       <QuestionReplies last={last} job={job} S={S} update={update} />
-      <label className="row"><input type="checkbox" checked={signals.some(s => s.region === 'shoulder' && s.type === 'pain')} onChange={event => {
+      <label className="adaptive-check"><input type="checkbox" checked={signals.some(s => s.region === 'shoulder' && s.type === 'pain')} onChange={event => {
         const checked = event.target.checked
         update(s => setShoulderPain(s,checked))
       }} />{t('I currently have shoulder pain')}</label>
@@ -102,8 +102,8 @@ export default function TrainingPanel() {
       {!snapshot && <p role="alert">{t('This session exceeds the AI context limit. Questions and manual logging remain available.')}</p>}
       {entry?.trainerSkipped && <p>{t('The remaining work was skipped. Logged sets are preserved.')}</p>}
       {available ? <>
-        <label>{t('Conversation mode')}<select value={mode} onChange={event => setMode(event.target.value)}><option value="question">{t('Ask a question')}</option><option value="active">{t('Request a session change')}</option></select></label>
-        <textarea aria-label={t('Message the Coach')} value={text} maxLength={1000} onChange={event => setText(event.target.value)} />
+        <ConversationMode mode={mode} onChange={setMode} scope="active" />
+        <TextArea aria-label={t('Message the Coach')} value={text} maxLength={1000} onChange={event => setText(event.target.value)} />
         <Button disabled={busy || !!job || !text.trim() || (mode === 'active' && (!snapshot || !!pending))} onClick={ask}>{t('Send')}</Button>
         {job && <p>{t('Coach is thinking…')}</p>}
         {!!last?.reading && <p>{last.reading}</p>}

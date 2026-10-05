@@ -61,6 +61,7 @@ literario.
 | Escenario canonico | Test ejecutable |
 | --- | --- |
 | coach-candidate-allowlist | core/candidates.test.js; paridad spawn/HTTP |
+| coach-create-blocked | core/create-blocked.test.js; API, BYOK y chat preservan estado |
 | calisthenics-live-management | core/active-workout.test.js; alta/baja/parcial |
 | novice-pullup-foundation | core/skills.test.js; tres reps no aprueban cuatro |
 | reported-pain-plan-removal | core/candidates.test.js; baja sin alternativa |

@@ -234,3 +234,12 @@ it('old consent does not authorize the expanded live context on a phone',async()
   const S=state();S.coach.consent.version=1;
   await expect(local.localQuestion(S,'Pregunta')).rejects.toMatchObject({code:'consent'});
 })
+
+it('blocked creation on BYOK shows a read-only explanation and preserves the pending plan',async()=>{
+  _resetCoachDevice();local._resetLocal();device.data={mode:'byok',provider:'openai',model:'gpt-t'};wire.calls=[];secret.key='sk-test-1';
+  const S=state();S.lang='es-AR';S.coach.profile={daysPerWeek:2,equipment:['body weight'],limitations:'Tengo dolor de hombro.'};
+  const before=structuredClone(S),pending={id:'previous',kind:'create',bundle:{}};
+  await saveCoachDevice({pending});wire.answer=chat(JSON.stringify({coach_contract:1,answer:'¿La molestia sigue presente?'}));
+  await local.localPlan(S,S.coach.profile);const result=await settle();
+  expect(result.last.reading).toBe('¿La molestia sigue presente?');expect(result.pending).toEqual(pending);expect(S).toEqual(before);expect(wire.calls).toHaveLength(1);
+});

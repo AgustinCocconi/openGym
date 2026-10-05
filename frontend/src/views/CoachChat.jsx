@@ -28,8 +28,9 @@ import Icon from '../components/Icon.jsx'
 import LineChart from '../components/LineChart.jsx'
 import { Button, Check, Switch, Section, Row, SelectRow } from '../components/ui.jsx'
 import '../coach.css'
-import { ConversationMode, sendCoachMessage, QuestionReplies } from '../components/adaptive-training/ConversationMode.jsx'
+import { sendCoachMessage, QuestionReplies } from '../components/adaptive-training/ConversationMode.jsx'
 import { ActiveProposalCard } from '../components/adaptive-training/TrainingPanel.jsx'
+import CoachComposer from '../components/adaptive-training/CoachComposer.jsx'
 
 export default function CoachChat() {
   const nav = useNavigate()
@@ -70,7 +71,7 @@ export default function CoachChat() {
     const ms = was.startedAt ? Date.now() - was.startedAt : 0
     update(s => {
       recordTiming(s, ms)
-      if (!pending) {
+      if (!pending && !last?.reading) {
         const cls = lastError?.errorClass || (last?.outcome === 'failed' ? (last.errorClass || 'internal') : null)
         appendChat(s, cls
           ? { role: 'coach', kind: 'error', text: jobErrorText(cls, lastError?.detail) }
@@ -192,25 +193,18 @@ export default function CoachChat() {
           ? <DebriefCard p={pending} S={S} update={update} toast={toast} refresh={refresh} />
           : <ReviewCard p={pending} S={S} update={update} toast={toast} refresh={refresh} />)}
 
-      <div ref={endRef} />
+      <div className="chat-end" ref={endRef} />
     </div>
 
-    <div className="composer">
-      <ConversationMode mode={mode} onChange={setMode} pending={pending} />
+    <CoachComposer mode={mode} onModeChange={setMode} pending={pending} text={text} onTextChange={setText}
+      placeholder={placeholder} job={job} busy={busy} onSend={send} cap={cap}>
       {idle && !busy && <div className="chips-row">
         <button className="qchip" onClick={askReview}><Icon name="sparkles" />{t('Review my training')}</button>
         {!!lastWorkout && <button className="qchip" onClick={askDebrief}><Icon name="checkCircle" />{t('Last workout')}</button>}
         {!!(S.routines || []).length && <button className="qchip" onClick={pickRoutine}><Icon name="wrench" />{t('Improve a routine')}</button>}
         {community && <button className="qchip" onClick={showCohort}><Icon name="person" />{t('Compare')}</button>}
       </div>}
-      <div className="composer-in">
-        <textarea rows={1} value={text} maxLength={1000} placeholder={mode === 'question' ? t('Ask about an exercise or your technique') : placeholder} disabled={!!job}
-          onChange={e => setText(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
-        <button className="send" onClick={send} disabled={!text.trim() || busy || !!job} aria-label={t('Send')}><Icon name="arrowUp" /></button>
-      </div>
-      {cap?.limit > 0 && <div className="composer-cap">{t('{0} of {1} Coach runs used today', cap.used, cap.limit)}</div>}
-    </div>
+    </CoachComposer>
   </div>
 }
 
@@ -241,7 +235,7 @@ function Message({ m, S, profile, openSheet }) {
     </div>
   }
   if (m.kind === 'reverted' || m.kind === 'nochange' || m.kind === 'error' || m.kind === 'text') {
-    return <Bubble role={m.role} kind={m.kind} at={m.at}>{m.text}</Bubble>
+    return <Bubble role={m.role} kind={m.kind} at={m.at}>{m.kind === 'error' ? t(m.text) : m.text}</Bubble>
   }
   return null
 }

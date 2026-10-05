@@ -110,12 +110,20 @@ los aliases ingleses. No se importa ni duplica el catalogo anterior. El generado
 Coach incluye instrucciones castellanas/inglesas solo de esos IDs; contexto de
 pregunta selecciona hasta ocho ejercicios y marca la fuente documental.
 
+Equipamiento del intake/resumen y nombres revisados de propuestas usan la capa
+localizada sin cambiar IDs. Errores de jobs/BYOK pasan por t; errores historicos
+con texto fuente se traducen al mostrarlos.
+
 Los tests comprueban traducciones de los controles nuevos y paridad de claves
-(14 locales, 1.361 claves). Otros idiomas tienen fallback ingles explicito para
+(14 locales, 1.375 claves). Otros idiomas tienen fallback ingles explicito para
 estos controles. Fuera de la seleccion curada hay nombres/instrucciones sin
-traduccion; el informe general de strings conserva faltantes previos. Calidad
-y castellano de un modelo real, todos los ejercicios y navegador siguen sin
-validacion; no se presenta esta cobertura como castellano integral.
+traduccion; el informe general de strings conserva faltantes previos. El catalogo completo y otros modelos siguen pendientes. Chrome cubre controles,
+equipamiento y errores en es/es-AR, claro/oscuro y 360/390/1280 px (12 casos).
+Fixtures HTTP; no acredita telefono fisico ni castellano integral.
+
+Correccion 5/10, Windows/Node 24: frontend 1.566 y API 237 pasan (una prueba
+de symlinks omitida); build/locales/contexto/assets/carga OK. Capturas y harness
+locales ignorados en .production-state/coach-inputs.
 
 ## Procedencia y licencias
 

@@ -1309,5 +1309,19 @@ export default {
   "You asked to remove this unstarted exercise from this session.": "Pediste quitar este ejercicio que todavía no empezaste de esta sesión.",
   "Propose removing this exercise": "Proponer quitar este ejercicio",
   "Plan changes affect saved routines and require confirmation. Session changes are available inside the workout.": "Los cambios de plan afectan las rutinas guardadas y requieren confirmación. Los cambios para una sola sesión se piden desde el entrenamiento.",
-  "Ask questions or request confirmed changes to your saved routines": "Consultá o pedí cambios con confirmación en tus rutinas guardadas"
+  "Ask questions or request confirmed changes to your saved routines": "Consultá o pedí cambios con confirmación en tus rutinas guardadas",
+  "The Coach isn’t set up on this instance.": "El Entrenador no está configurado en este servidor.",
+  "The Coach is resting — try again tomorrow.": "Alcanzaste el límite diario del Entrenador. Volvé a intentarlo mañana.",
+  "The Coach took too long and gave up.": "El Entrenador tardó demasiado. Volvé a intentarlo.",
+  "The Coach couldn’t sign in to its provider — the instance owner needs to check its setup.": "El Entrenador no pudo conectarse a su proveedor. El administrador debe revisar la configuración.",
+  "The Coach isn’t installed properly on this instance.": "El Entrenador no está instalado correctamente en este servidor.",
+  "The Coach couldn’t run — the instance owner needs to check its setup.": "El Entrenador no pudo ejecutarse. El administrador debe revisar la configuración.",
+  "The Coach answered with something the app couldn’t use.": "La respuesta del Entrenador no pudo validarse. No se aplicaron cambios; volvé a intentarlo.",
+  "The server restarted while the Coach was thinking.": "El servidor se reinició mientras el Entrenador analizaba tu entrenamiento.",
+  "The Coach couldn’t read your training data.": "El Entrenador no pudo leer tus datos de entrenamiento.",
+  "Something went wrong on the server.": "Se produjo un error en el servidor.",
+  "Your AI provider rejected the key on this phone — check it under Settings → AI Coach.": "Tu proveedor de IA rechazó la clave de este teléfono. Revisala en Ajustes → Entrenador IA.",
+  "The Coach isn’t set up on this phone — check Settings → AI Coach.": "El Entrenador no está configurado en este teléfono. Revisá Ajustes → Entrenador IA.",
+  "Your AI provider couldn’t answer.": "Tu proveedor de IA no pudo responder.",
+  "Something went wrong on this phone.": "Se produjo un error en este teléfono."
 }

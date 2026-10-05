@@ -2,19 +2,16 @@
 
 ## Objetivo
 
-Extender el AI Coach de openGym para que, ademas de disenar y revisar planes,
-pueda acompanar una sesion activa: responder preguntas, sugerir que hacer,
-ajustar el entrenamiento del dia y proponer cambios sin perder lo registrado.
+Extender AI Coach para disenar/revisar planes y acompanar sesiones activas:
+responder preguntas, sugerir que hacer y proponer ajustes sin perder registros.
 
-No se crea un segundo Coach. Se reutilizan los adaptadores de proveedor, el
-consentimiento, la allowlist de payload, la validacion estructurada, el historial
-de conversacion, el fingerprint y la aplicacion confirmada que mantenga
-upstream.
+Reutilizar Coach upstream: adaptadores, consentimiento, payload permitido,
+validacion estructurada, historial, fingerprint y aplicacion confirmada.
 
 ## Arquitectura objetivo
 
-La UI separa consulta y cambio de manera explicita. Consulta es el valor inicial:
-no se deja que un clasificador generativo decida si una duda modifica ejercicios.
+La UI separa consulta (modo inicial) y cambio; el modelo no decide si una duda
+modifica ejercicios.
 
 UI -> modo -> payload acotado -> modelo intercambiable -> validador compartido
    -> respuesta de solo lectura, o diff -> confirmar -> aplicar.
@@ -216,6 +213,10 @@ coach_contract:1. Question admite answer <=2.000 caracteres, rechaza mutaciones
 y conserva pending. Active exige una operacion, motivo, summary, scope,
 fingerprint y confirmacion; evidencia del snapshot. Aclaracion sin operacion
 es solo lectura.
+
+Create/refine sin candidatos usa question/schema: rechaza mutaciones, conserva
+pending y admite una reparacion. El chat muestra la explicacion una sola vez,
+incluso con otra propuesta pendiente.
 
 Snapshot: 40 items, 30 filas por item, profundidad 3 y 40.000 caracteres; unidad,
 item enfocado, target, registro anidado y senales permitidas. Viaja efimeramente:

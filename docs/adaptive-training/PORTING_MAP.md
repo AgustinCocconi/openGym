@@ -2,13 +2,10 @@
 
 ## Regla de uso
 
-Este mapa es la puerta de entrada a las aplicaciones anteriores. No explorar un
-repositorio completo para una tarea. Abrir primero la capsula del paquete, luego
-el escenario y solo entonces la ruta de origen que aparece en su fila.
+Para consultar fuentes anteriores: capsula -> escenario -> ruta autorizada de
+esta tabla. No explorar repositorios completos.
 
-Las rutas objetivo son intencionales, no definitivas: deben ajustarse a la
-estructura del commit de openGym que se use como base sin perder el limite entre
-logica pura, UI y adaptadores.
+Adaptar rutas objetivo al commit base, preservando logica pura, UI y adaptadores.
 
 ## Base del fork
 
@@ -78,6 +75,9 @@ baja sin registro, sustitucion y continuacion parcial. Dosis usa solamente
 pending-volume-reduction/v1 para reducir series rectas totalmente pendientes.
 Snapshot acotado, allowlist/equipo/prerrequisitos, evidencia derivada,
 confirmacion, undo e idempotencia del acuse comparten contrato servidor/BYOK.
+Create/refine sin candidatos conserva pending y devuelve lectura validada. UI
+usa tokens/altura real; equipamiento, errores y nombres usan localizacion.
+
 El polling adapta la guarda de respuestas viejas de upstream 43a2054.
 
 ## Verificacion del recorrido

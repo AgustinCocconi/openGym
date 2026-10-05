@@ -29,10 +29,11 @@ export async function attemptOnce({ adapter, cfg, kind, payload, model, timeoutM
   // the runtime-backed CLIs still get one flat prompt — they have no message roles to split over.
   const parts = buildPromptParts(kind, payload, repair);
   const split = adapter.spawns === false;
+  const planNeedsClarification = ['create', 'refine'].includes(parts.task) && Array.isArray(payload.library) && !payload.library.length;
   const r = await adapter.invoke({
     cfg,
     prompt: split ? parts.user : parts.system + '\n\n---\n\n' + parts.user,
-    ...(split ? { system: parts.system, schema: SCHEMAS[parts.task] || null } : {}),
+    ...(split ? { system: parts.system, schema: SCHEMAS[planNeedsClarification ? 'question' : parts.task] || null } : {}),
     model: model || null, timeoutMs, ...invokeOpts
   });
 
@@ -62,7 +63,7 @@ export async function attemptOnce({ adapter, cfg, kind, payload, model, timeoutM
   // so they are a legitimate thing for it to name back — the validator has to agree.
   const candidateIds = (payload.library || []).map(e => e.id);
   const customIds = (payload.library || []).filter(e => e && e.custom).map(e => e.id);
-  const checked = kind === 'active' ? (parsed.value?.answer != null ? validateQuestion(parsed.value) : validateActiveProposal(parsed.value, payload.activeWorkoutSnapshot, candidateIds, payload.jointSignals)) : kind === 'question' ? validateQuestion(parsed.value) : kind === 'review'
+  const checked = planNeedsClarification ? validateQuestion(parsed.value) : kind === 'active' ? (parsed.value?.answer != null ? validateQuestion(parsed.value) : validateActiveProposal(parsed.value, payload.activeWorkoutSnapshot, candidateIds, payload.jointSignals)) : kind === 'question' ? validateQuestion(parsed.value) : kind === 'review'
     ? validateReview(parsed.value, payload.plan, { customIds, candidateIds, jointSignals:payload.jointSignals })
     : kind === 'debrief'
       ? validateDebrief(parsed.value)
@@ -73,7 +74,7 @@ export async function attemptOnce({ adapter, cfg, kind, payload, model, timeoutM
     });
 
   if (!checked.ok) return { ok: false, repairable: !repair, errors: checked.errors, raw: r.text, errorClass: 'unusable' };
-  if (checked.nochange) return { ok: true, nochange: true, reading: checked.reading };
+  if (checked.nochange) return { ok: true, nochange: true, reading: checked.reading, ...(planNeedsClarification ? { preservePending: true } : {}) };
   return { ok: true, result: checked.proposal || { bundle: checked.bundle, summary: checked.bundle.summary } };
 }
 

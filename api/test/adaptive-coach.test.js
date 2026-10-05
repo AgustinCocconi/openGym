@@ -54,3 +54,13 @@ test('expanded live and skill context requires current consent before reserving 
   const uid='old-consent',S=sampleState();S.coach.consent.version=1;writeState(DIR,uid,S);
   assert.throws(()=>jobs.enqueue(uid,{kind:'question',note:'Pregunta'}),error=>error.code==='consent');assert.equal(jobs.capState(uid).used,0);
 });
+
+test('blocked creation explains the restriction and keeps pending and training state intact',async()=>{
+  const uid='create-blocked',S=sampleState();writeState(DIR,uid,S);
+  jobs.enqueue(uid,{kind:'create'});const first=(await settle(uid)).pending;assert.ok(first);
+  S.lang='es-AR';S.coach.profile.limitations='Tengo dolor de hombro.';writeState(DIR,uid,S);
+  const before=fs.readFileSync(stateFile(uid),'utf8');
+  jobs.enqueue(uid,{kind:'create'});const result=await settle(uid);
+  assert.equal(result.last.outcome,'nochange');assert.match(result.last.reading,/bloqueados/);
+  assert.deepEqual(result.pending,first);assert.equal(fs.readFileSync(stateFile(uid),'utf8'),before);
+});

@@ -240,7 +240,7 @@ describe('conversation mode',()=>{
     const S=state();S.active={id:'live',cur:0,entries:[{id:'0652',target:{sets:2,reps:4},sets:[{r:3,done:true},{r:4,done:false}]}]}
     const pending={id:'p',kind:'create',bundle:bundle(everyDay)},before=structuredClone({active:S.active,routines:S.routines,week:S.week})
     await mount(pending,null,{S})
-    expect(props(container.querySelector('.composer select')).value).toBe('question')
+    expect(byText(/^Ask a question$/).getAttribute('aria-pressed')).toBe('true')
     await act(async()=>props(container.querySelector('.composer textarea')).onChange({target:{value:'Tengo una duda de tecnica'}}))
     await click(container.querySelector('.send'))
     expect(requestQuestion).toHaveBeenCalledWith('Tengo una duda de tecnica',expect.objectContaining({id:'live'}))
@@ -250,7 +250,7 @@ describe('conversation mode',()=>{
   it('uses plan modification only when that mode was explicitly selected',async()=>{
     const {requestQuestion,refinePlan}=await import('../lib/coach-api.js')
     await mount(null)
-    await act(async()=>props(container.querySelector('.composer select')).onChange({target:{value:'plan'}}))
+    await click(byText(/^Request a plan change$/))
     await act(async()=>props(container.querySelector('.composer textarea')).onChange({target:{value:'Quiero otro plan'}}))
     await click(container.querySelector('.send'))
     expect(refinePlan).toHaveBeenCalledWith('Quiero otro plan');expect(requestQuestion).not.toHaveBeenCalled()
@@ -273,3 +273,12 @@ it('shows a fast question failure and records each answer once without needing a
   await act(async()=>root.render(React.createElement(CoachChat)))
   expect(mocks.S.coach.chat.filter(message=>message.jobId==='answered-question')).toHaveLength(1)
 })
+
+it('a fast blocked creation explains itself once even with an existing pending plan',async()=>{
+  const pending={id:'existing',kind:'create',bundle:bundle(everyDay)};
+  mocks.last={id:'blocked-create',kind:'create',outcome:'nochange',reading:'¿La molestia sigue presente?'};
+  await mount(pending);const before=structuredClone({routines:mocks.S.routines,week:mocks.S.week,workouts:mocks.S.workouts});
+  await act(async()=>root.render(React.createElement(CoachChat)));
+  expect(container.textContent).toContain('¿La molestia sigue presente?');expect(mocks.S.coach.chat.filter(message=>message.jobId==='blocked-create')).toHaveLength(1);
+  expect(mocks.pending).toBe(pending);expect({routines:mocks.S.routines,week:mocks.S.week,workouts:mocks.S.workouts}).toEqual(before);
+});

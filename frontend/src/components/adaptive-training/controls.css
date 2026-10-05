@@ -1,0 +1,19 @@
+/* Adaptive screens reuse the app's controls and theme tokens. */
+.conversation-mode{display:grid;gap:8px;min-width:0}
+.conversation-mode .seg button{min-height:44px;line-height:1.3;padding:8px 10px;white-space:normal}
+.conversation-mode p{margin:0;line-height:1.4}
+.adaptive-controls{display:grid;gap:14px;min-width:0}
+.adaptive-controls p,.adaptive-controls h3{margin:0;line-height:1.45}
+.adaptive-controls .item{display:grid;gap:12px;min-width:0}
+.adaptive-controls .tag{justify-self:start}
+.adaptive-form{display:grid;gap:14px;min-width:0}
+.adaptive-field{display:grid;gap:6px;min-width:0;font-size:14px;color:var(--label-2)}
+.adaptive-field .field{color:var(--label);min-width:0}
+.adaptive-field input[type="number"]{appearance:textfield;-moz-appearance:textfield}
+.adaptive-field input::-webkit-inner-spin-button,.adaptive-field input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.adaptive-check{display:flex;gap:10px;align-items:center;min-height:44px;font-size:15px;line-height:1.4}
+.adaptive-check input{flex:none;width:22px;height:22px;margin:0;accent-color:var(--acc);color-scheme:dark}
+:root[data-theme="light"] .adaptive-check input{color-scheme:light}
+.adaptive-controls fieldset{display:grid;gap:8px;min-width:0;margin:0;padding:12px 14px;border:1px solid var(--sep-op);border-radius:var(--r)}
+.adaptive-controls legend{padding:0 4px;font-size:14px;color:var(--label-2)}
+.adaptive-actions{display:flex;flex-wrap:wrap;gap:10px}

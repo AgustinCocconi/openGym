@@ -28,3 +28,14 @@ it('an older status reply cannot replace current question/proposal state or stop
     expect(api).toHaveBeenCalledTimes(3)
   } finally {await act(async()=>root.unmount());vi.useRealTimers()}
 })
+
+it('Coach job failures use the Spanish locale, including regional Spanish',async()=>{
+  const {jobErrorText,JOB_ERRORS,BYOK_ERRORS}=await import('./coach-api.js');
+  const {_setLangState}=await import('./i18n-core.js');const es=(await import('../locales/es.js')).default;
+  try {for(const lang of ['es','es-AR']){
+    _setLangState(lang,es,null,null);
+    expect(jobErrorText('unusable')).toBe(es[JOB_ERRORS.unusable]);
+    for(const source of [...Object.values(JOB_ERRORS),...Object.values(BYOK_ERRORS)])expect(es[source]).toBeTruthy();
+    for(const key of Object.keys(JOB_ERRORS))expect(jobErrorText(key)).not.toBe(JOB_ERRORS[key]);
+  }}finally{_setLangState('en',{},null,null)}
+});

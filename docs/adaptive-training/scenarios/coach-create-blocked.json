@@ -1,0 +1,62 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "coach-create-with-blocked-candidates",
+  "purpose": "Explicar en castellano la creacion bloqueada sin un plan imposible ni mutaciones ocultas.",
+  "given": {
+    "locale": "es-AR",
+    "coachProfile": {
+      "daysPerWeek": 2,
+      "equipment": [
+        "body weight"
+      ],
+      "limitations": "Tengo dolor de hombro."
+    },
+    "library": [],
+    "pendingProposal": {
+      "id": "previous",
+      "kind": "create"
+    },
+    "loggedSets": [
+      {
+        "r": 3,
+        "done": true
+      }
+    ]
+  },
+  "when": {
+    "kinds": [
+      "create",
+      "refine"
+    ],
+    "modelResponse": {
+      "coach_contract": 1,
+      "answer": "Mencionaste dolor de hombro. La propuesta queda bloqueada por esa señal. ¿La molestia sigue presente actualmente?"
+    },
+    "mixedResponseFields": [
+      "routines",
+      "week",
+      "changes",
+      "operations",
+      "customEx"
+    ]
+  },
+  "expect": {
+    "kind": "read_only",
+    "operationTypes": [],
+    "invariants": [
+      "empty_candidates_select_read_only_schema",
+      "single_repair_round",
+      "provider_contract_is_equivalent",
+      "pending_proposal_preserved",
+      "training_state_unchanged",
+      "fast_reply_visible_once",
+      "response_locale_is_spanish"
+    ],
+    "forbidden": [
+      "invent_exercises",
+      "clear_joint_signals_from_narrative",
+      "hide_explanation_behind_pending_plan",
+      "apply_plan_without_confirmation"
+    ]
+  }
+}
