@@ -107,8 +107,7 @@ de upstream 043dd30, revisado en 1350409; base a68a88d con baseline intacto
 58/58, sin merge completo. No elevar presupuestos de contexto.
 
 Intake es/es-AR guarda alcance sin generar ni alterar entrenamiento.
-Chrome 154/390-1440: importacion/undo con datos sinteticos. Hash pt-BR revisado:
-4cd3b1e388ebb5ecfe98b03c42534f16597b05101e7a9bc0845e2fcb61b6a438.
+Chrome 154/390-1440: importacion/undo con datos sinteticos; hash pt-BR anterior intacto.
 
 ## Matriz de modelo real
 
@@ -120,25 +119,20 @@ Usa el login del runtime y guarda resultados/hashes en el directorio ignorado
 .production-state/coach-plan-quality. Elegir modelo es obligatorio.
 No ejecutarlo automaticamente como test ni como parte del build.
 
-Tanda anterior, Codex CLI 0.160.0/gpt-6.1-sol: 10/10 y diez llamadas,
-es/es-AR en gimnasio, maquinas, bandas, 30 minutos y solo tren superior.
-Perfil corto: ocho series, 16-24 minutos; enfoque superior sin piernas.
-Tras clasificar tres accesorios: replay entonces 10/10 y repeticion real
-de tren superior 2/2. No mide optimalidad universal.
+Tanda previa, Codex CLI 0.160.0/gpt-6.1-sol: diez generaciones es/es-AR
+(gimnasio, maquinas, bandas, 30 minutos y tren superior) pasan; repeticion superior 2/2.
 Evidencia: .production-state/coach-plan-quality/{2026-10-06T17-31-56-376Z,
-2026-10-06T17-42-10-359Z,replay-current.json}.
-CLI 0.160 temporal; global 0.146 no admite view_image. Hash del probe:
-core/assets/adaptador/escenario. Sin cambiar instalacion.
-Estas pruebas no acreditan CI Linux/Node 22, otros proveedores, dispositivos
-fisicos o produccion. Clasificacion completa de movimientos y mayor cobertura de roles musculares
-siguen pendientes; extender la matriz antes de afirmar calidad general de un modelo.
+2026-10-06T17-42-10-359Z,replay-current.json}. El replay con candidatos actuales va abajo.
+No mide optimalidad universal ni acredita otros proveedores o dispositivos fisicos.
+Clasificacion completa de movimientos y cobertura de roles siguen pendientes;
+extender la matriz antes de afirmar calidad general de un modelo.
 
 ## Verificacion de volumen
 
 Preflight 6/10, Docker/Linux Node 22.23.3: API 279, frontend 1628, MCP 59;
 build/assets/carga/locales y sondas de fatiga OK. Snapshot Git + delta local,
-sin datos privados; evidencia preflight-2026-10-06T18-37-54-740Z. No acredita
-CI/publicacion del futuro SHA ni despliegue remoto.
+sin datos privados; evidencia preflight-2026-10-06T18-37-54-740Z.
+CI y produccion tienen su comprobacion separada abajo.
 
 6/10/2026, core del probe d9072156: API 278 pass/1 skip, frontend 1629.
 Build/assets/core, 14 locales/1404 claves y contexto OK; pt-BR 673 overrides,
@@ -157,6 +151,14 @@ en el mismo directorio ignorado.
 Replay historico con candidatos actuales: 9/10, cero llamadas reales. Una respuesta
 de tren superior es-AR usa 0154: su overlay canonico cambia back a shoulders y
 el recorte actual no lo ofrece. Gate lo rechaza; no es una propuesta vigente.
-Las dos generaciones nuevas de ese enfoque pasan. Capturas originales intactas;
-replay-muscle-current.json registra la diferencia. No ampliar candidatos ni
-relajar validacion para hacer pasar respuestas de un recorte anterior.
+Las dos generaciones nuevas pasan; replay-muscle-current.json conserva la diferencia.
+No ampliar candidatos ni relajar validacion para respuestas de recortes anteriores.
+
+## Produccion
+
+6/10: 5b544ef/coach accepted; CI/publicacion 37514731243 y revision/digests OK.
+Origen/HTTPS AR, registro cerrado y prueba real codex/gpt-6.1-sol/0.160.0 OK;
+binding/unprivileged/cuotas 30+30 intactos. WAF BR/Block/regla propia confirmado.
+Backup consistente cifrado/copia PC/restore siete archivos/2,64 s; plaintext retirado.
+Timers activos; detalle en [checkpoint OCI](OCI_DEPLOYMENT_PLAN.md#checkpoint).
+La generacion con el perfil real queda a cargo del propietario; no se editaron planes.

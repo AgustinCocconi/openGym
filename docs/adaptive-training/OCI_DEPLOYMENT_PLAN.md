@@ -7,9 +7,9 @@ las fases contienen controles y evidencia pertinente, sin bitacora de intentos.
 
 ## Checkpoint
 
-5/10 AR: 2eb87ea/coach sano, bandas/cargas/HTTPS/modelo/30/copia PC/restore OK; WAF pendiente.
+6/10: 5b544ef/coach accepted; calidad/volumen/HTTPS/modelo/30+30/WAF/restore OK.
 Propietario difiere resguardo de identidad: backup/clave solo en esta PC por ahora.
-OCI E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 al 5/10 UTC OK; sin PAYG.
+OCI E2/50+50 GB, cuota 1/1/0, MFA/4 alertas y USD 0 al 6/10 UTC OK; sin PAYG.
 
 | Fase | Estado | Evidencia / proximo paso |
 | --- | --- | --- |
@@ -17,9 +17,9 @@ OCI E2/50+50 GB, cuota 1/1/0, MFA/alertas y USD 0 al 5/10 UTC OK; sin PAYG.
 | 1. Compatibilidad | COMPLETA | ARM64 probado en `905f44e`; imagenes publicadas para AMD64 y ARM64 en fase 4. Consumo local orientativo. |
 | 2. Cuentas | COMPLETA | OCI Always Free/MFA/USD 0, alertas activas y E2 1/1/0. CF zona activa Free por API; propietario confirma Zero Trust Free/2FA. |
 | 3. IaC OCI | COMPLETA | Terraform 1.16.4 / OCI 7.32.0: formato, validacion y cuatro guardrails registrados; E2, swap y storage de 50+50 GB. |
-| 4. Imagenes | COMPLETA | 2eb87ea/37355654587: CI/publicacion default/coach/web; digests/revision OCI OK. |
+| 4. Imagenes | COMPLETA | 5b544ef/37514731243: default/coach/web y digests verificados. |
 | 5. VM y Cloudflare | COMPLETA | Tunnel Healthy/4, tres pruebas confirmadas, cierre sano y token API revocado. |
-| 6. Deploy | EN CURSO | 2eb87ea: HTTPS AR/modelo/30/backup OK; WAF pendiente. |
+| 6. Deploy | COMPLETA | 5b544ef accepted; HTTPS AR/modelo/30+30/WAF/recuperacion OK. |
 | 7. Observacion | EN CURSO | Revisar ocho dias completos desde 12/10/2026 16:25 AR. |
 | 8. Recuperacion | EN CURSO | Copia PC diaria tras 05:00 AR; simulacro 4/11. RTO pendiente; resguardo independiente diferido |
 | 9. Operacion | PENDIENTE | Rutina tras observacion y recuperacion periodica. |
@@ -211,25 +211,25 @@ Smoke/gate Linux y recuperacion corresponden a fase 6.
 
 ## Fase 6 - Primer despliegue controlado
 
-3dbc82f/coach: deploy 5/10 00:29 UTC, aceptado 00:44 UTC. Modelo activo/30 al dia.
-CI Linux/Node 22: frontend 1559/API 233/MCP 59, imagenes/ops/contexto OK.
-API sin puerto, web loopback, /srv persistente.
+5b544ef/coach accepted 6/10 19:08 UTC; API/web healthy 19:11 UTC.
+CI 37514731243: Linux/Node 22, default/coach/web, ops/contexto y digests OCI OK.
+API sin puerto, web loopback, /srv persistente; modelo real/30+30 intactos.
 
-- [x] HTTPS AR 00:33 UTC; Access propietario/OTP/24 h conservado.
-- [x] Propietario confirma WAF BR/Block/opengym_argentina_only, Ray a4585643af02d87c.
+- [x] HTTPS AR 6/10 19:06 UTC; Access renovado por propietario, OTP/24 h conservado.
+- [x] Propietario confirma WAF BR/Block/opengym_argentina_only, Ray a466f1759cdfd79f.
 - [x] Un perfil/passkey; INVITE_ONLY=1, ALLOW_GUEST=0, ADMIN_UIDS coincide.
 - [x] Codex 0.160.0/gpt-6.1-sol: login por dispositivo, cache 0700/0600 fuera de data/backups.
   Binding propietario, 30/dia; drop/canary sin comandos OK al 4/10 22:19 AR.
-  Propietario confirma MFA ChatGPT/historial reconocido; 62 tests Linux/Node 22 OK.
-- [x] UI/API/modelo real: consulta parcial, propuesta/confirmacion/undo;
-  manual offline/sync/historial y undo bloqueado por nuevos datos OK.
-- [x] Backup previo/copias PC; posterior 5/10 00:46 UTC, checksum/descifrado/
-  restore seis archivos/2,25 s OK; plaintext retirado. RPO 0,06 h.
+  MFA ChatGPT/historial confirmados; tests de seguridad OK.
+- [x] Base 3dbc82f: consulta/propuesta/confirmacion/undo, manual offline/sync/historial;
+  undo bloqueado por registros nuevos OK.
+- [x] Backup consistente previo 6/10 19:04:38 UTC (datos de 2eb87ea); age/copia PC
+  19:07 UTC, checksums/restore 7 archivos/2,64 s; plaintext retirado. RPO 0,04 h.
 - [x] Ventanas SSH DELETED; claves/config retiradas.
 
-Evidencia ignorada: .production-state/{deploy-coach,security-final}; constancias PC 5/10 00:49 UTC
-en openGym-backups/transfer-*; ruta en handoff.
-Resguardo independiente diferido; no acredita telefono fisico ni otros proveedores.
+Evidencia ignorada: .production-state/{deploy-plan-quality,deploy-coach,security-final};
+constancias PC 6/10 en openGym-backups/transfer-9dec7c5af76b4421941eda880f864cf2.
+Telefono fisico/otros proveedores pendientes.
 
 ## Fase 7 - Observar inactividad sin fabricar carga
 
@@ -258,10 +258,9 @@ Salida: cobertura completa y decision de dimensionamiento sustentada.
 ## Fase 8 - Backups y recuperacion ante reclamacion
 
 [Rutina activa](../../ops/PRODUCTION_ROUTINE.md#backup-diario-y-ventanas):
-2eb87ea: WAF pendiente; backup diario exige accepted.
-Backup 05:00 AR, retencion 14, age publico en host/identidad PC.
-Backup 5/10 18:30:57 UTC; copia PC/restore aislado autorizado 18:34 UTC OK.
-Checksums y restore 2,29 s/7 archivos OK; plaintext retirado.
+5b544ef accepted; backup diario habilitado, siguiente 7/10 05:00 AR.
+Retencion 14, age publico en host/identidad PC. Ultimo backup 6/10 19:04 UTC;
+Copia PC/restore/checksums verificados; plaintext retirado.
 Timer de backup pausado durante deploy y reactivado; ambos timers activos.
 No acredita RTO productivo ni automatiza la transferencia diaria a PC.
 
