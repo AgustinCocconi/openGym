@@ -17,6 +17,7 @@
 import { libraryHas, libraryName } from './library.js';
 import { reviewResultErrors } from './review-result.js';
 import { proposalCandidateErrors, planJointSignalErrors } from './candidates.js';
+import { assessPlanQuality } from './plan-quality.js';
 
 // The closed list (FR-23 / C3). Adding a member here is a deliberate act with an apply
 // implementation on the client to match; there is no default case anywhere.
@@ -194,6 +195,8 @@ export function validatePlan(data, ctx = {}) {
     errors.push(`the week schedules ${Object.keys(week).length} days but ${want} were asked for`);
   }
 
+  const quality = assessPlanQuality({ week, routines }, { requirements: ctx.planRequirements, candidateIds: ctx.candidateIds });
+  if (quality) errors.push(...quality.errors);
   if (errors.length) return fail(errors);
   return {
     ok: true,
@@ -202,7 +205,8 @@ export function validatePlan(data, ctx = {}) {
       name: clampStr(data.name || 'Coach plan', 40),
       summary: clampStr(data.summary || '', 1200),
       basedOn: clampStr(data.basedOn || '', 400),
-      week, routines, customEx
+      week, routines, customEx,
+      ...(quality ? { quality } : {})
     }
   };
 }

@@ -62,6 +62,8 @@ literario.
 | --- | --- |
 | coach-candidate-allowlist | core/candidates.test.js; paridad spawn/HTTP |
 | coach-create-blocked | core/create-blocked.test.js; API, BYOK y chat preservan estado |
+| coach-plan-quality | core/library-movements.test.js y core/plan-quality.test.js; UI es/es-AR, confirmar/undo |
+| coach-muscle-volume | core/plan-muscle-volume.test.js y core/library-muscles.test.js; calendario, incertidumbre, UI es/es-AR |
 | calisthenics-live-management | core/active-workout.test.js; alta/baja/parcial |
 | novice-pullup-foundation | core/skills.test.js; tres reps no aprueban cuatro |
 | reported-pain-plan-removal | core/candidates.test.js; baja sin alternativa |

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {LIBRARY, LIB_BY_ID, librarySlice} from './library.js';
+import {LIBRARY, LIB_BY_ID, librarySlice, isStretch} from './library.js';
 
 const equipment = ['body weight', 'band', 'dumbbell', 'barbell', 'cable', 'leverage machine', 'kettlebell'];
 const bandIds = LIBRARY.filter(e => e.eq === 'band').slice(0, 12).map(e => e.id);
@@ -13,7 +13,7 @@ test('bounded review candidates cover available weights despite a pinned band pl
   assert.equal(new Set(slice.map(e=>e.id)).size,slice.length);
   for(const id of bandIds)assert.ok(slice.some(e=>e.id===id));
   for(const eq of equipment)assert.ok(slice.some(e=>e.eq===eq),'missing '+eq);
-  const parts=new Set(LIBRARY.filter(e=>equipment.includes(e.eq)).map(e=>e.bp));
+  const parts=new Set(LIBRARY.filter(e=>equipment.includes(e.eq) && !isStretch(e)).map(e=>e.bp));
   assert.deepEqual(new Set(slice.map(e=>e.bp)),parts);
   assert.deepEqual(slice,librarySlice(S,equipment,options));
   assert.deepEqual(S,before);

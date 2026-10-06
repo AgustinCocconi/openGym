@@ -15,6 +15,7 @@ import { deleteRoutine } from './routines.js'
 import { reviewResultErrors } from '../../../api/coach/core/review-result.js'
 import { proposalCandidateErrors, planJointSignalErrors } from '../../../api/coach/core/candidates.js'
 import { equipmentContext } from '../../../api/coach/core/library.js'
+import { assertPlanQuality } from './coach-plan-quality.js'
 import { jointSignalsForState } from '../../../api/coach/core/joint-signals.js'
 import { POLICIES } from './progression.js'
 import { t, exerciseNameFor } from './i18n.js'
@@ -376,7 +377,6 @@ export function profileLines(p) {
 }
 
 /* ============================ applying a created plan ============================ */
-
 /**
  * Accepting a created plan is exactly importing a plan file (FR-18): routines arrive as new
  * ones with fresh ids, existing routines and history are never touched, and the week schedule
@@ -385,6 +385,7 @@ export function profileLines(p) {
 export function applyCreatedPlan(s, proposal, { schedule } = {}) {
   validateProposal(proposal)
   requireCurrentPlan(s, proposal)
+  assertPlanQuality(proposal)
   pushSnapshot(s, proposal.id, t('Before the Coach’s plan'))
   const bundle = proposal.bundle
   // The Coach's `why` texts are for the review screen; they have no place in the routine data.

@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { t } from '../lib/i18n.js'
-import { fmtDate, fmtNum, DAYS } from '../lib/format.js'
+import { fmtDate, fmtNum } from '../lib/format.js'
 import { exLine } from '../lib/history.js'
 import { DEMO } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
@@ -31,6 +31,7 @@ import '../coach.css'
 import { sendCoachMessage, QuestionReplies } from '../components/adaptive-training/ConversationMode.jsx'
 import { ActiveProposalCard } from '../components/adaptive-training/TrainingPanel.jsx'
 import CoachComposer from '../components/adaptive-training/CoachComposer.jsx'
+import { PlanWeek } from '../components/adaptive-training/PlanQuality.jsx'
 
 export default function CoachChat() {
   const nav = useNavigate()
@@ -315,7 +316,7 @@ function PlanCard({ p, S, update, toast, nav, refresh }) {
         {!!b.basedOn && <p className="pcard-sum" style={{ fontSize: 13 }}>{b.basedOn}</p>}
       </div>
 
-      <WeekStrip days={weekDays} />
+      <PlanWeek quality={b.quality} routines={b.routines} days={weekDays} />
 
       {b.routines.length > 1 && <div className="pcard-tabs">
         {b.routines.map((x, i) => <button key={x.id || i} className={'pcard-tab' + (i === tab ? ' on' : '')} onClick={() => setTab(i)}>{x.emoji} {x.name}</button>)}
@@ -336,10 +337,6 @@ function PlanCard({ p, S, update, toast, nav, refresh }) {
     <div className="msg-t">{t('Not quite right? Say what to change below and I will revise the whole plan.')}</div>
   </div>
 }
-
-const WeekStrip = ({ days }) => <div className="pcard-week">
-  {[1, 2, 3, 4, 5, 6, 0].map(d => <div key={d} className={'pcard-wd' + (days.has(d) ? ' on' : '')}>{t(DAYS[d])}</div>)}
-</div>
 
 const RoutineBlock = ({ r, unit }) => <div className="pcard-rt">
   <div className="pcard-rt-h"><b>{r.emoji} {r.name}</b><span>{t('{0} exercises', r.ex.length)}</span></div>
@@ -614,7 +611,7 @@ function ProposalDetail({ entry, S }) {
     </>}
 
     {kind === 'create' && b && <>
-      <WeekStrip days={weekDays} />
+      <PlanWeek quality={b.quality} routines={b.routines} days={weekDays} />
       {b.routines.length > 1 && <div className="pcard-tabs" style={{ paddingLeft: 0, paddingRight: 0 }}>
         {b.routines.map((x, i) => <button key={x.id || i} className={'pcard-tab' + (i === tab ? ' on' : '')} onClick={() => setTab(i)}>{x.emoji} {x.name}</button>)}
       </div>}

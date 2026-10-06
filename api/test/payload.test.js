@@ -114,7 +114,7 @@ test('the library is filtered to the equipment someone actually has', () => {
   assert.ok(dumbbell.length > 0);
   assert.ok(dumbbell.every(e => eqOf(e.id) === 'dumbbell'), 'nothing outside the filter');
   assert.ok(dumbbell.every(e => e.eq === 'dumbbell' && e.id && e.n && e.bp), 'equipment is explicit');
-  assert.deepEqual(Object.keys(dumbbell[0]).sort(), ['bp', 'eq', 'id', 'n'], 'entries stay slim');
+  assert.ok(dumbbell.every(e => Object.keys(e).every(key => ['bp', 'eq', 'id', 'n', 'pattern', 'primaries', 'muscleMetadata'].includes(key))), 'entries stay slim');
   assert.ok(payload.librarySlice({}, ['dumbbell', 'barbell']).some(e => eqOf(e.id) === 'barbell'));
   // Custom exercises always travel: they exist nowhere else and the model cannot guess them.
   const withCustom = payload.librarySlice({ customEx: [{ id: 'cx1', n: 'Sandbag carry', bp: 'back' }] }, ['dumbbell']);
@@ -133,7 +133,7 @@ test('the library slice is capped, balanced across body parts, deterministic, an
   // Small groups (neck has two rows) run out early and their share flows to the rest, so the
   // bound is "nobody dominates", not "everyone equal".
   assert.ok(Math.max(...Object.values(byBp)) <= MAX_LIBRARY / 4, `one body part dominates: ${JSON.stringify(byBp)}`);
-  assert.equal(byBp.neck, LIBRARY.filter(e => e.bp === 'neck').length, 'a tiny group is present in full');
+  assert.equal(byBp.neck || 0, 0, 'neck stretches do not take training candidate slots');
   assert.deepEqual(all.map(e => e.id), payload.librarySlice({}, []).map(e => e.id), 'same slice every time');
 
   // An exercise the user already trains rides along even when the filter would exclude it.

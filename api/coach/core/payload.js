@@ -15,6 +15,7 @@ import { LIBRARY, LIB_BY_ID, libraryHas, libraryName, librarySlice, equipmentCon
 import { activeSnapshot, activeFingerprint, ACTIVE_DOSE_POLICY } from './active-workout.js';
 import { skillProgression, skillExerciseAllowed } from './skills.js';
 import { jointSignalsForState } from './joint-signals.js';
+import { planRequirements } from './plan-quality.js';
 export const CONTRACT = 1;
 // Bounds from FR-22. A review reads a training block, not a training career: more history
 // makes the payload bigger and the reading vaguer, not better.
@@ -350,6 +351,7 @@ export function build(S, opts = {}) {
     coachProfile: profile ? {
       goal: profile.goal || null,
       experience: profile.experience || null,
+      planScope: ['general', 'focused'].includes(profile.planScope) ? profile.planScope : null,
       daysPerWeek: profile.daysPerWeek || null,
       preferredDays: profile.preferredDays || [],
       sessionMin: profile.sessionMin || null,
@@ -467,6 +469,7 @@ export function build(S, opts = {}) {
   }
   if (p.jointSignals.length) p.library=[];
   else if (p.library) p.library=p.library.filter(exercise=>skillExerciseAllowed(coach.skillGoals||[],exercise.id));
+  if (p.task === 'create') p.planRequirements = planRequirements(p);
   return p;
 }
 

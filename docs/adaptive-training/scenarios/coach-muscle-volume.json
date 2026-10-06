@@ -1,0 +1,155 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "coach-muscle-volume",
+  "purpose": "Revisar volumen semanal por musculo sin equivalencia principal/secundario ni minimo universal; preservar alcance e incertidumbre.",
+  "given": {
+    "locale": "es-AR",
+    "plan": {
+      "week": {
+        "1": "r1",
+        "4": "r2"
+      },
+      "routines": [
+        {
+          "id": "r1",
+          "name": "Dia A",
+          "ex": [
+            {
+              "id": "1408",
+              "sets": 2,
+              "reps": 10,
+              "mode": "reps"
+            },
+            {
+              "id": "1004",
+              "sets": 2,
+              "reps": 10,
+              "mode": "reps"
+            },
+            {
+              "id": "0739",
+              "sets": 2,
+              "reps": 10,
+              "mode": "reps"
+            },
+            {
+              "id": "0988",
+              "sets": 3,
+              "reps": 16,
+              "mode": "reps"
+            },
+            {
+              "id": "0989",
+              "sets": 2,
+              "reps": 16,
+              "mode": "reps"
+            },
+            {
+              "id": "1016",
+              "sets": 2,
+              "reps": 12,
+              "mode": "reps"
+            },
+            {
+              "id": "1344",
+              "sets": 2,
+              "reps": 10,
+              "mode": "reps"
+            },
+            {
+              "id": "0006",
+              "sets": 2,
+              "reps": 20,
+              "mode": "reps"
+            }
+          ]
+        },
+        {
+          "id": "r2",
+          "name": "Dia B",
+          "ex": [
+            {
+              "id": "1004",
+              "sets": 2,
+              "reps": 10,
+              "mode": "reps"
+            },
+            {
+              "id": "0017",
+              "sets": 3,
+              "reps": 6,
+              "mode": "reps"
+            },
+            {
+              "id": "0293",
+              "sets": 2,
+              "reps": 12,
+              "mode": "reps"
+            },
+            {
+              "id": "0989",
+              "sets": 2,
+              "reps": 16,
+              "mode": "reps"
+            },
+            {
+              "id": "1373",
+              "sets": 2,
+              "reps": 12,
+              "mode": "reps"
+            },
+            {
+              "id": "1425",
+              "sets": 2,
+              "reps": 16,
+              "mode": "reps"
+            },
+            {
+              "id": "0285",
+              "sets": 2,
+              "reps": 16,
+              "mode": "reps"
+            },
+            {
+              "id": "0006",
+              "sets": 2,
+              "reps": 20,
+              "mode": "reps"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "when": {
+    "checks": [
+      "repeat-calendar",
+      "multiple-routines-same-day",
+      "overhead-only-chest",
+      "supporting-only-hamstrings",
+      "legacy-custom-time-cardio",
+      "focus-equipment",
+      "concentration-goal",
+      "server-BYOK"
+    ]
+  },
+  "then": {
+    "recorded": {
+      "chest": {
+        "primarySets": 4,
+        "supportingSets": 0
+      },
+      "upper-back": {
+        "primarySets": 10,
+        "supportingSets": 0
+      },
+      "hamstring": {
+        "primarySets": 0,
+        "supportingSets": 10
+      }
+    },
+    "advisoryOnly": true,
+    "noUniversalMinimum": true,
+    "noStateMutation": true
+  }
+}

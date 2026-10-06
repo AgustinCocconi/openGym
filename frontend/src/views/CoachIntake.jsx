@@ -21,6 +21,7 @@ import { DEMO } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
 import Icon from '../components/Icon.jsx'
 import { Button, TextArea } from '../components/ui.jsx'
+import PlanScope from '../components/adaptive-training/PlanScope.jsx'
 import '../coach.css'
 
 const GOALS = [
@@ -63,7 +64,7 @@ export default function CoachIntake() {
   const [step, setStep] = useState(0)
   const [busy, setBusy] = useState(false)
   const [p, setP] = useState(() => ({
-    goal: null, experience: null, daysPerWeek: 3, preferredDays: [1, 3, 5],
+    goal: null, experience: null, planScope: S.coach?.profile ? null : 'general', daysPerWeek: 3, preferredDays: [1, 3, 5],
     sessionMin: 60, equipment: [], limitations: '', likes: '', dislikes: '', notes: '',
     ...(S.coach?.profile || {})
   }))
@@ -201,6 +202,7 @@ export default function CoachIntake() {
         <div className="ob-eyebrow">{t('Almost there')}</div>
         <h1 className="ob-h">{t('Anything else?')}</h1>
         <p className="ob-p">{t('All optional. The more the Coach knows, the less it guesses.')}</p>
+        <PlanScope value={p.planScope} onChange={planScope => set({ planScope })} />
         <div className="ob-sub" style={{ marginTop: 0 }}>{t('Exercises you love')}</div>
         <div className="ob-field"><TextArea rows={2} maxLength={300} value={p.likes} onChange={e => set({ likes: e.target.value })} placeholder={t('e.g. “deadlifts, anything with a kettlebell”')} /></div>
         <div className="ob-sub" style={{ marginTop: 4 }}>{t('Exercises you would rather not')}</div>

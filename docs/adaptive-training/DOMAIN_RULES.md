@@ -218,3 +218,8 @@ negocio. Las explicaciones se construyen con campos estructurados y se muestran
 sin puntajes tecnicos salvo que el usuario los pida.
 
 
+
+## Calidad de planes nuevos
+
+La politica local esta en [PLAN_QUALITY.md](PLAN_QUALITY.md), con su escenario,
+alcance, procedencia upstream y limites. No sustituye bloqueos articulares.

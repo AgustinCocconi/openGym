@@ -77,7 +77,14 @@ if (MODE === 'nochange' || (kind === 'review' && !(P.window?.workouts || []).len
 if (kind === 'create' && Array.isArray(P.library) && !P.library.length) out({ answer: 'Los candidatos están bloqueados por las restricciones declaradas. ¿Qué síntomas tenés actualmente?' });
 
 if (kind === 'create') {
-  const lib = (P.library || []).slice(0, 6);
+  const patterns = ['squat', 'horizontal_push', 'horizontal_pull', 'hinge', 'vertical_push', 'vertical_pull'];
+  const library = P.library || [];
+  const used = new Set();
+  const lib = patterns.map(pattern => {
+    const exercise = library.find(e => e.pattern === pattern && !used.has(e.id)) || library.find(e => !used.has(e.id));
+    if (exercise) used.add(exercise.id);
+    return exercise;
+  }).filter(Boolean);
   const ex = (i) => lib[i % Math.max(1, lib.length)] || { id: 'unknown' };
   out({
     coach_contract: 1,

@@ -170,7 +170,8 @@ describe('the Coach on a phone with its own key', () => {
   it('creates a plan from an intake, and refines it against the previous bundle', async () => {
     const S = { ...state(), routines: [], week: {} }
     const intake = { goal: 'muscle', daysPerWeek: 3 }
-    const candidates = build(S, { handle: 'test', kind: 'create', intake }).library.filter(e => e.bp !== 'cardio').slice(0, 6)
+    const library = build(S, { handle: 'test', kind: 'create', intake }).library
+    const candidates = ['0739', '1459', '0289', '0293', '0405', '0017'].map(id => library.find(e => e.id === id))
     expect(candidates).toHaveLength(6)
     const plan = { coach_contract: 1, opengym_plan: 1, name: 'P', summary: 's', basedOn: 'b', week: { 1: 'r1', 3: 'r2', 5: 'r1' },
       routines: [

@@ -70,7 +70,8 @@ export async function attemptOnce({ adapter, cfg, kind, payload, model, timeoutM
       : validatePlan(parsed.value, {
       customIds, candidateIds, jointSignals:payload.jointSignals,
       workingWeights: payload.history?.workingWeights,
-      daysPerWeek: payload.coachProfile?.daysPerWeek
+      daysPerWeek: payload.coachProfile?.daysPerWeek,
+      planRequirements: payload.planRequirements
     });
 
   if (!checked.ok) return { ok: false, repairable: !repair, errors: checked.errors, raw: r.text, errorClass: 'unusable' };

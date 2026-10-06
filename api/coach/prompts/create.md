@@ -24,6 +24,44 @@ Design a complete plan from `coachProfile` (their intake answers) and, if presen
 - If `history.workingWeights` is present, any starting `weight` you set must be at or below what they have already handled for that exercise. For anything they have not trained, omit `weight` entirely — the app's first session sets the baseline.
 - 1–7 routines, each 3–12 exercises, compound work before accessories.
 
+## Coverage and programming
+
+`coachProfile.planScope` distinguishes a general whole-body plan from a specific
+focus described in their notes. Ordinary exercise likes/dislikes can change the
+choices within a general plan without removing whole movement groups. Restrictions,
+notes and the current request still take precedence; explain any resulting omission.
+The payload's code-derived planRequirements describes the scope of coverage checks.
+When enforceCoverage is true, cover knee-dominant work, a hip hinge or hamstring
+curl, upper-body pushing and pulling across the scheduled week, using compatible
+library options. Do not count a glute bridge, calf raise or stretch as a hamstring
+curl or hinge. Split routines may distribute this work across days; an unscheduled
+routine does not supply weekly coverage.
+
+Known library.pattern values are curated movement metadata; absent patterns are
+unknown, not proof of an exercise's role or safety. Prefer conventional, teachable
+choices appropriate to experience before technical variants. Stretches already
+present in the plan may be retained for their stated purpose, but do not replace
+work sets with them.
+
+Library primaries are canonical muscle slugs, not proof of stimulus or safety.
+Legacy muscleMetadata may omit additional primary roles; absent metadata is unknown.
+Use these roles to review the weekly muscle distribution: shoulder presses alone do
+not supply chest work, and secondary hamstring involvement is not the same as primary
+hamstring work. Respect the requested scope and compatible equipment. The app reports
+primary and supporting sets separately; do not invent a muscle-volume report or aim
+for a universal minimum for every muscle.
+
+Match the distribution of sets to goal, experience, session length and priorities.
+Start conservatively for new/returning lifters; there is no universal minimum
+volume or compulsory one-to-one push/pull ratio. Explain deliberate priorities
+and omissions in summary/why. Put priority main lifts before fatiguing accessories
+unless the person's stated purpose calls for another order. Specify an appropriate
+progression policy; unknown starting weights do not prevent choosing loaded work.
+
+For a scoped request or restriction, preserve the requested scope and explain
+tradeoffs instead of inserting unrelated exercises just to satisfy a general plan.
+Quality is recomputed by code; never invent a quality report in the response.
+
 ## Output
 
 ```

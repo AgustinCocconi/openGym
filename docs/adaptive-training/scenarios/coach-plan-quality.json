@@ -1,0 +1,229 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "coach-plan-quality",
+  "purpose": "Evitar que el recorte del catalogo o la validacion permitan planes generales sin cadena posterior; respetar pedidos especificos y datos no clasificados.",
+  "given": {
+    "locale": "es-AR",
+    "coachProfile": {
+      "goal": "muscle",
+      "experience": "new",
+      "daysPerWeek": 2,
+      "sessionMin": 60,
+      "equipment": [
+        "body weight",
+        "band",
+        "barbell",
+        "dumbbell",
+        "cable",
+        "leverage machine",
+        "kettlebell",
+        "ez barbell",
+        "sled machine",
+        "smith machine",
+        "weighted",
+        "resistance band",
+        "stability ball",
+        "medicine ball"
+      ]
+    },
+    "visibleRoutines": [
+      {
+        "id": "r1",
+        "name": "Dia A",
+        "ex": [
+          {
+            "id": "1408",
+            "sets": 2,
+            "reps": 10,
+            "mode": "reps"
+          },
+          {
+            "id": "1004",
+            "sets": 2,
+            "reps": 10,
+            "mode": "reps"
+          },
+          {
+            "id": "0739",
+            "sets": 2,
+            "reps": 10,
+            "mode": "reps"
+          },
+          {
+            "id": "0988",
+            "sets": 3,
+            "reps": 16,
+            "mode": "reps"
+          },
+          {
+            "id": "0989",
+            "sets": 2,
+            "reps": 16,
+            "mode": "reps"
+          },
+          {
+            "id": "1016",
+            "sets": 2,
+            "reps": 12,
+            "mode": "reps"
+          },
+          {
+            "id": "1344",
+            "sets": 2,
+            "reps": 10,
+            "mode": "reps"
+          },
+          {
+            "id": "0006",
+            "sets": 2,
+            "reps": 20,
+            "mode": "reps"
+          }
+        ]
+      },
+      {
+        "id": "r2",
+        "name": "Dia B",
+        "ex": [
+          {
+            "id": "1004",
+            "sets": 2,
+            "reps": 10,
+            "mode": "reps"
+          },
+          {
+            "id": "0017",
+            "sets": 3,
+            "reps": 6,
+            "mode": "reps"
+          },
+          {
+            "id": "0293",
+            "sets": 2,
+            "reps": 12,
+            "mode": "reps"
+          },
+          {
+            "id": "0989",
+            "sets": 2,
+            "reps": 16,
+            "mode": "reps"
+          },
+          {
+            "id": "1373",
+            "sets": 2,
+            "reps": 12,
+            "mode": "reps"
+          },
+          {
+            "id": "1425",
+            "sets": 2,
+            "reps": 16,
+            "mode": "reps"
+          },
+          {
+            "id": "0285",
+            "sets": 2,
+            "reps": 16,
+            "mode": "reps"
+          },
+          {
+            "id": "0006",
+            "sets": 2,
+            "reps": 20,
+            "mode": "reps"
+          }
+        ]
+      }
+    ],
+    "week": {
+      "1": "r1",
+      "4": "r2"
+    }
+  },
+  "when": {
+    "kind": "create",
+    "candidateCaps": [
+      60,
+      160
+    ],
+    "posteriorCandidates": [
+      "0085",
+      "1459",
+      "0586",
+      "0599"
+    ]
+  },
+  "expect": {
+    "kind": "repair_or_proposal",
+    "invariants": [
+      "candidate_id_exists",
+      "equipment_and_skill_guards_preserved",
+      "posterior_candidates_survive_cap",
+      "stretches_only_pinned",
+      "weekly_schedule_counts_repeated_routines",
+      "general_missing_coverage_rejected",
+      "scoped_requests_advisory",
+      "unknown_classification_is_explicit",
+      "provider_contract_is_equivalent",
+      "quality_is_code_derived",
+      "explicit_confirmation_required",
+      "stale_fingerprint_rejected",
+      "response_locale_is_spanish",
+      "explicit_general_preferences_preserve_coverage",
+      "related_accessory_order_only",
+      "session_time_is_advisory"
+    ],
+    "forbidden": [
+      "state_mutation_during_assessment",
+      "rigid_push_pull_ratio",
+      "universal_minimum_hypertrophy_volume",
+      "inferred_joint_safety"
+    ]
+  },
+  "legacyEvidence": [],
+  "modelCases": [
+    {
+      "id": "gym-general",
+      "profile": {},
+      "enforceCoverage": true
+    },
+    {
+      "id": "gym-likes",
+      "profile": {
+        "planScope": "general",
+        "likes": "Prefiero maquinas y ejercicios faciles de aprender."
+      },
+      "enforceCoverage": true
+    },
+    {
+      "id": "bands",
+      "profile": {
+        "equipment": [
+          "body weight",
+          "band"
+        ],
+        "experience": "returning"
+      },
+      "enforceCoverage": true
+    },
+    {
+      "id": "short-session",
+      "profile": {
+        "sessionMin": 30
+      },
+      "enforceCoverage": true,
+      "expectTimeFit": true
+    },
+    {
+      "id": "upper-specialization",
+      "profile": {
+        "planScope": "focused",
+        "notes": "Solo quiero entrenar el tren superior. Las piernas las entreno en otro deporte.",
+        "experience": "regular"
+      },
+      "enforceCoverage": false,
+      "expectUpperOnly": true
+    }
+  ]
+}

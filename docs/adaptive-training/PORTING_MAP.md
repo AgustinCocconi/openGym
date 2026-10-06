@@ -76,8 +76,9 @@ pending-volume-reduction/v1 para reducir series rectas totalmente pendientes.
 Snapshot acotado, allowlist/equipo/prerrequisitos, evidencia derivada,
 confirmacion, undo e idempotencia del acuse comparten contrato servidor/BYOK.
 Review sin historial: bandas/cargas y undo; Codex gpt-6.1-sol 3/3 es-AR.
-Create/refine sin candidatos conserva pending y devuelve lectura validada. UI
-usa tokens/altura real; equipamiento, errores y nombres usan localizacion.
+Calidad: [PLAN_QUALITY.md](PLAN_QUALITY.md), 043dd30 parcial.
+Create/refine sin candidatos: lectura validada, pending intacto. UI: tokens,
+altura real y localizacion.
 
 El polling adapta la guarda de respuestas viejas de upstream 43a2054.
 
