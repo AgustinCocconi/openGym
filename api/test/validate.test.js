@@ -277,6 +277,7 @@ test('every allowed change type has a validator that accepts a well-formed insta
     'add-exercise': change({ type: 'add-exercise', target: { routineId: 'r1' }, after: { id: '0009', sets: 3, reps: 10 } }),
     'remove-exercise': change({ type: 'remove-exercise' }),
     'swap-exercise': change({ type: 'swap-exercise', after: { id: '0009' } }),
+    warmupSets: change({ type: 'warmupSets', after: 2 }),
     sets: change({ type: 'sets', after: 4 }),
     reps: change({ type: 'reps', after: 12 }),
     repsMin: change({ type: 'repsMin', after: 8 }),

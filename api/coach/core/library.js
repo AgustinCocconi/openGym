@@ -27,7 +27,7 @@ const slim = (e, locale) => ({
   ...(e.custom ? { custom: true } : {})
 });
 
-export function librarySlice(S, equipment, { keep = [], max = MAX_LIBRARY, locale='en', strictEquipment=false } = {}) {
+export function librarySlice(S, equipment, { keep = [], max = MAX_LIBRARY, locale='en', strictEquipment=false, focusId=null } = {}) {
   const wanted = (equipment || []).map(x => String(x).toLowerCase());
   const customs = (S.customEx || []).map(c => ({ id: c.id, n: c.n, bp: c.bp, eq: 'custom', custom: true }));
   const filtered = wanted.length ? LIBRARY.filter(e => wanted.includes((e.eq || '').toLowerCase())) : LIBRARY;
@@ -53,6 +53,11 @@ export function librarySlice(S, equipment, { keep = [], max = MAX_LIBRARY, local
   // Reserve a small set of conventional options per movement before filling the
   // weighted lanes. Ranking by catalogue prefix must not eliminate all hinges/curls.
   const eligible = new Map(base.map(e => [e.id, e]));
+  // Reserve variants of the focused movement before broad lane balancing, within the cap.
+  const focus = LIB_BY_ID.get(focusId), pattern = movementOf(focusId);
+  const variants = foundationIds(pattern).map(id => eligible.get(id)).filter(e => e && e.id !== focusId);
+  variants.sort((a, b) => Number(b.eq === focus?.eq) - Number(a.eq === focus?.eq));
+  variants.slice(0, 6).forEach(add);
   for (const pattern of FOUNDATION_PATTERNS) {
     let count = out.filter(e => movementOf(e.id) === pattern).length;
     for (const id of foundationIds(pattern)) {

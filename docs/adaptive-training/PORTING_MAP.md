@@ -17,9 +17,9 @@ Adaptar rutas objetivo al commit base, preservando logica pura, UI y adaptadores
 
 ## Correcciones de producto sobre la base
 
-La base integrada sigue en `a68a88d`. El 2026-10-04 se hizo fetch y se reviso
-`upstream/main` en `1350409`, sin merge; sus cuatro commits nuevos son docs/web.
-No contiene estas operaciones activas ni objetivos de habilidad.
+La base integrada sigue en `a68a88d`. El 2026-10-06 se reviso upstream en
+`31c6795`, sin merge; el delta desde `1350409` cambia solo README.
+No incorpora calibracion, normalizacion de swaps ni reserva de variantes activas.
 La [auditoria por subsistemas](../agents/SUBSYSTEM_AUDIT.md) registra H01-H10
 y su verificacion local. Son correcciones previas; no completan
 las fases adaptativas pendientes.

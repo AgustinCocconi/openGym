@@ -96,9 +96,8 @@ secundarias; metadata incompleta, sin afirmar ausencia fisiologica.
 
 Calidad derivada del plan validado; el modelo no aporta el informe. Visible con
 el calendario antes de confirmar y recalculada antes de importar; conserva
-rutinas/registros existentes y snapshot/undo. Modulos puros: movement-patterns,
-plan-quality, plan-feasibility y plan-muscle-volume. Adaptadores pequenos en library/payload/pipeline/
-validate; UI PlanQuality/PlanScope. Servidor y BYOK comparten el contrato.
+rutinas/registros existentes y snapshot/undo. Core puro compartido de movimientos, calidad y volumen; adaptadores finos en
+library/payload/pipeline/validate y UI PlanQuality/PlanScope.
 
 Escenario [coach-plan-quality](scenarios/coach-plan-quality.json): capturas,
 abdominales solos, cobertura, calendario repetido, restricciones, preferencias,
@@ -106,53 +105,53 @@ orden, tiempo y reparacion CLI/HTTP en es/es-AR. Reglas de candidatos adaptadas
 de upstream 043dd30, revisado en 1350409; base a68a88d con baseline intacto
 58/58, sin merge completo. No elevar presupuestos de contexto.
 
-Intake es/es-AR guarda alcance sin generar ni alterar entrenamiento.
-Chrome 154/390-1440: importacion/undo con datos sinteticos; hash pt-BR anterior intacto.
-
 ## Matriz de modelo real
 
-Probe opt-in reproducible: node scripts/verify-coach-plan-quality.mjs --model ID.
-En Windows, --launcher acepta la ruta del codex.js instalado. Conserva argvFor,
-sin herramientas del host, plugins, reglas o config ambiental. No lee estado
-de la app ni config de instancia; solo casos sinteticos del escenario.
-Usa el login del runtime y guarda resultados/hashes en el directorio ignorado
+Probe opt-in: node scripts/verify-coach-plan-quality.mjs --model ID;
+Windows admite --launcher codex.js. Conserva argvFor y aislamiento, solo casos
+sinteticos, sin estado/config de instancia ni herramientas del host.
+No ejecutarlo automaticamente como test/build. Guarda hashes/resultados en
 .production-state/coach-plan-quality. Elegir modelo es obligatorio.
-No ejecutarlo automaticamente como test ni como parte del build.
+Codex CLI 0.160.0/gpt-6.1-sol tiene probes es/es-AR anteriores; no acreditan
+otros modelos/dispositivos ni optimalidad. Metadata legacy implica incertidumbre.
 
-Tanda previa, Codex CLI 0.160.0/gpt-6.1-sol: diez generaciones es/es-AR
-(gimnasio, maquinas, bandas, 30 minutos y tren superior) pasan; repeticion superior 2/2.
-Evidencia: .production-state/coach-plan-quality/{2026-10-06T17-31-56-376Z,
-2026-10-06T17-42-10-359Z,replay-current.json}. El replay con candidatos actuales va abajo.
-No mide optimalidad universal ni acredita otros proveedores o dispositivos fisicos.
-Clasificacion completa de movimientos y cobertura de roles siguen pendientes;
-extender la matriz antes de afirmar calidad general de un modelo.
+## Verificacion local
 
-## Verificacion de volumen
+6/10, cambios locales, Windows Node 24: API 283 pass/1 skip; frontend gate
+completo y regresiones de calibracion/superseries, build/assets/Node-loadable,
+14 locales/1420 claves y contexto 21135 OK. Chrome 154: es/es-AR a 390/1440,
+sin overflow, diff y ayuda con teclado; evidencia sintetica visual-calibration-final2
+en .production-state/coach-plan-quality. CI/produccion conservan su gate separado.
+Replay historico 9/10 por 0154 fuera de recorte; no relajar allowlist.
 
-Preflight 6/10, Docker/Linux Node 22.23.3: API 279, frontend 1628, MCP 59;
-build/assets/carga/locales y sondas de fatiga OK. Snapshot Git + delta local,
-sin datos privados; evidencia preflight-2026-10-06T18-37-54-740Z.
-CI y produccion tienen su comprobacion separada abajo.
+## Uso en gimnasio
 
-6/10/2026, core del probe d9072156: API 278 pass/1 skip, frontend 1629.
-Build/assets/core, 14 locales/1404 claves y contexto OK; pt-BR 673 overrides,
-731 heredadas y hash anterior intactos. Chrome 154: es/es-AR a 390/1440,
-18 filas, sin overflow; teclado colapsa y click despliega. Ajustes finales:
-core/payload 21, volumen 10 y UI/herencia 11 OK. Evidencia sintetica
-visual-muscle-final en .production-state/coach-plan-quality.
+Escenario [coach-gym-calibration](scenarios/coach-gym-calibration.json):
+swap de 16-24 a 6 reps elimina rango incompatible y pasa prog a off;
+descarta carga/incremento/flags del movimiento anterior, conserva dosis compatible.
+Diff visible antes de confirmar; snapshot/undo preserva registros.
+Rangos ya guardados fuera de dosis son avisos, reparables mediante propuesta
+explicita; una actualizacion no reescribe planes.
 
-Codex CLI 0.160.0/gpt-6.1-sol: seis generaciones nuevas, seis llamadas,
-gimnasio/bandas/tren superior en es/es-AR, sin reparacion y con informe muscular.
-En bandas hay roles legacy y movimientos sin clasificar; se informa incertidumbre,
-sin certificar un plan optimo. El enfoque de tren superior no agrega piernas.
-Evidencia: 2026-10-06T18-16-06-276Z, 18-19-09-607Z y 18-21-30-804Z
-en el mismo directorio ignorado.
+Active reserva hasta seis variantes curadas del patron enfocado, prioriza equipo
+sin ampliar 60. Con equipo compatible, 1425 ofrece la prensa bilateral 0739.
+Review recibe diagnostico compacto y feedback inicial: una sesion facil/corta
+puede justificar calibracion o trabajo adicional solicitado, sin inventar tendencia
+ni rellenar minutos. Calidad proyectada de la seleccion real, cobertura orientativa;
+dependencias/rangos invalidos bloquean antes de mutar.
 
-Replay historico con candidatos actuales: 9/10, cero llamadas reales. Una respuesta
-de tren superior es-AR usa 0154: su overlay canonico cambia back a shoulders y
-el recorte actual no lo ofrece. Gate lo rechaza; no es una propuesta vigente.
-Las dos generaciones nuevas pasan; replay-muscle-current.json conserva la diferencia.
-No ampliar candidatos ni relajar validacion para respuestas de recortes anteriores.
+warmupSets 0-5: create/review, limpieza/fingerprint y buildSessionEntries existente;
+calentamiento separado, sin sumarlo al volumen de trabajo.
+appGuidance publico/acotado: mancuerna recomendada por unidad (dos de 12 = 12,
+sin conversion), barra, asistencia, esfuerzo y registro manual. Carga desconocida
+se calibra sin inventar kg; UI avisa carga pendiente y permite activar RIR
+sin cambiar entrenamiento. Maquinas asistidas: preferir off/manual mientras
+no exista contrato de progresion inversa. Copy es/es-AR; otros packs heredan
+las nuevas claves en ingles hasta traducirlas.
+
+Tests puros y de proveedor CLI/HTTP junto a gym-calibration/review-result;
+coach-calibration y UI cubren seleccion, inicio, castellano y undo.
+No certifican optimalidad ni reemplazan el probe real/dispositivos fisicos.
 
 ## Produccion
 

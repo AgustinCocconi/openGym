@@ -56,6 +56,11 @@ export function assessPlanQuality(plan, { requirements, candidateIds } = {}) {
   }
   const sessions = [];
   for (const routine of new Set(scheduled)) {
+    for (const exercise of routine.ex || []) {
+      if (exercise.reps > 0 && ((exercise.repsMin > 0 && exercise.reps < exercise.repsMin) || (exercise.repsMax > 0 && exercise.reps > exercise.repsMax))) {
+        issues.push({ code: 'quality.rep_range', routineId: routine.id, exerciseId: exercise.id, reps: exercise.reps, severity: 'warning' });
+      }
+    }
     const order = orderConcern(routine);
     if (order) issues.push({ code: 'quality.exercise_order', routineId: routine.id, ...order, severity: 'warning' });
     const time = routineTimeEstimate(routine);

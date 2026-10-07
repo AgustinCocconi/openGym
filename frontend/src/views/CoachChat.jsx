@@ -19,7 +19,7 @@ import { MOBILE } from '../lib/mobile.js'
 import {
   coachAvailable, hasConsent, emptyCoach, appendChat, recordTiming, estimateMs, profileLines,
   markStale, applicable, applyChangeSet, applyCreatedPlan, recordDismissal, recordDebrief, logEntry,
-  changeTitle, changeValues, exName, canRevert, revertLast, STALE_PLAN_MESSAGE
+  changeTitle, exName, canRevert, revertLast, STALE_PLAN_MESSAGE
 } from '../lib/coach.js'
 import { insightsFor, sessionInsights } from '../lib/coach-insights.js'
 import { useCoachStatus, requestReview, requestDebrief, requestPlan, refinePlan, resolvePending, cohortStats, setCohortShare, jobErrorText } from '../lib/coach-api.js'
@@ -30,8 +30,10 @@ import { Button, Check, Switch, Section, Row, SelectRow } from '../components/ui
 import '../coach.css'
 import { sendCoachMessage, QuestionReplies } from '../components/adaptive-training/ConversationMode.jsx'
 import { ActiveProposalCard } from '../components/adaptive-training/TrainingPanel.jsx'
+import ChangeRow from '../components/adaptive-training/CoachChangeRow.jsx'
 import CoachComposer from '../components/adaptive-training/CoachComposer.jsx'
-import { PlanWeek } from '../components/adaptive-training/PlanQuality.jsx'
+import { reviewQuality } from '../../../api/coach/core/review-quality.js'
+import PlanQuality, { PlanWeek } from '../components/adaptive-training/PlanQuality.jsx'
 
 export default function CoachChat() {
   const nav = useNavigate()
@@ -353,7 +355,9 @@ function ReviewCard({ p, S, update, toast, refresh }) {
   const marked = useMemo(() => markStale(p, S), [p, S])
   const usable = applicable(marked)
   const [accepted, setAccepted] = useState(() => new Set(usable.map(c => c.id)))
-  const count = usable.filter(c => accepted.has(c.id)).length
+  const selected = usable.filter(c => accepted.has(c.id))
+  const count = selected.length
+  const preview = reviewQuality(S, selected, { planRequirements: marked.quality?.requirements, candidateIds: marked.candidateIds })
   const toggle = id => setAccepted(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
 
   const apply = () => {
@@ -392,6 +396,8 @@ function ReviewCard({ p, S, update, toast, refresh }) {
       </div>
 
       <Insights S={S} window={marked.evidence} />
+      <PlanQuality quality={preview.quality} routines={preview.plan.routines} />
+      {!!preview.errors.length && <p role="alert" className="pcard-note">{t('These selected changes conflict. Select the related changes together or request a new review.')}</p>}
 
       {marked.changes.map(c => {
         const stale = c.status === 'stale'
@@ -404,26 +410,12 @@ function ReviewCard({ p, S, update, toast, refresh }) {
 
       <div className="pcard-note">{t('The Coach is not a doctor or a physiotherapist. If something hurts, ask a professional.')}</div>
       <div className="pcard-ft">
-        <Button variant="primary" icon="check" onClick={apply} disabled={!usable.length}>
+        <Button variant="primary" icon="check" onClick={apply} disabled={!usable.length || !!preview.errors.length}>
           {count ? t(count === 1 ? 'Apply {0} change' : 'Apply {0} changes', count) : t('Apply nothing')}
         </Button>
         <Button onClick={discard}>{t('Dismiss all')}</Button>
       </div>
     </div>
-  </div>
-}
-
-function ChangeRow({ c, S, stale, badge, children }) {
-  const vals = changeValues(c, S)
-  return <div className={'pcard-chg' + (stale ? ' stale' : '') + (c.status === 'rejected' ? ' declined' : '')}>
-    <div className="grow">
-      <div className="pcard-chg-t">{changeTitle(c, S)}{c.routineName ? <span className="dim" style={{ fontWeight: 400 }}> · {c.routineName}</span> : null}</div>
-      {vals && <div className="pcard-chg-v"><span className="tag">{vals.before}</span><Icon name="chevronRight" style={{ fontSize: 12, color: 'var(--label-3)' }} /><span className="tag acc">{vals.after}</span></div>}
-      <div className="pcard-chg-w">{c.why}</div>
-      {stale && <div className="pcard-chg-stale">{t('Doesn’t match your plan any more — can’t be applied.')}</div>}
-    </div>
-    {badge}
-    {children}
   </div>
 }
 

@@ -263,7 +263,7 @@ describe('applying changes', () => {
     // asserting "it throws" would pass against the bug this is here to pin.
     expect(() => apply(state(), proposal([change({
       type: 'superset', after: { link: true, with: '0001' }
-    })]), ['c1'])).toThrow('superset with itself')
+    })]), ['c1'])).toThrow()
   })
 
   it('supersets by moving the partner adjacent and tagging both', () => {

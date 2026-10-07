@@ -1,3 +1,4 @@
+import { exName } from '../../lib/coach.js'
 import { t } from '../../lib/i18n.js'
 import { DAYS } from '../../lib/format.js'
 import PlanMuscleVolume from './PlanMuscleVolume.jsx'
@@ -15,6 +16,7 @@ function issueText(issue, routines) {
     case 'quality.coverage_missing': return t('Review missing work for {0}.', groupLabel(issue.group))
     case 'quality.coverage_unavailable': return t('No checked option is available for {0} with the supplied equipment.', groupLabel(issue.group))
     case 'quality.coverage_unknown': return t('Coverage of {0} could not be verified from the selected exercises.', groupLabel(issue.group))
+    case 'quality.rep_range': return t('Review {0}: {1} target reps are outside its progression range.', exName(issue.exerciseId), issue.reps)
     case 'quality.unclassified': return t('{0} exercises could not be assessed; these counts are incomplete.', issue.count)
     case 'quality.upper_balance': return t('Pushing: {0} sets; pulling: {1}. Review this distribution against your goal.', issue.push, issue.pull)
     case 'quality.session_time': return t('Review the duration of {0}: roughly {1}–{2} minutes before warming up, for a {3}-minute session.', routines.find(r => r.id === issue.routineId)?.name || t('Routine'), issue.estimatedMin, issue.estimatedMax, issue.requestedMin)
@@ -34,6 +36,7 @@ export default function PlanQuality({ quality, routines = [] }) {
         <span className="ins-row-v"><b>{quality.weeklySets?.[group] || 0}</b></span>
       </div>)}
       {!quality.requirements?.enforceCoverage && <p className="small dim">{t('Adapt this balance to your goal and restrictions.')}</p>}
+      {(quality.sessions || []).filter(session => session.min != null).map(session => <p className="small dim" key={session.routineId}>{t('{0}: roughly {1}–{2} minutes of work sets and rest, excluding warm-up and transitions.', routines.find(r => r.id === session.routineId)?.name || t('Routine'), session.min, session.max)}</p>)}
       {messages.map((message, i) => <p className="small" key={i}>{message}</p>)}
     </div>
     <PlanMuscleVolume volume={quality.muscleVolume} />

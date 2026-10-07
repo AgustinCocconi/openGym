@@ -81,3 +81,13 @@ it('removing an unstarted exercise waits for confirmation and preserves the save
   await mount();await click(button('Ask or adapt this session'));await click(button('Propose removing this exercise'));expect(mocks.S).toEqual(before)
   await click(button('Confirm session change'));expect(mocks.S.active.entries).toHaveLength(0);expect(mocks.S.routines).toEqual(before.routines)
 })
+
+it('effort logging can be enabled manually from help without changing training records', async () => {
+  const before = structuredClone(mocks.S)
+  await mount()
+  expect(container.textContent).toContain('Loads, effort and warm-up: how to log')
+  await click(button('Enable RIR logging'))
+  expect(mocks.S.effort).toBe('rir')
+  expect(mocks.S.routines).toEqual(before.routines)
+  expect(mocks.S.active).toEqual(before.active)
+})

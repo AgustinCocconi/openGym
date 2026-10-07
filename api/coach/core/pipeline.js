@@ -64,7 +64,7 @@ export async function attemptOnce({ adapter, cfg, kind, payload, model, timeoutM
   const candidateIds = (payload.library || []).map(e => e.id);
   const customIds = (payload.library || []).filter(e => e && e.custom).map(e => e.id);
   const checked = planNeedsClarification ? validateQuestion(parsed.value) : kind === 'active' ? (parsed.value?.answer != null ? validateQuestion(parsed.value) : validateActiveProposal(parsed.value, payload.activeWorkoutSnapshot, candidateIds, payload.jointSignals)) : kind === 'question' ? validateQuestion(parsed.value) : kind === 'review'
-    ? validateReview(parsed.value, payload.plan, { customIds, candidateIds, jointSignals:payload.jointSignals })
+    ? validateReview(parsed.value, payload.plan, { customIds, candidateIds, jointSignals:payload.jointSignals, planRequirements:payload.planRequirements })
     : kind === 'debrief'
       ? validateDebrief(parsed.value)
       : validatePlan(parsed.value, {

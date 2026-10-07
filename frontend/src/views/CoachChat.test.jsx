@@ -282,3 +282,24 @@ it('a fast blocked creation explains itself once even with an existing pending p
   expect(container.textContent).toContain('¿La molestia sigue presente?');expect(mocks.S.coach.chat.filter(message=>message.jobId==='blocked-create')).toHaveLength(1);
   expect(mocks.pending).toBe(pending);expect({routines:mocks.S.routines,week:mocks.S.week,workouts:mocks.S.workouts}).toEqual(before);
 });
+
+it('review quality follows selected changes and keeps explicit partial scope', async () => {
+  const S = state()
+  S.routines = [{ id: 'a', name: 'A', ex: [{ id: '0989', sets: 2, reps: 16 }, { id: '1459', sets: 2, reps: 10 }] }]
+  S.week = { 1: ['a'], 4: ['a'] }
+  const { planRequirements } = await import('../../../api/coach/core/plan-quality.js')
+  const before = structuredClone(S.routines)
+  const p = { id: 'review-quality', kind: 'review', planHash: planHash(S), quality: { requirements: planRequirements({ coachProfile: S.coach.profile }) }, changes: [
+    { id: 'remove', type: 'remove-exercise', target: { routineId: 'a', exId: '0989' }, why: 'Requested removal' },
+    { id: 'add', type: 'add-exercise', target: { routineId: 'a' }, after: { id: '0289', mode: 'reps', sets: 3, reps: 10 }, why: 'Requested replacement' }
+  ] }
+  await mount(p, null, { S })
+  const pushSets = () => [...container.querySelectorAll('.ins-row')].find(row => row.textContent.includes('Upper body pushing')).querySelector('b').textContent
+  expect(pushSets()).toBe('6')
+  expect(S.routines).toEqual(before)
+  await click(container.querySelectorAll('.pcard-chg [role="checkbox"]')[1])
+  expect(pushSets()).toBe('0')
+  expect(container.textContent).toContain('Review missing work for Upper body pushing')
+  await click(byText(/^Apply 1 change$/))
+  expect(S.routines[0].ex.map(e => e.id)).toEqual(['1459'])
+})

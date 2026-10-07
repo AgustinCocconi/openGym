@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import WorkoutGuidance from './WorkoutGuidance.jsx'
 import { useStore } from '../../store/useStore.js'
 import { useUI } from '../../store/useUI.js'
 import { t, exerciseNameFor } from '../../lib/i18n.js'
@@ -90,6 +91,7 @@ export default function TrainingPanel() {
       reasonCode: 'user_request', summary: t(remove ? 'You asked to remove this unstarted exercise from this session.' : 'You asked to skip the remaining work while keeping anything already logged.'), operations: [{ type: remove ? 'remove_pending_exercise' : 'skip_pending_exercise', index: S.active.cur }] })
   }
   return <section className="sect adaptive-controls" style={{ margin: '12px 0' }}>
+    <WorkoutGuidance S={S} update={update} />
     <Button size="sm" variant="tinted" onClick={() => setOpen(!open)}>{t('Ask or adapt this session')}</Button>
     {open && <>
       <p className="small">{t('Questions never change exercises. Adaptation always requires a proposal and your confirmation.')}</p>

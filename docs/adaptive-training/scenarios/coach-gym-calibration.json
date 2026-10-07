@@ -1,0 +1,98 @@
+{
+  "scenarioVersion": "adaptive-training-scenario/v1",
+  "id": "coach-gym-calibration",
+  "purpose": "Calibrar una primera sesion, ofrecer variantes pertinentes y revisar el resultado confirmado sin heredar cargas/rangos ni alterar registros.",
+  "given": {
+    "locale": "es-AR",
+    "coachProfile": {
+      "goal": "muscle",
+      "experience": "returning",
+      "sessionMin": 75,
+      "daysPerWeek": 2,
+      "equipment": [
+        "body weight",
+        "band",
+        "dumbbell",
+        "sled machine",
+        "leverage machine",
+        "barbell",
+        "cable",
+        "ez barbell"
+      ]
+    },
+    "routines": [
+      {
+        "id": "a",
+        "name": "Dia A",
+        "ex": [
+          {
+            "id": "0989",
+            "sets": 2,
+            "reps": 16,
+            "repsMin": 16,
+            "repsMax": 24,
+            "prog": "double",
+            "weight": 10,
+            "inc": 2
+          },
+          {
+            "id": "1425",
+            "sets": 2,
+            "reps": 12
+          }
+        ]
+      }
+    ],
+    "week": {
+      "1": [
+        "a"
+      ],
+      "4": [
+        "a"
+      ]
+    }
+  },
+  "when": {
+    "swap": {
+      "id": "s",
+      "type": "swap-exercise",
+      "target": {
+        "routineId": "a",
+        "exId": "0989"
+      },
+      "after": {
+        "id": "0662",
+        "sets": 2,
+        "reps": 6
+      },
+      "why": "El equipo no esta disponible; propongo una dosis inicial que requiere calibracion."
+    },
+    "focused": "1425",
+    "requiredAlternative": "0739",
+    "candidateCap": 60,
+    "feedback": "La primera sesion se sintio facil y corta; agregue repeticiones y ejercicios. Revisa el plan completo.",
+    "loadQuestion": "Con dos mancuernas de 12 kg, registro 12 o 24?"
+  },
+  "expect": {
+    "swap": {
+      "id": "0662",
+      "sets": 2,
+      "reps": 6,
+      "prog": "off"
+    },
+    "removedFields": [
+      "weight",
+      "inc",
+      "repsMin",
+      "repsMax"
+    ],
+    "warmupBounds": [
+      0,
+      5
+    ],
+    "quality": "advisory and recomputed for selected changes",
+    "questions": "read-only with documented usage facts",
+    "records": "preserved and reversible",
+    "time": "available budget, not required duration"
+  }
+}

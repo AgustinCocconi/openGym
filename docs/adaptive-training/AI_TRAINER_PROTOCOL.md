@@ -210,20 +210,17 @@ Para `es-AR`:
 
 ## Estado implementado y validacion
 
-Question/active comparten pipeline servidor/BYOK y una reparacion;
-coach_contract:1. Question admite answer <=2.000 caracteres, rechaza mutaciones
-y conserva pending. Active exige una operacion, motivo, summary, scope,
-fingerprint y confirmacion; evidencia del snapshot. Aclaracion sin operacion
-es solo lectura.
+Question/active: pipeline servidor/BYOK, coach_contract:1 y una reparacion.
+Question: answer <=2.000, sin mutaciones, pending intacto. Active: una operacion,
+motivo/summary/scope/fingerprint/confirmacion y evidencia del snapshot.
+Aclaracion sin operacion: solo lectura.
 
-Create/refine sin candidatos usa question/schema: rechaza mutaciones, conserva
-pending y admite una reparacion. El chat muestra la explicacion una sola vez,
-incluso con otra propuesta pendiente.
+Create/refine sin candidatos usa question/schema, sin mutaciones, pending intacto
+y una reparacion. Explicacion unica en chat aun con otra propuesta pendiente.
 
-Snapshot: 40 items, 30 filas por item, profundidad 3 y 40.000 caracteres; unidad,
-item enfocado, target, registro anidado y senales permitidas. Viaja efimeramente:
-no se guarda como sesion del servidor. Cambios de registro/unidad/equipo o
-prerrequisitos invalidan la propuesta. No se traslada carga al cambiar ejercicio.
+Snapshot efimero: 40 items, 30 filas/item, profundidad 3, 40.000 caracteres;
+unidad/foco/target/registro anidado/senales permitidas. No persiste en servidor.
+Registro/unidad/equipo/prerrequisitos invalidan propuestas; swap no traslada cargas.
 
 Solo se elimina un item sin registro ni grupo; parcial se conserva y continua
 con otra entrada, o se omite lo pendiente. Completados son inmutables. Dosis
@@ -233,11 +230,13 @@ rutinas guardadas solo bajas, sin mezclarlas con otra mutacion. Undo local exige
 que no haya registro nuevo ni otro cambio material; navegar no lo invalida.
 El retry del acuse usa proposalId y no aplica nuevamente el cambio.
 
-4/10: Codex 0.160/gpt-6.1-sol, 14/14 es/es-AR; Chrome 153, 36 casos.
-UI/API/modelo real, offline/sync/undo OK; OCI 3dbc82f/coach, propietario, 30/dia.
-Otros proveedores/dispositivos pendientes.
-Detalle en [el handoff](../tasks/active/coach-adaptativo-validacion.md).
+Gate historico 4/10 y proveedores/dispositivos pendientes:
+[handoff](../tasks/active/coach-adaptativo-validacion.md).
+Produccion vigente en el [checkpoint](OCI_DEPLOYMENT_PLAN.md#checkpoint).
 
 Pendientes: registro por proveedor/modelo/idioma, frecuencia 7/14/28,
 proxima sesion, tiempo/DOMS y grafos curados. MCP remoto de escritura deshabilitado.
 
+Uso: appGuidance publico, calentamiento 0-5 con motor/fingerprint existente,
+calidad de seleccion y swaps sin carga/rangos incompatibles. Reglas y escenario
+coach-gym-calibration en PLAN_QUALITY; no actualiza planes de produccion.

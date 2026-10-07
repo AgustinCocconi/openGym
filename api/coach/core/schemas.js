@@ -52,7 +52,7 @@ const EX_SCHEMA = {
     reps: { type: 'integer' }, sec: { type: 'integer' },
     min: { type: 'integer' }, speed: { type: 'number' },
     weight: { type: 'number' }, prog: STR, inc: { type: 'number' },
-    repsMin: { type: 'integer' }, repsMax: { type: 'integer' },
+    repsMin: { type: 'integer' }, repsMax: { type: 'integer' }, warmupSets: { type: 'integer', minimum: 0, maximum: 5 },
     bodyweight: { type: 'boolean' }, side: { type: 'boolean' },
     sg: STR, why: STR, position: { type: 'integer' }
   },

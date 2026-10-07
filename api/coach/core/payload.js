@@ -15,7 +15,8 @@ import { LIBRARY, LIB_BY_ID, libraryHas, libraryName, librarySlice, equipmentCon
 import { activeSnapshot, activeFingerprint, ACTIVE_DOSE_POLICY } from './active-workout.js';
 import { skillProgression, skillExerciseAllowed } from './skills.js';
 import { jointSignalsForState } from './joint-signals.js';
-import { planRequirements } from './plan-quality.js';
+import { planRequirements, assessPlanQuality } from './plan-quality.js';
+import { APP_GUIDANCE, APP_GUIDANCE_VERSION } from './app-guidance.js';
 export const CONTRACT = 1;
 // Bounds from FR-22. A review reads a training block, not a training career: more history
 // makes the payload bigger and the reading vaguer, not better.
@@ -95,6 +96,7 @@ function cleanEx(e) {
   if (mode === 'cardio') { if (e.min != null) o.min = e.min; if (e.speed != null) o.speed = e.speed; }
   else if (mode === 'time') { if (e.sec != null) o.sec = e.sec; if (e.weight) o.weight = e.weight; }
   else { if (e.reps != null) o.reps = e.reps; if (e.weight) o.weight = e.weight; }
+  if (Number.isInteger(e.warmupSets) && e.warmupSets >= 0 && e.warmupSets <= 5) o.warmupSets = e.warmupSets;
   if (e.prog) o.prog = e.prog;
   if (e.inc > 0) o.inc = e.inc;
   if (e.repsMin != null) o.repsMin = e.repsMin;
@@ -132,7 +134,7 @@ export function canonicalPlan(S) {
           min: mode === 'cardio' ? (e.min || 0) : 0,
           speed: mode === 'cardio' ? (e.speed || 0) : 0,
           weight: mode === 'cardio' ? 0 : (e.weight || 0),
-          prog: e.prog || '', inc: e.inc || 0, repsMin: e.repsMin || 0, repsMax: e.repsMax || 0,
+          prog: e.prog || '', inc: e.inc || 0, repsMin: e.repsMin || 0, repsMax: e.repsMax || 0, warmupSets: e.warmupSets || 0,
           // Resolved rather than copied: the fingerprint has to change when a plan starts
           // disagreeing with the catalogue, and `bodyweight: undefined` and an exercise the
           // dataset already calls bodyweight are the same plan and must hash the same.
@@ -366,6 +368,7 @@ export function build(S, opts = {}) {
     jointSignals:jointSignalsForState({...S,coach:{...coach,profile}},{note:opts.note,extra:opts.activeWorkoutSnapshot?.trainerSignals})
   };
 
+  if (['create', 'review', 'question', 'active'].includes(opts.kind)) p.appGuidance={version:APP_GUIDANCE_VERSION,facts:APP_GUIDANCE};
   p.skills=skillProgression(coach.skillGoals||[],p.jointSignals);
   if (['question','active'].includes(opts.kind)) {
     p.userNote=String(opts.note||'').slice(0,1000);
@@ -374,7 +377,7 @@ export function build(S, opts = {}) {
     p.activeDosePolicyVersion=ACTIVE_DOSE_POLICY;
     if (p.activeWorkoutSnapshot) p.activeFingerprint=activeFingerprint(p.activeWorkoutSnapshot);
     if (opts.kind==='active' && !p.activeWorkoutSnapshot) throw new Error('active snapshot required');
-    p.library=librarySlice(S,profile?.equipment,{max:60,locale:S.lang||'en',strictEquipment:true,keep:[...(coach.skillGoals||[]).map(goal=>goal.exerciseId),...(p.activeWorkoutSnapshot?.entries||[]).map(entry=>entry.id),'0652','1326','0662','0017']});
+    p.library=librarySlice(S,profile?.equipment,{max:60,locale:S.lang||'en',strictEquipment:true,focusId:p.activeWorkoutSnapshot?.entries[p.activeWorkoutSnapshot.cur]?.id,keep:[...(coach.skillGoals||[]).map(goal=>goal.exerciseId),...(p.activeWorkoutSnapshot?.entries||[]).map(entry=>entry.id),'0652','1326','0662','0017']});
     if (p.jointSignals.length || p.activeWorkoutSnapshot?.trainerSignals.length) p.library=[];
     else p.library=p.library.filter(exercise=>skillExerciseAllowed(coach.skillGoals||[],exercise.id));
     const focused=p.activeWorkoutSnapshot?.entries[p.activeWorkoutSnapshot.cur]?.id;
@@ -469,7 +472,11 @@ export function build(S, opts = {}) {
   }
   if (p.jointSignals.length) p.library=[];
   else if (p.library) p.library=p.library.filter(exercise=>skillExerciseAllowed(coach.skillGoals||[],exercise.id));
-  if (p.task === 'create') p.planRequirements = planRequirements(p);
+  if (['create', 'review'].includes(p.task)) p.planRequirements = planRequirements(p);
+  if (p.task === 'review') {
+    const quality = assessPlanQuality(p.plan, { requirements: { ...p.planRequirements, enforceCoverage: false }, candidateIds: p.library.map(e => e.id) });
+    p.planAssessment = { weeklySets: quality.weeklySets, sessions: quality.sessions, issues: quality.issues };
+  }
   return p;
 }
 

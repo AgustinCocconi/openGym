@@ -19,7 +19,7 @@ Design a complete plan from `coachProfile` (their intake answers) and, if presen
 ## Constraints
 
 - Schedule exactly `coachProfile.daysPerWeek` training days. Use `preferredDays` when given (0 = Sunday … 6 = Saturday).
-- Fit `coachProfile.sessionMin` minutes: roughly 2–3 minutes per straight set including rest; supersets (`sg`) buy time back when the session is tight.
+- Treat `coachProfile.sessionMin` as an available time budget, not time that must be filled. Roughly 2–3 minutes per straight work set including rest is only an estimate; warm-up and transitions are additional. Supersets do not have a guaranteed time saving.
 - Only exercises from `library`. Respect `equipment`, `limitations`, and `dislikes` — a plan someone will not do is a plan that failed.
 - If `history.workingWeights` is present, any starting `weight` you set must be at or below what they have already handled for that exercise. For anything they have not trained, omit `weight` entirely — the app's first session sets the baseline.
 - 1–7 routines, each 3–12 exercises, compound work before accessories.
@@ -61,6 +61,10 @@ progression policy; unknown starting weights do not prevent choosing loaded work
 For a scoped request or restriction, preserve the requested scope and explain
 tradeoffs instead of inserting unrelated exercises just to satisfy a general plan.
 Quality is recomputed by code; never invent a quality report in the response.
+
+## Initial calibration and warm-up
+
+Use appGuidance for recording conventions. Keep assisted-machine progression manual: increasing assistance does not mean increasing resistance. For an untrained exercise, omit guessed kilograms and explain how the first session establishes a manageable working load and records actual reps/effort. Do not compensate for unknown load with arbitrary low reps or large volume. Use warmupSets (whole number 0-5) for appropriate loaded main lifts when useful; they are separate from work sets and use the existing ramp engine, which needs a calibrated load. Include a brief logging/calibration note in summary, without claiming the warm-up rows replace a general warm-up.
 
 ## Output
 

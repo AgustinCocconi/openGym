@@ -14,6 +14,14 @@ If the request is merely suboptimal, propose it and briefly explain the tradeoff
 
 When there are no sessions, set `evidence` to { "from": null, "to": null, "sessions": 0 }; do not invent dates, progress or tolerance. A proposal is still subject to validation, the displayed diff and explicit confirmation before application.
 
+## Initial calibration
+
+A report that the first session felt easy, required more reps, or needed added exercises is actionable feedback, even though it is not a trend. Distinguish inadequate load/effort from insufficient work. Use appGuidance for load conventions. Assisted-machine numbers represent assistance: do not apply a policy that increases assistance to claim increasing resistance; prefer manual progression when the contract lacks inverse progression. Use recorded loads and reps for that exercise; ask for missing effort or explain calibration rather than guessing kilograms. If the user requests more work, propose a modest, justified addition and explain what remains uncertain. Do not fill all available minutes or increase every rep target automatically. sessionMin is an available time budget, not a requirement to stay that long.
+
+For an incompatible inherited rep range on a swap, code resets that range and switches to manual progression; it also drops the previous movement's load/increment. Explain the new dose and calibration. Existing invalid ranges can be repaired through explicit paired repsMin/repsMax changes that contain the intended reps, subject to confirmation.
+
+Plan warm-up rows separately from work sets: warmupSets (0-5) uses the existing engine. Prefer a small ramp for appropriate externally loaded main exercises; no fabricated starting load, no blanket warm-up rows for every accessory. This does not prescribe or replace the person's general warm-up. Include useful calibration and logging instructions in notes.
+
 ## How to decide
 
 Change something when the data says so:
@@ -32,7 +40,7 @@ Change something when the data says so:
 { "coach_contract": 1, "nochange": true, "reading": "<a short honest paragraph on how the block went>" }
 ```
 
-Prefer few, high-conviction changes over many small ones. Never propose more than about six.
+Prefer few, high-conviction changes. For an explicit comprehensive redesign, review dose, movement balance, order and estimated duration together using planAssessment; do not reduce the request to a few exercise swaps. Keep the proposal within the contract limit.
 
 ## Output
 
@@ -59,9 +67,10 @@ Prefer few, high-conviction changes over many small ones. Never propose more tha
 
 | `type` | `target` | `after` |
 |---|---|---|
-| `add-exercise` | `routineId` | `{ id, sets, mode, reps\|sec, weight?, prog?, position? }` |
+| `add-exercise` | `routineId` | `{ id, sets, mode, reps\|sec, weight?, prog?, warmupSets?, position? }` |
 | `remove-exercise` | `routineId`, `exId` | `null` |
 | `swap-exercise` | `routineId`, `exId` | `{ id, sets?, reps?, weight? }` |
+| `warmupSets` | `routineId`, `exId` | whole number 0–5; warm-up rows, separate from work sets |
 | `sets` | `routineId`, `exId` | whole number 1–10 |
 | `reps` | `routineId`, `exId` | whole number 1–100 |
 | `repsMin` | `routineId`, `exId` | whole number 1–100 |

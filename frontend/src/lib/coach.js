@@ -12,9 +12,10 @@ import { modeOf, isBw, isPerSide, cleanupSg } from './history.js'
 import { uid, todayISO, DAYN } from './format.js'
 import { mergePlan } from './plan-share.js'
 import { deleteRoutine } from './routines.js'
-import { reviewResultErrors } from '../../../api/coach/core/review-result.js'
+import { reviewResultErrors, swapPrescription } from '../../../api/coach/core/review-result.js'
 import { proposalCandidateErrors, planJointSignalErrors } from '../../../api/coach/core/candidates.js'
 import { equipmentContext } from '../../../api/coach/core/library.js'
+import { swapChangeValues } from './coach-swap-copy.js'
 import { assertPlanQuality } from './coach-plan-quality.js'
 import { jointSignalsForState } from '../../../api/coach/core/joint-signals.js'
 import { POLICIES } from './progression.js'
@@ -94,7 +95,7 @@ export function canonicalPlan(S) {
           min: mode === 'cardio' ? (e.min || 0) : 0,
           speed: mode === 'cardio' ? (e.speed || 0) : 0,
           weight: mode === 'cardio' ? 0 : (e.weight || 0),
-          prog: e.prog || '', inc: e.inc || 0, repsMin: e.repsMin || 0, repsMax: e.repsMax || 0,
+          prog: e.prog || '', inc: e.inc || 0, repsMin: e.repsMin || 0, repsMax: e.repsMax || 0, warmupSets: e.warmupSets || 0,
           bodyweight: isBw(e, S), side: isPerSide(e),
           sg: e.sg || ''
         }
@@ -113,7 +114,7 @@ export function hashPlan(plan) {
   const canon = JSON.stringify({
     routines: (plan?.routines || []).map(r => [r.id, r.name, r.prog, (r.ex || []).map(e =>
       [e.id, e.mode, e.sets, e.reps, e.sec, e.min, e.speed, e.weight, e.prog, e.inc,
-        e.repsMin, e.repsMax, e.bodyweight, e.side, e.sg].join(':')
+        e.repsMin, e.repsMax, e.bodyweight, e.side, e.sg, ...(e.warmupSets ? ['warm:' + e.warmupSets] : [])].join(':')
     )]),
     // `plan` is a canonicalPlan output, so each day is already an array. `{1:['r1']}` → "1=r1",
     // byte-identical to the pre-upgrade fingerprint; `{3:['r2','r3']}` → "3=r2+r3". Weekday
@@ -141,6 +142,7 @@ export function currentValue(S, change) {
   const r = findRoutine(S, change.target?.routineId)
   const e = change.target?.exId ? findEx(r, change.target.exId) : null
   switch (change.type) {
+    case 'warmupSets': return e?.warmupSets ?? 0
     case 'sets': return e?.sets ?? null
     case 'reps': return e?.reps ?? null
     case 'repsMin': return e?.repsMin ?? null
@@ -419,6 +421,7 @@ const CHANGE_APPLY = {
     else e.reps = a.reps || 10
     if (a.weight > 0) e.weight = a.weight
     if (POLICIES.includes(a.prog)) e.prog = a.prog
+    if (a.warmupSets != null) e.warmupSets = a.warmupSets
     if (Number.isInteger(a.repsMin)) e.repsMin = a.repsMin
     if (Number.isInteger(a.repsMax)) e.repsMax = a.repsMax
     // Only when the Coach disagreed with the catalogue: an absent flag has always meant
@@ -439,16 +442,11 @@ const CHANGE_APPLY = {
     const r = need(findRoutine(s, c.target.routineId))
     const i = r.ex.findIndex(e => e.id === c.target.exId)
     if (i < 0) throw new Error('missing exercise')
-    const old = r.ex[i], a = c.after || {}
-    // Keep the old prescription unless the Coach deliberately changed it: a swap is about the
-    // movement, and silently resetting sets and reps would be a second change nobody approved.
-    //
-    // The two v1.2.4 flags are the exception, and they have to be: they describe the *movement*,
-    // not the prescription. Carrying `side: true` from a lunge onto a leg press would make the
-    // app halve a rep count that was never per-side, so an explicit flag is dropped and the new
-    // exercise goes back to whatever the catalogue says about it.
-    const { bodyweight, side, ...keep } = old
-    r.ex[i] = { ...keep, id: a.id, ...(a.sets ? { sets: a.sets } : {}), ...(a.reps ? { reps: a.reps } : {}), ...(a.weight > 0 ? { weight: a.weight } : {}) }
+    r.ex[i] = swapPrescription(r.ex[i], c.after || {})
+  },
+  warmupSets: (s, c) => {
+    if (!Number.isInteger(c.after) || c.after < 0 || c.after > 5) throw new Error(t('Could not apply those changes'))
+    need(findExIn(s, c)).warmupSets = c.after
   },
   sets: (s, c) => { need(findExIn(s, c)).sets = c.after },
   reps: (s, c) => { need(findExIn(s, c)).reps = c.after },
@@ -500,6 +498,7 @@ const CHANGE_APPLY = {
       ex: a.ex.map(e => ({
         id: e.id, sets: e.sets || 3, mode: e.mode || 'reps',
         ...(e.mode === 'time' ? { sec: e.sec || 45 } : { reps: e.reps || 10 }),
+        ...(Number.isInteger(e.warmupSets) ? { warmupSets: e.warmupSets } : {}),
         ...(Number.isInteger(e.repsMax) ? { repsMax: e.repsMax } : {}),
         ...(Number.isInteger(e.repsMin) ? { repsMin: e.repsMin } : {}),
         ...(e.bodyweight != null ? { bodyweight: !!e.bodyweight } : {}),
@@ -609,6 +608,7 @@ export function changeTitle(c, S) {
     case 'add-exercise': return t('Add {0}', exTitle(c.after?.id))
     case 'remove-exercise': return t('Drop {0}', ex)
     case 'swap-exercise': return t('Swap {0} for {1}', ex, exTitle(c.after?.id))
+    case 'warmupSets': return t('{0}: warm-up sets', ex)
     case 'sets': return t('{0}: sets', ex)
     case 'reps': return t('{0}: reps', ex)
     case 'repsMin': return t('{0}: rep-range floor', ex)
@@ -630,11 +630,9 @@ export function changeTitle(c, S) {
 
 /** Short before/after strings for the diff column. */
 export function changeValues(c, S) {
+  if (c.type === 'swap-exercise') return swapChangeValues(c, S, exTitle)
   const routineName = id => (S?.routines || []).find(r => r.id === id)?.name || id
   const fmt = v => {
-    // `week` first — its value is a routine-id list (an array is also an object, so it has to
-    // win before the generic branches). Render as " + "-joined routine names; null / empty /
-    // "rest" all read as Rest.
     if (c.type === 'week') {
       const ids = [].concat(v ?? []).filter(x => x && x !== 'rest')
       return ids.length ? ids.map(routineName).join(' + ') : t('Rest')

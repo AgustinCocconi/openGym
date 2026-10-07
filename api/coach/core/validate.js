@@ -16,6 +16,7 @@
  */
 import { libraryHas, libraryName } from './library.js';
 import { reviewResultErrors } from './review-result.js';
+import { reviewQuality } from './review-quality.js';
 import { proposalCandidateErrors, planJointSignalErrors } from './candidates.js';
 import { assessPlanQuality } from './plan-quality.js';
 
@@ -23,7 +24,7 @@ import { assessPlanQuality } from './plan-quality.js';
 // implementation on the client to match; there is no default case anywhere.
 export const CHANGE_TYPES = [
   'add-exercise', 'remove-exercise', 'swap-exercise',
-  'sets', 'reps', 'repsMin', 'repsMax', 'sec', 'cardio',
+  'sets', 'reps', 'repsMin', 'repsMax', 'warmupSets', 'sec', 'cardio',
   'reorder', 'superset',
   'routine-prog', 'exercise-prog', 'inc',
   'add-routine', 'remove-routine', 'rename-routine',
@@ -118,6 +119,8 @@ export function validatePlan(data, ctx = {}) {
         if (perSide && clean.reps % 2) { errors.push(ODD_PER_SIDE(`${where}.reps`)); return; }
         if (isNum(e.weight) && e.weight > 0 && e.weight <= MAX_WEIGHT) clean.weight = e.weight;
       }
+      if (e.warmupSets != null && !isInt(e.warmupSets, 0, 5)) errors.push(`${where}.warmupSets must be a whole number (0-5)`);
+      else if (e.warmupSets != null) clean.warmupSets = e.warmupSets;
       if (e.prog != null) {
         if (!POLICIES.includes(e.prog)) errors.push(`${where}.prog "${e.prog}" is not one of ${POLICIES.join(', ')}`);
         else clean.prog = e.prog;
@@ -251,7 +254,7 @@ export function validateReview(data, plan, ctx = {}) {
     if (!['add-routine', 'week'].includes(c.type)) {
       if (!routine) { errors.push(`${where}.target.routineId "${target.routineId}" is not one of the routines in the plan`); return; }
     }
-    const needsEx = ['remove-exercise', 'swap-exercise', 'sets', 'reps', 'repsMin', 'repsMax', 'sec', 'cardio', 'exercise-prog', 'inc', 'superset'];
+    const needsEx = ['remove-exercise', 'swap-exercise', 'sets', 'reps', 'repsMin', 'repsMax', 'warmupSets', 'sec', 'cardio', 'exercise-prog', 'inc', 'superset'];
     let planned = null;
     if (needsEx.includes(c.type)) {
       if (!target.exId) { errors.push(`${where}.target.exId is required for type "${c.type}"`); return; }
@@ -297,6 +300,7 @@ export function validateReview(data, plan, ctx = {}) {
         }
         const a = c.after || {};
         if (!isStr(a.id) || !knownEx(a.id)) { errors.push(`${where}.after.id must be an exercise id from the library`); return; }
+        if (a.warmupSets != null && !isInt(a.warmupSets, 0, 5)) { errors.push(`${where}.after.warmupSets must be 0-5`); return; }
         const perSide = !!a.side;
         if (perSide && isInt(a.reps, 1, 100) && a.reps % 2) { errors.push(ODD_PER_SIDE(`${where}.after.reps`)); return; }
         if (isInt(a.repsMax, 1, 100) && isInt(a.repsMin, 1, 100) && a.repsMax < a.repsMin) { errors.push(INVERTED_RANGE(`${where}.after`)); return; }
@@ -308,6 +312,7 @@ export function validateReview(data, plan, ctx = {}) {
           ...(isInt(a.sec, 5, 3600) ? { sec: a.sec } : {}),
           ...(isNum(a.weight) && a.weight > 0 && a.weight <= MAX_WEIGHT ? { weight: a.weight } : {}),
           ...(POLICIES.includes(a.prog) ? { prog: a.prog } : {}),
+          ...(isInt(a.warmupSets, 0, 5) ? { warmupSets: a.warmupSets } : {}),
           ...(isInt(a.repsMin, 1, 100) ? { repsMin: a.repsMin } : {}),
           ...(isInt(a.repsMax, 1, 100) ? { repsMax: a.repsMax } : {}),
           ...(a.bodyweight != null ? { bodyweight: !!a.bodyweight } : {}),
@@ -325,6 +330,7 @@ export function validateReview(data, plan, ctx = {}) {
         const a = c.after || {};
         if (!isStr(a.id) || !knownEx(a.id)) { errors.push(`${where}.after.id must be an exercise id from the library`); return; }
         if (a.id === target.exId) { errors.push(`${where} swaps an exercise for itself`); return; }
+        out.before = structuredClone(planned);
         out.after = {
           id: a.id, name: libraryName(a.id),
           ...(isInt(a.sets, 1, 10) ? { sets: a.sets } : {}),
@@ -337,6 +343,7 @@ export function validateReview(data, plan, ctx = {}) {
       case 'remove-routine':
         out.after = null;
         break;
+      case 'warmupSets': if (!isInt(c.after, 0, 5)) { errors.push(`${where}.after must be warm-up sets (0-5)`); return; } break;
       case 'sets': if (!isInt(c.after, 1, 10)) { errors.push(`${where}.after must be a whole number of sets (1-10)`); return; } break;
       case 'reps':
         if (!isInt(c.after, 1, 100)) { errors.push(`${where}.after must be a whole number of reps (1-100)`); return; }
@@ -398,6 +405,7 @@ export function validateReview(data, plan, ctx = {}) {
         if (bad) { errors.push(`${where}.after.ex "${bad.id}" is not in the exercise library — use an id from the library provided in the payload`); return; }
         const ex = listed.slice(0, MAX_EX_PER_ROUTINE);
         if (!ex.length) { errors.push(`${where}.after.ex must list at least one exercise from the library`); return; }
+        if (ex.some(e => e.warmupSets != null && !isInt(e.warmupSets, 0, 5))) { errors.push(`${where}.after.ex warmupSets must be 0-5`); return; }
         const odd = ex.find(e => e.side && isInt(e.reps, 1, 100) && e.reps % 2);
         if (odd) { errors.push(ODD_PER_SIDE(`${where}.after.ex "${odd.id}"`)); return; }
         out.after = {
@@ -412,6 +420,7 @@ export function validateReview(data, plan, ctx = {}) {
             ...(isInt(e.repsMin, 1, 100) ? { repsMin: e.repsMin } : {}),
             ...(isInt(e.repsMax, 1, 100) ? { repsMax: e.repsMax } : {}),
             ...(POLICIES.includes(e.prog) ? { prog: e.prog } : {}),
+            ...(isInt(e.warmupSets, 0, 5) ? { warmupSets: e.warmupSets } : {}),
             ...(isNum(e.inc) && e.inc > 0 && e.inc <= MAX_INC ? { inc: e.inc } : {}),
             ...(e.bodyweight != null ? { bodyweight: !!e.bodyweight } : {}),
             ...(e.side ? { side: true } : {})
@@ -513,6 +522,7 @@ export function validateReview(data, plan, ctx = {}) {
         sessions: isInt(data.evidence?.sessions, 0, 10000) ? data.evidence.sessions : null
       },
       changes: kept,
+      ...(ctx.planRequirements ? { quality: reviewQuality(plan, kept, ctx).quality } : {}),
       notes: (Array.isArray(data.notes) ? data.notes : []).filter(isStr).slice(0, 6).map(n => clampStr(n, 600))
     }
   };
@@ -531,6 +541,7 @@ export function validateReview(data, plan, ctx = {}) {
  */
 function currentOf(type, routine, planned, plan, target) {
   switch (type) {
+    case 'warmupSets': return planned?.warmupSets ?? 0;
     case 'sets': return planned?.sets ?? null;
     case 'reps': return planned?.reps ?? null;
     case 'repsMin': return planned?.repsMin ?? null;
